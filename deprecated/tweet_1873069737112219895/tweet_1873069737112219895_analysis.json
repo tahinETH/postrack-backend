@@ -1,0 +1,281 @@
+{
+    "tweet_id": "1873069737112219895",
+    "timestamps": [
+        "20241228_223559",
+        "20241228_224106",
+        "20241228_224612",
+        "20241228_225119",
+        "20241228_225628",
+        "20241228_230136",
+        "20241228_230645",
+        "20241228_231153",
+        "20241228_233004",
+        "20241228_233515",
+        "20241228_234027",
+        "20241228_234538",
+        "20241228_235050",
+        "20241228_235601"
+    ],
+    "engagement_metrics": {
+        "20241228_223559": {
+            "quote_count": 0,
+            "reply_count": 3,
+            "retweet_count": 3,
+            "favorite_count": 101,
+            "views_count": 2750,
+            "bookmark_count": 0
+        },
+        "20241228_224106": {
+            "quote_count": 0,
+            "reply_count": 3,
+            "retweet_count": 3,
+            "favorite_count": 109,
+            "views_count": 3105,
+            "bookmark_count": 0
+        },
+        "20241228_224612": {
+            "quote_count": 0,
+            "reply_count": 3,
+            "retweet_count": 5,
+            "favorite_count": 124,
+            "views_count": 3418,
+            "bookmark_count": 0
+        },
+        "20241228_225119": {
+            "quote_count": 0,
+            "reply_count": 3,
+            "retweet_count": 5,
+            "favorite_count": 135,
+            "views_count": 3712,
+            "bookmark_count": 0
+        },
+        "20241228_225628": {
+            "quote_count": 0,
+            "reply_count": 3,
+            "retweet_count": 5,
+            "favorite_count": 147,
+            "views_count": 3944,
+            "bookmark_count": 1
+        },
+        "20241228_230136": {
+            "quote_count": 0,
+            "reply_count": 3,
+            "retweet_count": 5,
+            "favorite_count": 157,
+            "views_count": 4200,
+            "bookmark_count": 1
+        },
+        "20241228_230645": {
+            "quote_count": 0,
+            "reply_count": 3,
+            "retweet_count": 5,
+            "favorite_count": 161,
+            "views_count": 4405,
+            "bookmark_count": 2
+        },
+        "20241228_231153": {
+            "quote_count": 0,
+            "reply_count": 3,
+            "retweet_count": 5,
+            "favorite_count": 167,
+            "views_count": 4588,
+            "bookmark_count": 2
+        },
+        "20241228_233004": {
+            "quote_count": 0,
+            "reply_count": 3,
+            "retweet_count": 5,
+            "favorite_count": 189,
+            "views_count": 5123,
+            "bookmark_count": 3
+        },
+        "20241228_233515": {
+            "quote_count": 0,
+            "reply_count": 3,
+            "retweet_count": 5,
+            "favorite_count": 194,
+            "views_count": 5271,
+            "bookmark_count": 3
+        },
+        "20241228_234027": {
+            "quote_count": 0,
+            "reply_count": 3,
+            "retweet_count": 5,
+            "favorite_count": 198,
+            "views_count": 5364,
+            "bookmark_count": 3
+        },
+        "20241228_234538": {
+            "quote_count": 0,
+            "reply_count": 3,
+            "retweet_count": 5,
+            "favorite_count": 198,
+            "views_count": 5434,
+            "bookmark_count": 3
+        },
+        "20241228_235050": {
+            "quote_count": 0,
+            "reply_count": 3,
+            "retweet_count": 5,
+            "favorite_count": 203,
+            "views_count": 5537,
+            "bookmark_count": 3
+        },
+        "20241228_235601": {
+            "quote_count": 0,
+            "reply_count": 3,
+            "retweet_count": 5,
+            "favorite_count": 205,
+            "views_count": 5631,
+            "bookmark_count": 3
+        }
+    },
+    "comments_tracking": {
+        "20241228_223559": [
+            {
+                "id": 1873072992563122657,
+                "favorite_count": 1,
+                "views_count": 13,
+                "bookmark_count": 0,
+                "screen_name": "FreeSoilAndrew",
+                "followers_count": 605
+            },
+            {
+                "id": 1873070734345682997,
+                "favorite_count": 1,
+                "views_count": 25,
+                "bookmark_count": 0,
+                "screen_name": "antlionai",
+                "followers_count": 343
+            }
+        ]
+    },
+    "retweeters_tracking": {
+        "20241228_223559": [
+            {
+                "screen_name": "notascoolaswine",
+                "followers_count": 267
+            },
+            {
+                "screen_name": "moddedLimes",
+                "followers_count": 914
+            }
+        ],
+        "20241228_224612": [
+            {
+                "screen_name": "populusaigeiros",
+                "followers_count": 1048
+            },
+            {
+                "screen_name": "LogoSimian",
+                "followers_count": 1546
+            }
+        ]
+    },
+    "engagement_changes": {
+        "20241228_224106": {
+            "quote_count": 0,
+            "reply_count": 0,
+            "retweet_count": 0,
+            "favorite_count": 8,
+            "views_count": 355,
+            "bookmark_count": 0
+        },
+        "20241228_224612": {
+            "quote_count": 0,
+            "reply_count": 0,
+            "retweet_count": 2,
+            "favorite_count": 15,
+            "views_count": 313,
+            "bookmark_count": 0
+        },
+        "20241228_225119": {
+            "quote_count": 0,
+            "reply_count": 0,
+            "retweet_count": 0,
+            "favorite_count": 11,
+            "views_count": 294,
+            "bookmark_count": 0
+        },
+        "20241228_225628": {
+            "quote_count": 0,
+            "reply_count": 0,
+            "retweet_count": 0,
+            "favorite_count": 12,
+            "views_count": 232,
+            "bookmark_count": 1
+        },
+        "20241228_230136": {
+            "quote_count": 0,
+            "reply_count": 0,
+            "retweet_count": 0,
+            "favorite_count": 10,
+            "views_count": 256,
+            "bookmark_count": 0
+        },
+        "20241228_230645": {
+            "quote_count": 0,
+            "reply_count": 0,
+            "retweet_count": 0,
+            "favorite_count": 4,
+            "views_count": 205,
+            "bookmark_count": 1
+        },
+        "20241228_231153": {
+            "quote_count": 0,
+            "reply_count": 0,
+            "retweet_count": 0,
+            "favorite_count": 6,
+            "views_count": 183,
+            "bookmark_count": 0
+        },
+        "20241228_233004": {
+            "quote_count": 0,
+            "reply_count": 0,
+            "retweet_count": 0,
+            "favorite_count": 22,
+            "views_count": 535,
+            "bookmark_count": 1
+        },
+        "20241228_233515": {
+            "quote_count": 0,
+            "reply_count": 0,
+            "retweet_count": 0,
+            "favorite_count": 5,
+            "views_count": 148,
+            "bookmark_count": 0
+        },
+        "20241228_234027": {
+            "quote_count": 0,
+            "reply_count": 0,
+            "retweet_count": 0,
+            "favorite_count": 4,
+            "views_count": 93,
+            "bookmark_count": 0
+        },
+        "20241228_234538": {
+            "quote_count": 0,
+            "reply_count": 0,
+            "retweet_count": 0,
+            "favorite_count": 0,
+            "views_count": 70,
+            "bookmark_count": 0
+        },
+        "20241228_235050": {
+            "quote_count": 0,
+            "reply_count": 0,
+            "retweet_count": 0,
+            "favorite_count": 5,
+            "views_count": 103,
+            "bookmark_count": 0
+        },
+        "20241228_235601": {
+            "quote_count": 0,
+            "reply_count": 0,
+            "retweet_count": 0,
+            "favorite_count": 2,
+            "views_count": 94,
+            "bookmark_count": 0
+        }
+    }
+}

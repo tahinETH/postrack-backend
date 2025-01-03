@@ -1,0 +1,132 @@
+{
+    "data": [
+        {
+            "tweet_created_at": "2024-12-28T18:26:16.000000Z",
+            "id": 1873072992563122657,
+            "id_str": "1873072992563122657",
+            "text": null,
+            "full_text": "@eigenrobot This seems obvious to me, too. More leisure time.",
+            "source": "",
+            "truncated": false,
+            "in_reply_to_status_id": 1873069737112219895,
+            "in_reply_to_status_id_str": "1873069737112219895",
+            "in_reply_to_user_id": 1584642529,
+            "in_reply_to_user_id_str": "1584642529",
+            "in_reply_to_screen_name": "eigenrobot",
+            "user": {
+                "id": 710607179494121472,
+                "id_str": "710607179494121472",
+                "name": "\ud83e\udd97New Free Soil Party",
+                "screen_name": "FreeSoilAndrew",
+                "location": "",
+                "url": "http://free-soil-blog.blogspot.com/",
+                "description": "\u201cI\u2019m Not A Republican, I\u2019m Worse\u201d - Kurt Russell \nI hate Trump & won't ever vote for him\nBruce Bartlett called me an idiot\nRead the Platform: https://t.co/S5mbqbTZ7X",
+                "protected": false,
+                "verified": false,
+                "followers_count": 605,
+                "friends_count": 25,
+                "listed_count": 0,
+                "favourites_count": 20,
+                "statuses_count": 86182,
+                "created_at": "2016-03-17T23:22:08.000000Z",
+                "profile_banner_url": "https://pbs.twimg.com/profile_banners/710607179494121472/1462325792",
+                "profile_image_url_https": "https://pbs.twimg.com/profile_images/1747723914690650113/_wIs-9sn_normal.png",
+                "can_dm": false
+            },
+            "quoted_status_id": null,
+            "quoted_status_id_str": null,
+            "is_quote_status": false,
+            "quoted_status": null,
+            "retweeted_status": null,
+            "quote_count": 0,
+            "reply_count": 0,
+            "retweet_count": 0,
+            "favorite_count": 1,
+            "views_count": 19,
+            "bookmark_count": 0,
+            "lang": "en",
+            "entities": {
+                "hashtags": [],
+                "symbols": [],
+                "timestamps": [],
+                "urls": [],
+                "user_mentions": [
+                    {
+                        "id_str": "1584642529",
+                        "indices": [
+                            0,
+                            11
+                        ],
+                        "name": "eigenrobot",
+                        "screen_name": "eigenrobot"
+                    }
+                ]
+            },
+            "is_pinned": false
+        },
+        {
+            "tweet_created_at": "2024-12-28T18:17:17.000000Z",
+            "id": 1873070734345682997,
+            "id_str": "1873070734345682997",
+            "text": null,
+            "full_text": "@eigenrobot A niche internet microcelebrity wins the lottery and is asked what he'll do with the winnings. \n\"Probably keep tweeting until it runs out\"\n\nThats the format of a joke but with farming I've heard.",
+            "source": "",
+            "truncated": false,
+            "in_reply_to_status_id": 1873069737112219895,
+            "in_reply_to_status_id_str": "1873069737112219895",
+            "in_reply_to_user_id": 1584642529,
+            "in_reply_to_user_id_str": "1584642529",
+            "in_reply_to_screen_name": "eigenrobot",
+            "user": {
+                "id": 1849996857176629248,
+                "id_str": "1849996857176629248",
+                "name": "Antlion",
+                "screen_name": "antlionai",
+                "location": "Las Vegas, NV",
+                "url": "http://antlion.ai",
+                "description": "Building things I find interesting. \n\nCheck out https://t.co/PfANTnQkc8 WIP\n\nDiet Coke enjoyer. \n\nNot a coder.",
+                "protected": false,
+                "verified": true,
+                "followers_count": 343,
+                "friends_count": 417,
+                "listed_count": 0,
+                "favourites_count": 7334,
+                "statuses_count": 3394,
+                "created_at": "2024-10-26T02:10:11.000000Z",
+                "profile_banner_url": "https://pbs.twimg.com/profile_banners/1849996857176629248/1730070696",
+                "profile_image_url_https": "https://pbs.twimg.com/profile_images/1850663291544326145/I3UcEtE7_normal.jpg",
+                "can_dm": true
+            },
+            "quoted_status_id": null,
+            "quoted_status_id_str": null,
+            "is_quote_status": false,
+            "quoted_status": null,
+            "retweeted_status": null,
+            "quote_count": 0,
+            "reply_count": 0,
+            "retweet_count": 0,
+            "favorite_count": 2,
+            "views_count": 29,
+            "bookmark_count": 0,
+            "lang": "en",
+            "entities": {
+                "hashtags": [],
+                "symbols": [],
+                "timestamps": [],
+                "urls": [],
+                "user_mentions": [
+                    {
+                        "id_str": "1584642529",
+                        "indices": [
+                            0,
+                            11
+                        ],
+                        "name": "eigenrobot",
+                        "screen_name": "eigenrobot"
+                    }
+                ]
+            },
+            "is_pinned": false
+        }
+    ]
+}

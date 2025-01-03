@@ -1,0 +1,799 @@
+/Users/furkangok/Desktop/code/x-analyzer/main.py:51: DeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+  async def monitor_tweet(tweet_id: str, action: str = Query(..., regex="^(start|stop)$")):
+/Users/furkangok/Desktop/code/x-analyzer/main.py:95: DeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+  async def get_tweet_history(tweet_id: str, format: str = Query(..., regex="^(raw|analyzed)$")):
+/Users/furkangok/Desktop/code/x-analyzer/main.py:114: DeprecationWarning: `regex` has been deprecated, please use `pattern` instead
+  async def monitor_account(account_identifier: str, action: str = Query(None, regex="^(start|stop)$")):
+/Users/furkangok/Desktop/code/x-analyzer/main.py:193: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+INFO:     Started server process [34940]
+INFO:     Waiting for application startup.
+2025-01-02 21:19:09,245 - __main__ - INFO - Starting tweet monitoring background task at 1735838349
+2025-01-02 21:19:09,245 - __main__ - INFO - Running periodic tweet check at 1735838349
+2025-01-02 21:19:09,245 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735832595)
+2025-01-02 21:19:09,245 - __main__ - INFO - Running periodic account check at 1735838349
+2025-01-02 21:19:14,935 - monitor - INFO - Retrieved 1 tweets for user frknnsh
+2025-01-02 21:19:16,659 - monitor - INFO - Saved details for tweet 1874822889725379018
+2025-01-02 21:19:22,003 - monitor - INFO - Found 1 new tweets from frknnsh
+INFO:     Application startup complete.
+2025-01-02 21:19:24,421 - monitor - INFO - Saved details for tweet 1874822889725379018
+INFO:     Uvicorn running on http://0.0.0.0:3001 (Press CTRL+C to quit)
+2025-01-02 21:19:29,734 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: 
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [34940]
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.12/3.12.6/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "uvloop/loop.pyx", line 1517, in uvloop.loop.Loop.run_until_complete
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.12/3.12.6/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.6/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 123, in run
+    raise KeyboardInterrupt()
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/furkangok/Desktop/code/x-analyzer/main.py", line 201, in <module>
+    uvicorn.run(app, host="0.0.0.0", port=3001)
+  File "/Users/furkangok/Desktop/code/butler-bot/venv/lib/python3.12/site-packages/uvicorn/main.py", line 577, in run
+    server.run()
+  File "/Users/furkangok/Desktop/code/butler-bot/venv/lib/python3.12/site-packages/uvicorn/server.py", line 65, in run
+    return asyncio.run(self.serve(sockets=sockets))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.6/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 193, in run
+    with Runner(debug=debug, loop_factory=loop_factory) as runner:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.6/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 62, in __exit__
+    self.close()
+  File "/opt/homebrew/Cellar/python@3.12/3.12.6/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 70, in close
+    _cancel_all_tasks(loop)
+  File "/opt/homebrew/Cellar/python@3.12/3.12.6/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 205, in _cancel_all_tasks
+    loop.run_until_complete(tasks.gather(*to_cancel, return_exceptions=True))
+  File "uvloop/loop.pyx", line 1511, in uvloop.loop.Loop.run_until_complete
+  File "uvloop/loop.pyx", line 1504, in uvloop.loop.Loop.run_until_complete
+  File "uvloop/loop.pyx", line 1377, in uvloop.loop.Loop.run_forever
+  File "uvloop/loop.pyx", line 555, in uvloop.loop.Loop._run
+  File "uvloop/handles/poll.pyx", line 216, in uvloop.loop.__on_uvpoll_event
+  File "uvloop/cbhandles.pyx", line 83, in uvloop.loop.Handle._run
+  File "uvloop/cbhandles.pyx", line 66, in uvloop.loop.Handle._run
+  File "uvloop/loop.pyx", line 397, in uvloop.loop.Loop._read_from_self
+  File "uvloop/loop.pyx", line 402, in uvloop.loop.Loop._invoke_signals
+  File "uvloop/loop.pyx", line 377, in uvloop.loop.Loop._ceval_process_signals
+KeyboardInterrupt
+2025-01-02 21:19:31,279 - asyncio - ERROR - Task was destroyed but it is pending!
+task: <Task cancelling name='Task-4' coro=<periodic_account_check() running at /Users/furkangok/Desktop/code/x-analyzer/main.py:191> wait_for=<Future pending cb=[Task.task_wakeup()]> cb=[gather.<locals>._done_callback() at /opt/homebrew/Cellar/python@3.12/3.12.6/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/tasks.py:767]>
+INFO:     Will watch for changes in these directories: ['/Users/furkangok/Desktop/code/x-analyzer']
+INFO:     Uvicorn running on http://0.0.0.0:3001 (Press CTRL+C to quit)
+INFO:     Started reloader process [35164] using WatchFiles
+INFO:     Started server process [35171]
+INFO:     Waiting for application startup.
+2025-01-02 21:24:54,605 - main - INFO - Starting tweet monitoring background task at 1735838694
+2025-01-02 21:24:54,605 - main - INFO - Running periodic tweet check at 1735838694
+2025-01-02 21:24:54,605 - monitor - INFO - No tweets need updating at this time
+2025-01-02 21:24:54,605 - main - INFO - Running periodic account check at 1735838694
+2025-01-02 21:24:57,225 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 21:24:59,559 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 21:25:01,997 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 21:25:04,647 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 21:25:07,291 - monitor - WARNING - No tweets found for user levelsio
+INFO:     Application startup complete.
+2025-01-02 21:25:09,184 - main - INFO - Retrieved feed with 1 tweets at 1735838709
+INFO:     127.0.0.1:58543 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 21:25:12,284 - main - INFO - Retrieved feed with 1 tweets at 1735838712
+INFO:     127.0.0.1:58543 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 21:25:20,722 - main - INFO - Retrieved feed with 1 tweets at 1735838720
+INFO:     127.0.0.1:58627 - "GET /tweet/feed HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58734 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58734 - "GET /openapi.json HTTP/1.1" 200 OK
+2025-01-02 21:25:52,738 - monitor - INFO - Started monitoring account eshear
+INFO:     127.0.0.1:58763 - "POST /account/monitor/eshear?action=start HTTP/1.1" 200 OK
+2025-01-02 21:25:54,605 - main - INFO - Running periodic tweet check at 1735838754
+2025-01-02 21:25:54,606 - monitor - INFO - No tweets need updating at this time
+2025-01-02 21:26:29,864 - monitor - INFO - Started monitoring account nntaleb
+INFO:     127.0.0.1:58935 - "POST /account/monitor/nntaleb?action=start HTTP/1.1" 200 OK
+2025-01-02 21:26:54,606 - main - INFO - Running periodic tweet check at 1735838814
+2025-01-02 21:26:54,607 - monitor - INFO - No tweets need updating at this time
+2025-01-02 21:27:03,250 - monitor - INFO - Started monitoring account visakanv
+INFO:     127.0.0.1:59089 - "POST /account/monitor/visakanv?action=start HTTP/1.1" 200 OK
+2025-01-02 21:27:09,087 - monitor - INFO - Started monitoring account DefenderOfBasic
+INFO:     127.0.0.1:59089 - "POST /account/monitor/DefenderOfBasic?action=start HTTP/1.1" 200 OK
+2025-01-02 21:27:10,548 - main - INFO - Retrieved feed with 1 tweets at 1735838830
+INFO:     127.0.0.1:59134 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 21:27:12,148 - main - INFO - Retrieved feed with 1 tweets at 1735838832
+INFO:     127.0.0.1:59134 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 21:27:12,927 - main - INFO - Retrieved feed with 1 tweets at 1735838832
+INFO:     127.0.0.1:59134 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 21:27:13,159 - main - INFO - Retrieved feed with 1 tweets at 1735838833
+INFO:     127.0.0.1:59134 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 21:27:13,284 - main - INFO - Retrieved feed with 1 tweets at 1735838833
+INFO:     127.0.0.1:59134 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 21:27:13,515 - main - INFO - Retrieved feed with 1 tweets at 1735838833
+INFO:     127.0.0.1:59134 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 21:27:54,608 - main - INFO - Running periodic tweet check at 1735838874
+2025-01-02 21:27:54,609 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735838535)
+2025-01-02 21:27:57,189 - monitor - INFO - Saved details for tweet 1874822889725379018
+2025-01-02 21:28:03,241 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: 
+2025-01-02 21:28:32,328 - main - INFO - Retrieved feed with 1 tweets at 1735838912
+INFO:     127.0.0.1:59521 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 21:29:03,243 - main - INFO - Running periodic tweet check at 1735838943
+2025-01-02 21:29:03,243 - monitor - INFO - No tweets need updating at this time
+2025-01-02 21:29:07,294 - main - INFO - Running periodic account check at 1735838947
+2025-01-02 21:29:09,904 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 21:29:12,302 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 21:29:15,133 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 21:29:17,505 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 21:29:20,038 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 21:29:22,361 - monitor - WARNING - No tweets found for user eshear
+2025-01-02 21:29:24,235 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 21:29:26,590 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 21:29:29,117 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 21:29:38,450 - main - INFO - Retrieved feed with 1 tweets at 1735838978
+INFO:     127.0.0.1:59824 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 21:29:39,170 - main - INFO - Retrieved feed with 1 tweets at 1735838979
+INFO:     127.0.0.1:59824 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 21:29:39,343 - main - INFO - Retrieved feed with 1 tweets at 1735838979
+INFO:     127.0.0.1:59824 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 21:29:39,534 - main - INFO - Retrieved feed with 1 tweets at 1735838979
+INFO:     127.0.0.1:59824 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 21:29:39,680 - main - INFO - Retrieved feed with 1 tweets at 1735838979
+INFO:     127.0.0.1:59824 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 21:30:03,243 - main - INFO - Running periodic tweet check at 1735839003
+2025-01-02 21:30:03,244 - monitor - INFO - No tweets need updating at this time
+2025-01-02 21:31:03,244 - main - INFO - Running periodic tweet check at 1735839063
+2025-01-02 21:31:03,244 - monitor - INFO - No tweets need updating at this time
+2025-01-02 21:32:03,243 - main - INFO - Running periodic tweet check at 1735839123
+2025-01-02 21:32:03,244 - monitor - INFO - No tweets need updating at this time
+2025-01-02 21:33:03,240 - main - INFO - Running periodic tweet check at 1735839183
+2025-01-02 21:33:03,240 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735838874)
+2025-01-02 21:33:05,960 - monitor - INFO - Saved details for tweet 1874822889725379018
+2025-01-02 21:33:12,101 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: 
+2025-01-02 21:33:29,112 - main - INFO - Running periodic account check at 1735839209
+2025-01-02 21:33:31,836 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 21:33:34,452 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 21:33:36,830 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 21:33:39,152 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 21:33:41,367 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 21:33:44,031 - monitor - WARNING - No tweets found for user eshear
+2025-01-02 21:33:46,115 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 21:33:48,679 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 21:33:51,390 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 21:34:12,100 - main - INFO - Running periodic tweet check at 1735839252
+2025-01-02 21:34:12,101 - monitor - INFO - No tweets need updating at this time
+2025-01-02 21:35:12,103 - main - INFO - Running periodic tweet check at 1735839312
+2025-01-02 21:35:12,103 - monitor - INFO - No tweets need updating at this time
+2025-01-02 21:36:12,105 - main - INFO - Running periodic tweet check at 1735839372
+2025-01-02 21:36:12,106 - monitor - INFO - No tweets need updating at this time
+2025-01-02 21:37:12,107 - main - INFO - Running periodic tweet check at 1735839432
+2025-01-02 21:37:12,108 - monitor - INFO - No tweets need updating at this time
+2025-01-02 21:37:51,392 - main - INFO - Running periodic account check at 1735839471
+2025-01-02 21:37:54,083 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 21:37:56,210 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 21:37:58,339 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 21:38:00,953 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 21:38:03,454 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 21:38:06,005 - monitor - WARNING - No tweets found for user eshear
+2025-01-02 21:38:08,280 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 21:38:10,759 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 21:38:13,641 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 21:38:13,643 - main - INFO - Running periodic tweet check at 1735839493
+2025-01-02 21:38:13,644 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735839183)
+2025-01-02 21:38:16,157 - monitor - INFO - Saved details for tweet 1874822889725379018
+2025-01-02 21:38:22,177 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: 
+2025-01-02 21:39:22,177 - main - INFO - Running periodic tweet check at 1735839562
+2025-01-02 21:39:22,178 - monitor - INFO - No tweets need updating at this time
+2025-01-02 21:40:22,181 - main - INFO - Running periodic tweet check at 1735839622
+2025-01-02 21:40:22,182 - monitor - INFO - No tweets need updating at this time
+2025-01-02 21:54:12,208 - main - INFO - Running periodic tweet check at 1735840452
+2025-01-02 21:54:12,209 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735839493)
+2025-01-02 21:54:16,365 - monitor - ERROR - Failed to fetch details for tweet 1874822889725379018
+2025-01-02 21:54:16,366 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: details: Failed to fetch tweet details
+2025-01-02 22:11:58,803 - main - INFO - Running periodic account check at 1735841518
+2025-01-02 22:12:02,935 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 22:12:02,942 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 22:12:02,960 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 22:12:02,964 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 22:12:02,968 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 22:12:02,983 - monitor - WARNING - No tweets found for user eshear
+2025-01-02 22:12:02,991 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 22:12:03,000 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 22:12:03,010 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 22:12:03,010 - main - INFO - Running periodic tweet check at 1735841523
+2025-01-02 22:12:03,011 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735839493)
+2025-01-02 22:12:03,018 - monitor - ERROR - Failed to fetch details for tweet 1874822889725379018
+2025-01-02 22:12:03,019 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: details: Failed to fetch tweet details
+2025-01-02 22:22:58,468 - main - INFO - Running periodic tweet check at 1735842178
+2025-01-02 22:22:58,469 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735839493)
+2025-01-02 22:23:02,621 - monitor - ERROR - Failed to fetch details for tweet 1874822889725379018
+2025-01-02 22:23:02,621 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: details: Failed to fetch tweet details
+2025-01-02 22:24:11,123 - main - INFO - Running periodic account check at 1735842251
+2025-01-02 22:24:13,911 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 22:24:18,910 - monitor - INFO - Retrieved 1 tweets for user DylanoA4
+2025-01-02 22:24:21,511 - monitor - INFO - Saved details for tweet 1874881839573463136
+2025-01-02 22:24:26,474 - monitor - INFO - Saved 6 new comments for tweet 1874881839573463136
+2025-01-02 22:24:32,921 - monitor - INFO - Saved 21 new retweeters for tweet 1874881839573463136
+2025-01-02 22:24:32,923 - monitor - INFO - Found 1 new tweets from DylanoA4
+2025-01-02 22:24:35,859 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 22:24:38,442 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 22:24:41,122 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 22:24:45,887 - monitor - INFO - Retrieved 1 tweets for user eshear
+2025-01-02 22:24:48,918 - monitor - INFO - Saved details for tweet 1874883427042042074
+2025-01-02 22:24:54,999 - monitor - INFO - Found 1 new tweets from eshear
+2025-01-02 22:24:57,136 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 22:24:59,857 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 22:25:01,881 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 22:25:01,883 - main - INFO - Running periodic tweet check at 1735842301
+2025-01-02 22:25:01,883 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735839493)
+2025-01-02 22:25:05,275 - monitor - INFO - Saved details for tweet 1874822889725379018
+2025-01-02 22:25:10,917 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: 
+2025-01-02 22:28:18,824 - main - INFO - Running periodic tweet check at 1735842498
+2025-01-02 22:28:18,825 - monitor - INFO - No tweets need updating at this time
+2025-01-02 22:31:49,758 - main - INFO - Running periodic tweet check at 1735842709
+2025-01-02 22:31:49,759 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735842301)
+2025-01-02 22:31:49,759 - monitor - INFO - Tweet 1874881839573463136 needs update (last check: 1735842258)
+2025-01-02 22:31:49,759 - monitor - INFO - Tweet 1874883427042042074 needs update (last check: 1735842285)
+2025-01-02 22:31:49,759 - main - INFO - Running periodic account check at 1735842709
+2025-01-02 22:31:54,002 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 22:31:54,008 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 22:31:54,017 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 22:31:54,024 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 22:31:54,029 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 22:31:54,036 - monitor - WARNING - No tweets found for user eshear
+2025-01-02 22:31:54,040 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 22:31:54,043 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 22:31:54,046 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 22:31:54,049 - monitor - ERROR - Failed to fetch details for tweet 1874822889725379018
+2025-01-02 22:31:54,052 - monitor - ERROR - Failed to fetch details for tweet 1874881839573463136
+Error getting tweet details: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/tweets/1874822889725379018 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x105693d40>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3Afrknnsh+-filter%3Areplies+since_time%3A1735839474 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056b4110>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3ADylanoA4+-filter%3Areplies+since_time%3A1735839476 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056b52b0>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3Acremieuxrecueil+-filter%3Areplies+since_time%3A1735839478 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056b5c70>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3Arauchg+-filter%3Areplies+since_time%3A1735839480 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x105692a20>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3Alevelsio+-filter%3Areplies+since_time%3A1735839483 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056b44a0>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3Aeshear+-filter%3Areplies+since_time%3A1735839486 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056b5d60>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3Anntaleb+-filter%3Areplies+since_time%3A1735839488 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056b66c0>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3Avisakanv+-filter%3Areplies+since_time%3A1735839490 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056b6ff0>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3ADefenderOfBasic+-filter%3Areplies+since_time%3A1735839493 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056911c0>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting tweet details: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/tweets/1874822889725379018 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056b6f00>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting tweet details: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/tweets/1874822889725379018 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056b6270>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3Afrknnsh+-filter%3Areplies+since_time%3A1735842253 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056b79b0>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3ADylanoA4+-filter%3Areplies+since_time%3A1735842272 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056b5940>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3Acremieuxrecueil+-filter%3Areplies+since_time%3A1735842275 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056d82c0>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3Arauchg+-filter%3Areplies+since_time%3A1735842278 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056d90a0>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3Alevelsio+-filter%3Areplies+since_time%3A1735842281 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056b55e0>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3Aeshear+-filter%3Areplies+since_time%3A1735842295 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056b5280>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3Anntaleb+-filter%3Areplies+since_time%3A1735842297 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056b6210>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3Avisakanv+-filter%3Areplies+since_time%3A1735842299 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056b6ff0>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting user tweets: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/search?query=from%3ADefenderOfBasic+-filter%3Areplies+since_time%3A1735842301 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x105693aa0>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting tweet details: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/tweets/1874822889725379018 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056d81a0>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting tweet details: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/tweets/1874881839573463136 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x105693b90>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting tweet details: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/tweets/1874883427042042074 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056b6810>: Failed to establish a new connection: [Errno 65] No route to host'))2025-01-02 22:31:54,054 - monitor - ERROR - Failed to fetch details for tweet 1874883427042042074
+2025-01-02 22:31:54,055 - main - INFO - Retrieved feed with 3 tweets at 1735842714
+
+INFO:     127.0.0.1:52774 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 22:31:54,056 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: details: Failed to fetch tweet details
+2025-01-02 22:31:54,056 - monitor - WARNING - Monitoring run for tweet 1874881839573463136 had issues: details: Failed to fetch tweet details
+2025-01-02 22:31:54,056 - monitor - WARNING - Monitoring run for tweet 1874883427042042074 had issues: details: Failed to fetch tweet details
+2025-01-02 22:32:02,317 - main - INFO - Retrieved analyzed history for tweet 1874881839573463136 at 1735842722
+INFO:     127.0.0.1:52980 - "GET /tweet/1874881839573463136/history?format=analyzed HTTP/1.1" 200 OK
+2025-01-02 22:32:10,354 - main - INFO - Retrieved analyzed history for tweet 1874881839573463136 at 1735842730
+INFO:     127.0.0.1:53026 - "GET /tweet/1874881839573463136/history?format=analyzed HTTP/1.1" 200 OK
+2025-01-02 22:32:54,059 - main - INFO - Running periodic tweet check at 1735842774
+2025-01-02 22:32:54,060 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735842301)
+2025-01-02 22:32:54,060 - monitor - INFO - Tweet 1874881839573463136 needs update (last check: 1735842258)
+2025-01-02 22:32:54,061 - monitor - INFO - Tweet 1874883427042042074 needs update (last check: 1735842285)
+2025-01-02 22:32:57,022 - monitor - INFO - Saved details for tweet 1874822889725379018
+2025-01-02 22:33:05,436 - monitor - INFO - Saved details for tweet 1874881839573463136
+2025-01-02 22:33:11,060 - monitor - INFO - Saved 1 new comments for tweet 1874881839573463136
+2025-01-02 22:33:17,735 - monitor - INFO - Saved 12 new retweeters for tweet 1874881839573463136
+2025-01-02 22:33:20,358 - monitor - INFO - Saved details for tweet 1874883427042042074
+2025-01-02 22:33:24,995 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: 
+2025-01-02 22:33:24,995 - monitor - WARNING - Monitoring run for tweet 1874883427042042074 had issues: 
+2025-01-02 22:35:46,686 - main - INFO - Running periodic tweet check at 1735842946
+2025-01-02 22:35:46,687 - monitor - INFO - No tweets need updating at this time
+2025-01-02 22:36:15,955 - main - INFO - Retrieved analyzed history for tweet 1874881839573463136 at 1735842975
+INFO:     127.0.0.1:53895 - "GET /tweet/1874881839573463136/history?format=analyzed HTTP/1.1" 200 OK
+2025-01-02 22:36:36,692 - main - INFO - Retrieved analyzed history for tweet 1874881839573463136 at 1735842996
+INFO:     127.0.0.1:53966 - "GET /tweet/1874881839573463136/history?format=analyzed HTTP/1.1" 200 OK
+2025-01-02 22:36:38,587 - main - INFO - Retrieved feed with 3 tweets at 1735842998
+INFO:     127.0.0.1:53966 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 22:36:39,874 - main - INFO - Retrieved feed with 3 tweets at 1735842999
+INFO:     127.0.0.1:53966 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 22:36:41,696 - main - INFO - Retrieved feed with 3 tweets at 1735843001
+INFO:     127.0.0.1:53966 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 22:36:42,178 - main - INFO - Retrieved feed with 3 tweets at 1735843002
+INFO:     127.0.0.1:53966 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 22:36:42,345 - main - INFO - Retrieved feed with 3 tweets at 1735843002
+INFO:     127.0.0.1:53966 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 22:36:46,689 - main - INFO - Running periodic tweet check at 1735843006
+2025-01-02 22:36:46,690 - monitor - INFO - No tweets need updating at this time
+2025-01-02 22:36:46,690 - main - INFO - Running periodic account check at 1735843006
+2025-01-02 22:36:49,269 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 22:36:51,853 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 22:36:56,551 - monitor - INFO - Retrieved 1 tweets for user cremieuxrecueil
+2025-01-02 22:36:58,524 - monitor - INFO - Saved details for tweet 1874887434934301107
+2025-01-02 22:37:06,808 - monitor - INFO - Saved 1 new retweeters for tweet 1874887434934301107
+2025-01-02 22:37:06,809 - monitor - INFO - Found 1 new tweets from cremieuxrecueil
+2025-01-02 22:37:09,551 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 22:37:12,138 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 22:37:14,260 - monitor - WARNING - No tweets found for user eshear
+2025-01-02 22:37:16,789 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 22:37:19,520 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 22:37:21,523 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 22:37:46,692 - main - INFO - Running periodic tweet check at 1735843066
+2025-01-02 22:37:46,693 - monitor - INFO - No tweets need updating at this time
+2025-01-02 22:38:46,696 - main - INFO - Running periodic tweet check at 1735843126
+2025-01-02 22:38:46,696 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735842774)
+2025-01-02 22:38:46,697 - monitor - INFO - Tweet 1874881839573463136 needs update (last check: 1735842782)
+2025-01-02 22:38:46,697 - monitor - INFO - Tweet 1874883427042042074 needs update (last check: 1735842797)
+2025-01-02 22:38:49,345 - monitor - INFO - Saved details for tweet 1874822889725379018
+2025-01-02 22:38:56,713 - monitor - INFO - Saved details for tweet 1874881839573463136
+2025-01-02 22:39:02,662 - monitor - INFO - Saved 2 new comments for tweet 1874881839573463136
+2025-01-02 22:39:08,637 - monitor - INFO - Saved 12 new retweeters for tweet 1874881839573463136
+2025-01-02 22:39:10,997 - monitor - INFO - Saved details for tweet 1874883427042042074
+2025-01-02 22:39:16,663 - monitor - INFO - Saved 1 new comments for tweet 1874883427042042074
+2025-01-02 22:39:19,796 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: 
+2025-01-02 22:39:19,797 - monitor - WARNING - Monitoring run for tweet 1874883427042042074 had issues: 
+2025-01-02 22:40:19,798 - main - INFO - Running periodic tweet check at 1735843219
+2025-01-02 22:40:19,799 - monitor - INFO - No tweets need updating at this time
+2025-01-02 22:40:33,241 - main - INFO - Retrieved feed with 4 tweets at 1735843233
+INFO:     127.0.0.1:54103 - "GET /tweet/feed HTTP/1.1" 200 OK
+2025-01-02 22:40:35,649 - main - INFO - Retrieved analyzed history for tweet 1874883427042042074 at 1735843235
+INFO:     127.0.0.1:54103 - "GET /tweet/1874883427042042074/history?format=analyzed HTTP/1.1" 200 OK
+2025-01-02 22:41:19,802 - main - INFO - Running periodic tweet check at 1735843279
+2025-01-02 22:41:19,802 - monitor - INFO - No tweets need updating at this time
+2025-01-02 22:41:21,530 - main - INFO - Running periodic account check at 1735843281
+2025-01-02 22:41:23,865 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 22:41:26,091 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 22:41:28,466 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 22:41:31,077 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 22:41:33,469 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 22:41:35,719 - monitor - WARNING - No tweets found for user eshear
+2025-01-02 22:41:38,535 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 22:41:41,132 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 22:41:44,010 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 22:42:19,805 - main - INFO - Running periodic tweet check at 1735843339
+2025-01-02 22:42:19,806 - monitor - INFO - Tweet 1874887434934301107 needs update (last check: 1735843016)
+2025-01-02 22:42:22,430 - monitor - INFO - Saved details for tweet 1874887434934301107
+2025-01-02 22:42:27,656 - monitor - INFO - Saved 2 new comments for tweet 1874887434934301107
+2025-01-02 22:42:33,188 - monitor - INFO - Saved 3 new retweeters for tweet 1874887434934301107
+2025-01-02 22:43:33,193 - main - INFO - Running periodic tweet check at 1735843413
+2025-01-02 22:43:33,193 - monitor - INFO - No tweets need updating at this time
+2025-01-02 22:44:33,137 - main - INFO - Running periodic tweet check at 1735843473
+2025-01-02 22:44:33,138 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735843126)
+2025-01-02 22:44:33,138 - monitor - INFO - Tweet 1874881839573463136 needs update (last check: 1735843134)
+2025-01-02 22:44:33,138 - monitor - INFO - Tweet 1874883427042042074 needs update (last check: 1735843148)
+2025-01-02 22:44:35,906 - monitor - INFO - Saved details for tweet 1874822889725379018
+2025-01-02 22:44:44,445 - monitor - INFO - Saved details for tweet 1874881839573463136
+2025-01-02 22:44:50,457 - monitor - INFO - Saved 1 new comments for tweet 1874881839573463136
+2025-01-02 22:44:57,836 - monitor - INFO - Saved 12 new retweeters for tweet 1874881839573463136
+2025-01-02 22:45:00,260 - monitor - INFO - Saved details for tweet 1874883427042042074
+2025-01-02 22:45:05,699 - monitor - INFO - No new comments for tweet 1874883427042042074
+2025-01-02 22:45:08,766 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: 
+2025-01-02 22:45:08,767 - monitor - WARNING - Monitoring run for tweet 1874883427042042074 had issues: 
+2025-01-02 22:46:08,768 - main - INFO - Running periodic account check at 1735843568
+2025-01-02 22:46:11,421 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 22:46:14,014 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 22:46:16,707 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 22:46:19,379 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 22:46:21,520 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 22:46:24,253 - monitor - WARNING - No tweets found for user eshear
+2025-01-02 22:46:26,787 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 22:46:29,208 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 22:46:32,067 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 22:46:32,070 - main - INFO - Running periodic tweet check at 1735843592
+2025-01-02 22:46:32,070 - monitor - INFO - No tweets need updating at this time
+2025-01-02 22:47:32,072 - main - INFO - Running periodic tweet check at 1735843652
+2025-01-02 22:47:32,073 - monitor - INFO - Tweet 1874887434934301107 needs update (last check: 1735843339)
+2025-01-02 22:47:35,109 - monitor - INFO - Saved details for tweet 1874887434934301107
+2025-01-02 22:47:40,802 - monitor - INFO - Saved 5 new comments for tweet 1874887434934301107
+2025-01-02 22:47:49,798 - monitor - INFO - No new retweeters for tweet 1874887434934301107
+2025-01-02 22:48:49,802 - main - INFO - Running periodic tweet check at 1735843729
+2025-01-02 22:48:49,803 - monitor - INFO - No tweets need updating at this time
+2025-01-02 22:49:49,804 - main - INFO - Running periodic tweet check at 1735843789
+2025-01-02 22:49:49,804 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735843473)
+2025-01-02 22:49:49,804 - monitor - INFO - Tweet 1874881839573463136 needs update (last check: 1735843482)
+2025-01-02 22:49:52,435 - monitor - INFO - Saved details for tweet 1874822889725379018
+2025-01-02 22:50:00,807 - monitor - INFO - Saved details for tweet 1874881839573463136
+2025-01-02 22:50:05,731 - monitor - INFO - Saved 1 new comments for tweet 1874881839573463136
+2025-01-02 22:50:12,364 - monitor - INFO - Saved 8 new retweeters for tweet 1874881839573463136
+2025-01-02 22:50:12,366 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: 
+2025-01-02 22:50:32,074 - main - INFO - Running periodic account check at 1735843832
+2025-01-02 22:50:34,490 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 22:50:36,267 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 22:50:39,053 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 22:50:41,763 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 22:50:44,342 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 22:50:49,194 - monitor - INFO - Retrieved 1 tweets for user eshear
+2025-01-02 22:50:51,879 - monitor - INFO - Saved details for tweet 1874890574966440331
+2025-01-02 22:50:56,416 - monitor - INFO - Saved 2 new comments for tweet 1874890574966440331
+2025-01-02 22:50:59,568 - monitor - INFO - Found 1 new tweets from eshear
+2025-01-02 22:51:01,738 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 22:51:03,803 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 22:51:06,659 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 22:51:12,368 - main - INFO - Running periodic tweet check at 1735843872
+2025-01-02 22:51:12,368 - monitor - INFO - Tweet 1874883427042042074 needs update (last check: 1735843497)
+2025-01-02 22:51:15,057 - monitor - INFO - Saved details for tweet 1874883427042042074
+2025-01-02 22:51:19,934 - monitor - INFO - Saved 2 new comments for tweet 1874883427042042074
+2025-01-02 22:51:22,873 - monitor - WARNING - Monitoring run for tweet 1874883427042042074 had issues: 
+2025-01-02 22:52:22,874 - main - INFO - Running periodic tweet check at 1735843942
+2025-01-02 22:52:22,875 - monitor - INFO - No tweets need updating at this time
+2025-01-02 22:53:22,877 - main - INFO - Running periodic tweet check at 1735844002
+2025-01-02 22:53:22,878 - monitor - INFO - Tweet 1874887434934301107 needs update (last check: 1735843652)
+2025-01-02 22:53:25,547 - monitor - INFO - Saved details for tweet 1874887434934301107
+2025-01-02 22:53:30,830 - monitor - INFO - Saved 1 new comments for tweet 1874887434934301107
+2025-01-02 22:53:36,807 - monitor - INFO - No new retweeters for tweet 1874887434934301107
+2025-01-02 22:54:36,812 - main - INFO - Running periodic tweet check at 1735844076
+2025-01-02 22:54:36,813 - monitor - INFO - No tweets need updating at this time
+2025-01-02 22:55:06,667 - main - INFO - Running periodic account check at 1735844106
+2025-01-02 22:55:09,132 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 22:55:14,475 - monitor - INFO - Retrieved 1 tweets for user DylanoA4
+2025-01-02 22:55:16,912 - monitor - INFO - Saved details for tweet 1874892013352767928
+2025-01-02 22:55:22,785 - monitor - INFO - Found 1 new tweets from DylanoA4
+2025-01-02 22:55:26,997 - monitor - INFO - Retrieved 1 tweets for user cremieuxrecueil
+2025-01-02 22:55:29,224 - monitor - INFO - Saved details for tweet 1874892056285610214
+2025-01-02 22:55:34,528 - monitor - INFO - Saved 2 new comments for tweet 1874892056285610214
+2025-01-02 22:55:37,521 - monitor - INFO - Found 1 new tweets from cremieuxrecueil
+2025-01-02 22:55:39,695 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 22:55:42,737 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 22:55:45,282 - monitor - WARNING - No tweets found for user eshear
+2025-01-02 22:55:47,468 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 22:55:49,568 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 22:55:51,895 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 22:55:51,897 - main - INFO - Running periodic tweet check at 1735844151
+2025-01-02 22:55:51,898 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735843789)
+2025-01-02 22:55:51,898 - monitor - INFO - Tweet 1874881839573463136 needs update (last check: 1735843798)
+2025-01-02 22:55:51,898 - monitor - INFO - Tweet 1874890574966440331 needs update (last check: 1735843849)
+2025-01-02 22:55:54,679 - monitor - INFO - Saved details for tweet 1874822889725379018
+2025-01-02 22:56:02,121 - monitor - INFO - Saved details for tweet 1874881839573463136
+2025-01-02 22:56:06,996 - monitor - INFO - Saved 1 new comments for tweet 1874881839573463136
+2025-01-02 22:56:13,515 - monitor - INFO - Saved 3 new retweeters for tweet 1874881839573463136
+2025-01-02 22:56:15,952 - monitor - INFO - Saved details for tweet 1874890574966440331
+2025-01-02 22:56:20,796 - monitor - INFO - Saved 3 new comments for tweet 1874890574966440331
+2025-01-02 22:56:26,541 - monitor - INFO - Saved 1 new retweeters for tweet 1874890574966440331
+2025-01-02 22:56:26,543 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: 
+2025-01-02 22:57:26,544 - main - INFO - Running periodic tweet check at 1735844246
+2025-01-02 22:57:26,545 - monitor - INFO - Tweet 1874883427042042074 needs update (last check: 1735843872)
+2025-01-02 22:57:29,343 - monitor - INFO - Saved details for tweet 1874883427042042074
+2025-01-02 22:57:34,836 - monitor - INFO - Saved 2 new comments for tweet 1874883427042042074
+2025-01-02 22:57:38,068 - monitor - WARNING - Monitoring run for tweet 1874883427042042074 had issues: 
+2025-01-02 22:58:38,070 - main - INFO - Running periodic tweet check at 1735844318
+2025-01-02 22:58:38,071 - monitor - INFO - Tweet 1874887434934301107 needs update (last check: 1735844002)
+2025-01-02 22:58:39,582 - monitor - INFO - Saved details for tweet 1874887434934301107
+2025-01-02 22:58:43,044 - monitor - INFO - Saved 5 new comments for tweet 1874887434934301107
+2025-01-02 22:58:47,025 - monitor - INFO - No new retweeters for tweet 1874887434934301107
+2025-01-02 22:59:46,952 - main - INFO - Running periodic tweet check at 1735844386
+2025-01-02 22:59:46,953 - monitor - INFO - No tweets need updating at this time
+2025-01-02 22:59:51,825 - main - INFO - Running periodic account check at 1735844391
+2025-01-02 22:59:54,878 - monitor - INFO - Retrieved 1 tweets for user frknnsh
+2025-01-02 22:59:56,450 - monitor - INFO - Saved details for tweet 1874892534063018411
+2025-01-02 23:00:00,128 - monitor - INFO - Found 1 new tweets from frknnsh
+2025-01-02 23:00:01,670 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 23:00:03,112 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 23:00:06,392 - monitor - INFO - Retrieved 1 tweets for user rauchg
+2025-01-02 23:00:08,028 - monitor - INFO - Saved details for tweet 1874893399549256168
+2025-01-02 23:00:11,483 - monitor - INFO - Found 1 new tweets from rauchg
+2025-01-02 23:00:12,902 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 23:00:14,268 - monitor - WARNING - No tweets found for user eshear
+2025-01-02 23:00:15,822 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 23:00:17,302 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 23:00:18,690 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 23:00:46,954 - main - INFO - Running periodic tweet check at 1735844446
+2025-01-02 23:00:46,954 - monitor - INFO - Tweet 1874892013352767928 needs update (last check: 1735844114)
+2025-01-02 23:00:46,954 - monitor - INFO - Tweet 1874892056285610214 needs update (last check: 1735844126)
+2025-01-02 23:00:46,958 - monitor - ERROR - Failed to fetch details for tweet 1874892013352767928
+2025-01-02 23:00:46,961 - monitor - ERROR - Failed to fetch details for tweet 1874892056285610214
+2025-01-02 23:00:46,961 - monitor - WARNING - Monitoring run for tweet 1874892013352767928 had issues: details: Failed to fetch tweet details
+2025-01-02 23:00:46,962 - monitor - WARNING - Monitoring run for tweet 1874892056285610214 had issues: details: Failed to fetch tweet details
+2025-01-02 23:01:46,963 - main - INFO - Running periodic tweet check at 1735844506
+2025-01-02 23:01:46,964 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735844151)
+2025-01-02 23:01:46,964 - monitor - INFO - Tweet 1874881839573463136 needs update (last check: 1735844159)
+2025-01-02 23:01:46,965 - monitor - INFO - Tweet 1874890574966440331 needs update (last check: 1735844173)
+2025-01-02 23:01:46,965 - monitor - INFO - Tweet 1874892013352767928 needs update (last check: 1735844114)
+2025-01-02 23:01:46,965 - monitor - INFO - Tweet 1874892056285610214 needs update (last check: 1735844126)
+2025-01-02 23:01:49,577 - monitor - INFO - Saved details for tweet 1874822889725379018
+2025-01-02 23:01:57,078 - monitor - INFO - Saved details for tweet 1874881839573463136
+2025-01-02 23:02:02,037 - monitor - INFO - No new comments for tweet 1874881839573463136
+2025-01-02 23:02:08,802 - monitor - INFO - Saved 9 new retweeters for tweet 1874881839573463136
+2025-01-02 23:02:11,160 - monitor - INFO - Saved details for tweet 1874890574966440331
+2025-01-02 23:02:16,040 - monitor - INFO - Saved 4 new comments for tweet 1874890574966440331
+2025-01-02 23:02:21,637 - monitor - INFO - No new retweeters for tweet 1874890574966440331
+2025-01-02 23:02:24,491 - monitor - INFO - Saved details for tweet 1874892013352767928
+2025-01-02 23:02:31,953 - monitor - INFO - Saved details for tweet 1874892056285610214
+2025-01-02 23:02:37,117 - monitor - INFO - Saved 7 new comments for tweet 1874892056285610214
+2025-01-02 23:02:42,446 - monitor - INFO - Saved 3 new retweeters for tweet 1874892056285610214
+2025-01-02 23:02:42,448 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: 
+2025-01-02 23:02:42,449 - monitor - WARNING - Monitoring run for tweet 1874892013352767928 had issues: 
+2025-01-02 23:03:42,450 - main - INFO - Running periodic tweet check at 1735844622
+2025-01-02 23:03:42,450 - monitor - INFO - Tweet 1874883427042042074 needs update (last check: 1735844246)
+2025-01-02 23:03:42,450 - monitor - INFO - Tweet 1874887434934301107 needs update (last check: 1735844318)
+2025-01-02 23:03:44,832 - monitor - INFO - Saved details for tweet 1874883427042042074
+2025-01-02 23:03:49,889 - monitor - INFO - Saved 3 new comments for tweet 1874883427042042074
+2025-01-02 23:03:55,438 - monitor - INFO - Saved details for tweet 1874887434934301107
+2025-01-02 23:04:01,190 - monitor - INFO - No new comments for tweet 1874887434934301107
+2025-01-02 23:04:07,020 - monitor - INFO - No new retweeters for tweet 1874887434934301107
+2025-01-02 23:04:07,022 - monitor - WARNING - Monitoring run for tweet 1874883427042042074 had issues: 
+2025-01-02 23:04:18,695 - main - INFO - Running periodic account check at 1735844658
+2025-01-02 23:04:21,312 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 23:04:23,376 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 23:04:25,796 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 23:04:28,421 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 23:04:30,786 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 23:04:33,503 - monitor - WARNING - No tweets found for user eshear
+2025-01-02 23:04:36,202 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 23:04:38,579 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 23:04:40,924 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 23:05:07,023 - main - INFO - Running periodic tweet check at 1735844707
+2025-01-02 23:05:07,024 - monitor - INFO - Tweet 1874892534063018411 needs update (last check: 1735844394)
+2025-01-02 23:05:07,024 - monitor - INFO - Tweet 1874893399549256168 needs update (last check: 1735844406)
+2025-01-02 23:05:09,378 - monitor - INFO - Saved details for tweet 1874892534063018411
+2025-01-02 23:05:16,426 - monitor - INFO - Saved details for tweet 1874893399549256168
+2025-01-02 23:05:21,656 - monitor - INFO - Saved 4 new comments for tweet 1874893399549256168
+2025-01-02 23:05:24,315 - monitor - WARNING - Monitoring run for tweet 1874892534063018411 had issues: 
+2025-01-02 23:05:24,315 - monitor - WARNING - Monitoring run for tweet 1874893399549256168 had issues: 
+2025-01-02 23:06:24,316 - main - INFO - Running periodic tweet check at 1735844784
+2025-01-02 23:06:24,317 - monitor - INFO - No tweets need updating at this time
+2025-01-02 23:07:24,319 - main - INFO - Running periodic tweet check at 1735844844
+2025-01-02 23:07:24,319 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735844506)
+2025-01-02 23:07:24,319 - monitor - INFO - Tweet 1874881839573463136 needs update (last check: 1735844514)
+2025-01-02 23:07:24,319 - monitor - INFO - Tweet 1874890574966440331 needs update (last check: 1735844528)
+2025-01-02 23:07:24,319 - monitor - INFO - Tweet 1874892013352767928 needs update (last check: 1735844541)
+2025-01-02 23:07:26,953 - monitor - INFO - Saved details for tweet 1874822889725379018
+2025-01-02 23:07:34,488 - monitor - INFO - Saved details for tweet 1874881839573463136
+2025-01-02 23:07:40,099 - monitor - INFO - No new comments for tweet 1874881839573463136
+2025-01-02 23:07:46,629 - monitor - INFO - Saved 6 new retweeters for tweet 1874881839573463136
+2025-01-02 23:07:49,156 - monitor - INFO - Saved details for tweet 1874890574966440331
+2025-01-02 23:07:55,232 - monitor - INFO - Saved 2 new comments for tweet 1874890574966440331
+2025-01-02 23:08:01,209 - monitor - INFO - Saved 1 new retweeters for tweet 1874890574966440331
+2025-01-02 23:08:04,118 - monitor - INFO - Saved details for tweet 1874892013352767928
+2025-01-02 23:08:10,044 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: 
+2025-01-02 23:08:10,044 - monitor - WARNING - Monitoring run for tweet 1874892013352767928 had issues: 
+2025-01-02 23:09:10,046 - main - INFO - Running periodic account check at 1735844950
+2025-01-02 23:09:12,974 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 23:09:15,055 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 23:09:17,528 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 23:09:19,868 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 23:09:22,505 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 23:09:25,089 - monitor - WARNING - No tweets found for user eshear
+2025-01-02 23:09:27,519 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 23:09:29,583 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 23:09:31,646 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 23:09:31,648 - main - INFO - Running periodic tweet check at 1735844971
+2025-01-02 23:09:31,649 - monitor - INFO - Tweet 1874883427042042074 needs update (last check: 1735844622)
+2025-01-02 23:09:31,649 - monitor - INFO - Tweet 1874887434934301107 needs update (last check: 1735844632)
+2025-01-02 23:09:31,649 - monitor - INFO - Tweet 1874892056285610214 needs update (last check: 1735844549)
+2025-01-02 23:09:34,235 - monitor - INFO - Saved details for tweet 1874883427042042074
+2025-01-02 23:09:40,054 - monitor - INFO - Saved 1 new comments for tweet 1874883427042042074
+2025-01-02 23:09:45,250 - monitor - INFO - Saved details for tweet 1874887434934301107
+2025-01-02 23:09:50,947 - monitor - INFO - No new comments for tweet 1874887434934301107
+2025-01-02 23:09:56,860 - monitor - INFO - No new retweeters for tweet 1874887434934301107
+2025-01-02 23:09:59,433 - monitor - INFO - Saved details for tweet 1874892056285610214
+2025-01-02 23:10:04,316 - monitor - INFO - Saved 2 new comments for tweet 1874892056285610214
+2025-01-02 23:10:10,036 - monitor - INFO - Saved 1 new retweeters for tweet 1874892056285610214
+2025-01-02 23:10:10,038 - monitor - WARNING - Monitoring run for tweet 1874883427042042074 had issues: 
+2025-01-02 23:10:29,487 - main - INFO - Retrieved analyzed history for tweet 1874883427042042074 at 1735845029
+Error getting tweet details: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/tweets/1874892013352767928 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056d8560>: Failed to establish a new connection: [Errno 65] No route to host'))
+Error getting tweet details: HTTPSConnectionPool(host='api.socialdata.tools', port=443): Max retries exceeded with url: /twitter/tweets/1874892056285610214 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x1056da300>: Failed to establish a new connection: [Errno 65] No route to host'))
+INFO:     127.0.0.1:57155 - "GET /tweet/1874883427042042074/history?format=analyzed HTTP/1.1" 200 OK
+2025-01-02 23:10:32,753 - main - ERROR - Error getting tweet feed at 1735845032: 'user'
+INFO:     127.0.0.1:57155 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:10:34,724 - main - ERROR - Error getting tweet feed at 1735845034: 'user'
+INFO:     127.0.0.1:57155 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:11:10,039 - main - INFO - Running periodic tweet check at 1735845070
+2025-01-02 23:11:10,041 - monitor - INFO - Tweet 1874892534063018411 needs update (last check: 1735844707)
+2025-01-02 23:11:10,041 - monitor - INFO - Tweet 1874893399549256168 needs update (last check: 1735844714)
+2025-01-02 23:11:12,738 - monitor - INFO - Saved details for tweet 1874892534063018411
+2025-01-02 23:11:20,595 - monitor - INFO - Saved details for tweet 1874893399549256168
+2025-01-02 23:11:25,857 - monitor - INFO - No new comments for tweet 1874893399549256168
+2025-01-02 23:11:28,951 - monitor - WARNING - Monitoring run for tweet 1874892534063018411 had issues: 
+2025-01-02 23:11:28,952 - monitor - WARNING - Monitoring run for tweet 1874893399549256168 had issues: 
+2025-01-02 23:12:28,952 - main - INFO - Running periodic tweet check at 1735845148
+2025-01-02 23:12:28,953 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735844844)
+2025-01-02 23:12:31,289 - monitor - INFO - Saved details for tweet 1874822889725379018
+2025-01-02 23:12:37,151 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: 
+2025-01-02 23:13:37,152 - main - INFO - Running periodic account check at 1735845217
+2025-01-02 23:13:39,773 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 23:13:42,344 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 23:13:44,919 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 23:13:46,927 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 23:13:49,477 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 23:13:52,289 - monitor - WARNING - No tweets found for user eshear
+2025-01-02 23:13:54,613 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 23:13:57,222 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 23:13:59,609 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 23:13:59,612 - main - INFO - Running periodic tweet check at 1735845239
+2025-01-02 23:13:59,612 - monitor - INFO - Tweet 1874881839573463136 needs update (last check: 1735844852)
+2025-01-02 23:13:59,612 - monitor - INFO - Tweet 1874890574966440331 needs update (last check: 1735844866)
+2025-01-02 23:13:59,612 - monitor - INFO - Tweet 1874892013352767928 needs update (last check: 1735844881)
+2025-01-02 23:14:01,725 - monitor - INFO - Saved details for tweet 1874881839573463136
+2025-01-02 23:14:07,241 - monitor - INFO - Saved 1 new comments for tweet 1874881839573463136
+2025-01-02 23:14:13,869 - monitor - INFO - Saved 7 new retweeters for tweet 1874881839573463136
+2025-01-02 23:14:16,003 - monitor - INFO - Saved details for tweet 1874890574966440331
+2025-01-02 23:14:21,186 - monitor - INFO - Saved 2 new comments for tweet 1874890574966440331
+2025-01-02 23:14:26,741 - monitor - INFO - No new retweeters for tweet 1874890574966440331
+2025-01-02 23:14:29,826 - monitor - INFO - Saved details for tweet 1874892013352767928
+2025-01-02 23:14:35,268 - monitor - WARNING - Monitoring run for tweet 1874892013352767928 had issues: 
+2025-01-02 23:15:35,284 - main - INFO - Running periodic tweet check at 1735845335
+2025-01-02 23:15:35,285 - monitor - INFO - Tweet 1874883427042042074 needs update (last check: 1735844971)
+2025-01-02 23:15:35,285 - monitor - INFO - Tweet 1874887434934301107 needs update (last check: 1735844983)
+2025-01-02 23:15:35,285 - monitor - INFO - Tweet 1874892056285610214 needs update (last check: 1735844996)
+2025-01-02 23:15:38,143 - monitor - INFO - Saved details for tweet 1874883427042042074
+2025-01-02 23:15:44,078 - monitor - INFO - No new comments for tweet 1874883427042042074
+2025-01-02 23:15:49,899 - monitor - INFO - Saved details for tweet 1874887434934301107
+2025-01-02 23:15:55,948 - monitor - INFO - No new comments for tweet 1874887434934301107
+2025-01-02 23:16:02,636 - monitor - INFO - No new retweeters for tweet 1874887434934301107
+2025-01-02 23:16:05,228 - monitor - INFO - Saved details for tweet 1874892056285610214
+2025-01-02 23:16:10,357 - monitor - INFO - No new comments for tweet 1874892056285610214
+2025-01-02 23:16:16,058 - monitor - INFO - Saved 2 new retweeters for tweet 1874892056285610214
+2025-01-02 23:16:16,061 - monitor - WARNING - Monitoring run for tweet 1874883427042042074 had issues: 
+2025-01-02 23:17:16,063 - main - INFO - Running periodic tweet check at 1735845436
+2025-01-02 23:17:16,063 - monitor - INFO - Tweet 1874892534063018411 needs update (last check: 1735845070)
+2025-01-02 23:17:16,063 - monitor - INFO - Tweet 1874893399549256168 needs update (last check: 1735845078)
+2025-01-02 23:17:18,659 - monitor - INFO - Saved details for tweet 1874892534063018411
+2025-01-02 23:17:26,053 - monitor - INFO - Saved details for tweet 1874893399549256168
+2025-01-02 23:17:30,784 - monitor - INFO - No new comments for tweet 1874893399549256168
+2025-01-02 23:17:32,863 - monitor - WARNING - Monitoring run for tweet 1874892534063018411 had issues: 
+2025-01-02 23:17:32,863 - monitor - WARNING - Monitoring run for tweet 1874893399549256168 had issues: 
+2025-01-02 23:17:59,627 - main - INFO - Running periodic account check at 1735845479
+2025-01-02 23:18:02,238 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 23:18:04,328 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 23:18:06,652 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 23:18:09,112 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 23:18:11,759 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 23:18:14,388 - monitor - WARNING - No tweets found for user eshear
+2025-01-02 23:18:16,460 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 23:18:18,602 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 23:18:21,175 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 23:18:32,865 - main - INFO - Running periodic tweet check at 1735845512
+2025-01-02 23:18:32,866 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735845148)
+2025-01-02 23:18:34,912 - monitor - INFO - Saved details for tweet 1874822889725379018
+2025-01-02 23:18:40,146 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: 
+2025-01-02 23:19:40,148 - main - INFO - Running periodic tweet check at 1735845580
+2025-01-02 23:19:40,148 - monitor - INFO - Tweet 1874881839573463136 needs update (last check: 1735845239)
+2025-01-02 23:19:40,148 - monitor - INFO - Tweet 1874890574966440331 needs update (last check: 1735845253)
+2025-01-02 23:19:40,148 - monitor - INFO - Tweet 1874892013352767928 needs update (last check: 1735845266)
+2025-01-02 23:19:42,799 - monitor - INFO - Saved details for tweet 1874881839573463136
+2025-01-02 23:19:48,867 - monitor - INFO - Saved 1 new comments for tweet 1874881839573463136
+2025-01-02 23:19:57,323 - monitor - INFO - Saved 8 new retweeters for tweet 1874881839573463136
+2025-01-02 23:19:59,654 - monitor - INFO - Saved details for tweet 1874890574966440331
+2025-01-02 23:20:05,822 - monitor - INFO - No new comments for tweet 1874890574966440331
+2025-01-02 23:20:11,648 - monitor - INFO - No new retweeters for tweet 1874890574966440331
+2025-01-02 23:20:14,895 - monitor - INFO - Saved details for tweet 1874892013352767928
+2025-01-02 23:20:20,142 - monitor - WARNING - Monitoring run for tweet 1874892013352767928 had issues: 
+2025-01-02 23:20:20,142 - main - ERROR - Error getting tweet feed at 1735845620: 'user'
+INFO:     127.0.0.1:58460 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:21:20,142 - main - INFO - Running periodic tweet check at 1735845680
+2025-01-02 23:21:20,143 - monitor - INFO - Tweet 1874883427042042074 needs update (last check: 1735845335)
+2025-01-02 23:21:20,143 - monitor - INFO - Tweet 1874887434934301107 needs update (last check: 1735845347)
+2025-01-02 23:21:20,143 - monitor - INFO - Tweet 1874892056285610214 needs update (last check: 1735845362)
+2025-01-02 23:21:22,824 - monitor - INFO - Saved details for tweet 1874883427042042074
+2025-01-02 23:21:28,656 - monitor - INFO - No new comments for tweet 1874883427042042074
+2025-01-02 23:21:34,135 - monitor - INFO - Saved details for tweet 1874887434934301107
+2025-01-02 23:21:39,726 - monitor - INFO - Saved 1 new comments for tweet 1874887434934301107
+2025-01-02 23:21:46,064 - monitor - INFO - Saved 1 new retweeters for tweet 1874887434934301107
+2025-01-02 23:21:48,421 - monitor - INFO - Saved details for tweet 1874892056285610214
+2025-01-02 23:21:53,664 - monitor - INFO - Saved 1 new comments for tweet 1874892056285610214
+2025-01-02 23:21:58,930 - monitor - INFO - Saved 2 new retweeters for tweet 1874892056285610214
+2025-01-02 23:21:58,932 - monitor - WARNING - Monitoring run for tweet 1874883427042042074 had issues: 
+2025-01-02 23:22:58,933 - main - INFO - Running periodic account check at 1735845778
+2025-01-02 23:23:01,271 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 23:23:03,841 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 23:23:06,384 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 23:23:08,934 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 23:23:11,615 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 23:23:13,915 - monitor - WARNING - No tweets found for user eshear
+2025-01-02 23:23:16,471 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 23:23:18,783 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 23:23:21,180 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 23:23:21,182 - main - INFO - Running periodic tweet check at 1735845801
+2025-01-02 23:23:21,182 - monitor - INFO - Tweet 1874892534063018411 needs update (last check: 1735845436)
+2025-01-02 23:23:21,182 - monitor - INFO - Tweet 1874893399549256168 needs update (last check: 1735845444)
+2025-01-02 23:23:23,820 - monitor - INFO - Saved details for tweet 1874892534063018411
+2025-01-02 23:23:31,855 - monitor - INFO - Saved details for tweet 1874893399549256168
+2025-01-02 23:23:36,821 - monitor - INFO - Saved 1 new comments for tweet 1874893399549256168
+2025-01-02 23:23:42,231 - monitor - WARNING - Monitoring run for tweet 1874892534063018411 had issues: 
+2025-01-02 23:23:42,231 - monitor - WARNING - Monitoring run for tweet 1874893399549256168 had issues: 
+2025-01-02 23:24:42,233 - main - INFO - Running periodic tweet check at 1735845882
+2025-01-02 23:24:42,233 - monitor - INFO - Tweet 1874822889725379018 needs update (last check: 1735845512)
+2025-01-02 23:24:42,233 - monitor - INFO - Tweet 1874881839573463136 needs update (last check: 1735845580)
+2025-01-02 23:24:45,822 - monitor - INFO - Saved details for tweet 1874822889725379018
+2025-01-02 23:24:58,030 - monitor - INFO - Saved details for tweet 1874881839573463136
+2025-01-02 23:25:03,483 - monitor - INFO - No new comments for tweet 1874881839573463136
+2025-01-02 23:25:37,069 - monitor - INFO - Saved 4 new retweeters for tweet 1874881839573463136
+2025-01-02 23:25:37,069 - monitor - WARNING - Monitoring run for tweet 1874822889725379018 had issues: 
+2025-01-02 23:25:45,098 - main - ERROR - Error getting tweet feed at 1735845945: 'user'
+INFO:     127.0.0.1:58649 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:25:45,121 - main - ERROR - Error getting tweet feed at 1735845945: 'user'
+INFO:     127.0.0.1:58649 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:25:50,067 - main - ERROR - Error getting tweet feed at 1735845950: 'user'
+INFO:     127.0.0.1:58649 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:26:16,431 - main - ERROR - Error getting tweet feed at 1735845976: 'user'
+INFO:     127.0.0.1:58778 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:26:16,966 - main - ERROR - Error getting tweet feed at 1735845976: 'user'
+INFO:     127.0.0.1:58778 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:26:29,990 - main - ERROR - Error getting tweet feed at 1735845989: 'user'
+INFO:     127.0.0.1:58858 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:26:30,638 - main - ERROR - Error getting tweet feed at 1735845990: 'user'
+INFO:     127.0.0.1:58858 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:26:37,071 - main - INFO - Running periodic tweet check at 1735845997
+2025-01-02 23:26:37,071 - monitor - INFO - Tweet 1874883427042042074 needs update (last check: 1735845680)
+2025-01-02 23:26:37,071 - monitor - INFO - Tweet 1874887434934301107 needs update (last check: 1735845691)
+2025-01-02 23:26:37,071 - monitor - INFO - Tweet 1874890574966440331 needs update (last check: 1735845597)
+2025-01-02 23:26:37,071 - monitor - INFO - Tweet 1874892013352767928 needs update (last check: 1735845611)
+2025-01-02 23:26:41,472 - monitor - INFO - Saved details for tweet 1874883427042042074
+2025-01-02 23:26:47,122 - monitor - INFO - Saved 1 new comments for tweet 1874883427042042074
+2025-01-02 23:26:54,621 - monitor - INFO - Saved details for tweet 1874887434934301107
+2025-01-02 23:27:00,525 - monitor - INFO - Saved 1 new comments for tweet 1874887434934301107
+2025-01-02 23:27:09,691 - monitor - INFO - No new retweeters for tweet 1874887434934301107
+2025-01-02 23:27:12,981 - monitor - INFO - Saved details for tweet 1874890574966440331
+2025-01-02 23:27:18,877 - monitor - INFO - Saved 2 new comments for tweet 1874890574966440331
+2025-01-02 23:27:28,356 - monitor - INFO - No new retweeters for tweet 1874890574966440331
+2025-01-02 23:27:30,927 - monitor - INFO - Saved details for tweet 1874892013352767928
+2025-01-02 23:27:35,759 - main - INFO - Running periodic account check at 1735846055
+2025-01-02 23:27:38,351 - monitor - WARNING - No tweets found for user frknnsh
+2025-01-02 23:27:40,896 - monitor - WARNING - No tweets found for user DylanoA4
+2025-01-02 23:27:43,349 - monitor - WARNING - No tweets found for user cremieuxrecueil
+2025-01-02 23:27:45,906 - monitor - WARNING - No tweets found for user rauchg
+2025-01-02 23:27:48,504 - monitor - WARNING - No tweets found for user levelsio
+2025-01-02 23:27:50,567 - monitor - WARNING - No tweets found for user eshear
+2025-01-02 23:27:52,952 - monitor - WARNING - No tweets found for user nntaleb
+2025-01-02 23:27:55,303 - monitor - WARNING - No tweets found for user visakanv
+2025-01-02 23:27:57,601 - monitor - WARNING - No tweets found for user DefenderOfBasic
+2025-01-02 23:27:57,602 - monitor - WARNING - Monitoring run for tweet 1874883427042042074 had issues: 
+2025-01-02 23:27:57,602 - monitor - WARNING - Monitoring run for tweet 1874892013352767928 had issues: 
+2025-01-02 23:27:57,603 - main - ERROR - Error getting tweet feed at 1735846077: 'user'
+INFO:     127.0.0.1:58901 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:27:57,604 - main - ERROR - Error getting tweet feed at 1735846077: 'user'
+INFO:     127.0.0.1:58994 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:27:57,606 - main - ERROR - Error getting tweet feed at 1735846077: 'user'
+INFO:     127.0.0.1:58997 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:27:57,607 - main - ERROR - Error getting tweet feed at 1735846077: 'user'
+INFO:     127.0.0.1:58999 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:27:57,608 - main - ERROR - Error getting tweet feed at 1735846077: 'user'
+INFO:     127.0.0.1:59001 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:27:57,610 - main - ERROR - Error getting tweet feed at 1735846077: 'user'
+INFO:     127.0.0.1:59002 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:27:57,611 - main - ERROR - Error getting tweet feed at 1735846077: 'user'
+INFO:     127.0.0.1:59004 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:27:57,612 - main - ERROR - Error getting tweet feed at 1735846077: 'user'
+INFO:     127.0.0.1:59006 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:27:57,612 - main - ERROR - Error getting tweet feed at 1735846077: 'user'
+INFO:     127.0.0.1:59059 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:28:12,062 - main - ERROR - Error getting tweet feed at 1735846092: 'user'
+INFO:     127.0.0.1:59384 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:28:15,116 - main - ERROR - Error getting tweet feed at 1735846095: 'user'
+INFO:     127.0.0.1:59384 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:28:25,722 - main - ERROR - Error getting tweet feed at 1735846105: 'user'
+INFO:     127.0.0.1:60477 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:28:37,165 - main - ERROR - Error getting tweet feed at 1735846117: 'user'
+INFO:     127.0.0.1:60538 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:28:39,729 - main - ERROR - Error getting tweet feed at 1735846119: 'user'
+INFO:     127.0.0.1:60538 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:28:50,151 - main - ERROR - Error getting tweet feed at 1735846130: 'user'
+INFO:     127.0.0.1:60605 - "GET /tweet/feed HTTP/1.1" 500 Internal Server Error
+2025-01-02 23:28:57,604 - main - INFO - Running periodic tweet check at 1735846137
+2025-01-02 23:28:57,604 - monitor - INFO - Tweet 1874892056285610214 needs update (last check: 1735845706)
+2025-01-02 23:28:57,604 - monitor - INFO - Tweet 1874892534063018411 needs update (last check: 1735845801)
+2025-01-02 23:28:57,604 - monitor - INFO - Tweet 1874893399549256168 needs update (last check: 1735845809)
+2025-01-02 23:29:01,053 - monitor - INFO - Saved details for tweet 1874892056285610214
+2025-01-02 23:29:06,715 - monitor - INFO - No new comments for tweet 1874892056285610214
+2025-01-02 23:29:17,437 - monitor - INFO - Saved 1 new retweeters for tweet 1874892056285610214
+2025-01-02 23:29:20,257 - monitor - INFO - Saved details for tweet 1874892534063018411
+2025-01-02 23:29:31,373 - monitor - INFO - Saved details for tweet 1874893399549256168
+2025-01-02 23:29:35,622 - monitor - INFO - No new comments for tweet 1874893399549256168
+2025-01-02 23:29:40,305 - monitor - WARNING - Monitoring run for tweet 1874892534063018411 had issues: 
+2025-01-02 23:29:40,306 - monitor - WARNING - Monitoring run for tweet 1874893399549256168 had issues: 
