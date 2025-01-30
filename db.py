@@ -52,11 +52,20 @@ def migrations():
             PRIMARY KEY (user_id, tweet_id),
             FOREIGN KEY (tweet_id) REFERENCES monitored_tweets(tweet_id)
         )""",
+
+        """CREATE TABLE IF NOT EXISTS ai_analysis (
+            tweet_id TEXT NOT NULL,
+            analysis TEXT NOT NULL,
+            input_data TEXT NOT NULL,
+            created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+            FOREIGN KEY (tweet_id) REFERENCES monitored_tweets(tweet_id)
+        )""",
         
         "CREATE INDEX IF NOT EXISTS idx_tweet_details ON tweet_details (tweet_id, captured_at)",
         "CREATE INDEX IF NOT EXISTS idx_tweet_comments ON tweet_comments (tweet_id, captured_at)",
         "CREATE INDEX IF NOT EXISTS idx_tweet_retweeters ON tweet_retweeters (tweet_id, captured_at)",
-        "CREATE INDEX IF NOT EXISTS idx_monitored_accounts ON monitored_accounts (account_id, screen_name)"
+        "CREATE INDEX IF NOT EXISTS idx_monitored_accounts ON monitored_accounts (account_id, screen_name)",
+        "CREATE INDEX IF NOT EXISTS idx_ai_analysis ON ai_analysis (tweet_id, created_at)"
     ]
 
 def connect_and_migrate(path: Path):

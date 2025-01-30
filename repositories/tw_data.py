@@ -2,7 +2,9 @@ from datetime import datetime
 import json
 from typing import Optional, List, Dict, Any
 from .base import BaseRepository
+import logging
 
+logger = logging.getLogger(__name__)
 
 class TweetDataRepository(BaseRepository):
     def get_latest_tweet_for_account(self, account_id: str) -> Optional[Dict[str, Any]]:
@@ -67,6 +69,35 @@ class TweetDataRepository(BaseRepository):
             (tweet_id, json.dumps(details), timestamp)
         )
         self._commit()
+    def remove_all_tweet_data(self, tweet_id: str):
+        """Remove all data related to a tweet from all tables"""
+        try:
+            # Delete from all related tables
+            self.conn.execute(
+                "DELETE FROM tweet_details WHERE tweet_id = ?",
+                (tweet_id,)
+            )
+            self.conn.execute(
+                "DELETE FROM tweet_comments WHERE tweet_id = ?",
+                (tweet_id,)
+            )
+            self.conn.execute(
+                "DELETE FROM tweet_retweeters WHERE tweet_id = ?",
+                (tweet_id,)
+            )
+            self.conn.execute(
+                "DELETE FROM ai_analysis WHERE tweet_id = ?",
+                (tweet_id,)
+            )
+            self.conn.execute(
+                "DELETE FROM monitored_tweets WHERE tweet_id = ?",
+                (tweet_id,)
+            )
+            self._commit()
+            logger.info(f"Successfully removed all data for tweet {tweet_id}")
+        except Exception as e:
+            logger.error(f"Error removing data for tweet {tweet_id}: {str(e)}")
+            raise
 
     def save_tweet_comments(self, tweet_id: str, comments: List[Dict[str, Any]], timestamp: Optional[int] = None):
         """Save tweet comments with timestamp"""
@@ -100,3 +131,22 @@ class TweetDataRepository(BaseRepository):
         )
         return [dict(zip(['tweet_id', 'user_screen_name', 'created_at', 'last_check', 'is_active'], row))
                 for row in cursor.fetchall()]
+    
+    def save_ai_analysis(self, tweet_id: str, analysis: str, input_data: Dict[str, Any]):
+        timestamp = int(datetime.now().timestamp())
+        self.conn.execute(
+            "INSERT INTO ai_analysis (tweet_id, analysis, input_data, created_at) VALUES (?, ?, ?, ?)",
+            (tweet_id, analysis, json.dumps(input_data), timestamp)
+        )
+        self._commit()
+
+    def get_ai_analysis(self, tweet_id: str) -> Optional[Dict[str, Any]]:
+        cursor = self.conn.execute(
+            """SELECT analysis, input_data 
+               FROM ai_analysis 
+               WHERE tweet_id = ?
+               ORDER BY created_at DESC
+               LIMIT 1""",
+            (tweet_id,)
+        )
+        return cursor.fetchone()

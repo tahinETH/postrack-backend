@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime
 from typing import Dict, List, Any
 from .base import BaseRepository
 from .tw_data import TweetDataRepository
@@ -21,19 +22,16 @@ class TweetAnalysisRepository(BaseRepository):
             'bookmark_count': tweet_details.get('bookmark_count', 0)
         }
 
-    def get_feed(self) -> List[Dict[str, Any]]:
+    async def get_feed(self) -> List[Dict[str, Any]]:
         """Get latest data for all monitored tweets"""
         logger = logging.getLogger(__name__)
         
         logger.info("Starting feed retrieval")
-        monitored_tweets = self.conn.execute(
-            "SELECT tweet_id, is_active FROM monitored_tweets"
-        ).fetchall()
-        logger.info(f"Found {len(monitored_tweets)} monitored tweets")
+        monitored_tweets = self.tweet_data.get_monitored_tweets()
         
         feed_data = []
-        for (tweet_id, is_active) in monitored_tweets:
-            logger.info(f"Processing tweet_id: {tweet_id}")
+        for tweet in monitored_tweets:
+            logger.info(f"Processing tweet_id: {tweet['tweet_id']}")
             
             latest_details = self.conn.execute(
                 """SELECT data_json, captured_at 
@@ -41,11 +39,11 @@ class TweetAnalysisRepository(BaseRepository):
                    WHERE tweet_id = ? 
                    ORDER BY captured_at DESC 
                    LIMIT 1""",
-                (tweet_id,)
+                (tweet['tweet_id'],)
             ).fetchone()
             
             if not latest_details:
-                logger.warning(f"No details found for tweet_id: {tweet_id}")
+                logger.warning(f"No details found for tweet_id: {tweet['tweet_id']}")
                 continue
             
             tweet_data = json.loads(latest_details[0])
@@ -56,19 +54,19 @@ class TweetAnalysisRepository(BaseRepository):
                 """SELECT COUNT(DISTINCT comment_id) 
                    FROM tweet_comments 
                    WHERE tweet_id = ?""",
-                (tweet_id,)
+                (tweet['tweet_id'],)
             ).fetchone()[0]
             
             retweeter_count = self.conn.execute(
                 """SELECT COUNT(DISTINCT user_id) 
                    FROM tweet_retweeters 
                    WHERE tweet_id = ?""",
-                (tweet_id,)
+                (tweet['tweet_id'],)
             ).fetchone()[0]
             
             feed_item = {
-                'tweet_id': tweet_id,
-                'is_monitored': bool(is_active),
+                'tweet_id': tweet['tweet_id'],
+                'is_monitored': bool(tweet['is_active'] ),
                 'author': {
                     'id': tweet_data.get('author_id') or tweet_data.get('user', {}).get('id'),
                     'screen_name': tweet_data.get('user', {}).get('screen_name') or tweet_data.get('author_username'),
@@ -78,7 +76,8 @@ class TweetAnalysisRepository(BaseRepository):
                 'engagement_metrics': engagement,
                 'total_comments': comment_count,
                 'total_retweeters': retweeter_count,
-                'last_updated': captured_at
+                'last_updated': captured_at,
+                'created_at': tweet_data.get('tweet_created_at')
             }
             
             text = tweet_data.get('full_text') or tweet_data.get('text')
@@ -89,7 +88,7 @@ class TweetAnalysisRepository(BaseRepository):
             
         return sorted(feed_data, key=lambda x: x['last_updated'], reverse=True)
 
-    def get_raw_tweet_history(self, tweet_id: str) -> Dict[str, Any]:
+    async def get_raw_tweet_history(self, tweet_id: str) -> Dict[str, Any]:
         """Get raw, unprocessed history data for a tweet"""
         details = self.conn.execute(
             """SELECT data_json, captured_at 
@@ -131,7 +130,7 @@ class TweetAnalysisRepository(BaseRepository):
             ]
         }
 
-    def get_analyzed_tweet_history(self, tweet_id: str) -> Dict[str, Any]:
+    async def get_analyzed_tweet_history(self, tweet_id: str) -> Dict[str, Any]:
         """Get processed and analyzed history data for a tweet"""
         details_rows = self.conn.execute(
             """SELECT data_json, captured_at 
@@ -241,6 +240,16 @@ class TweetAnalysisRepository(BaseRepository):
                 'verified_replies': verified_replies.get(ts, 0),
                 'verified_retweets': verified_retweets.get(ts, 0)
             })
+
+        
+        ai_analysis_row = self.tweet_data.get_ai_analysis(tweet_id)
+        ai_analysis = None
+        
+        if ai_analysis_row:
+            ai_analysis = {
+                'analysis': ai_analysis_row[0],
+                'input_data': json.loads(ai_analysis_row[1])
+            }
         
         return {
             'tweet_id': tweet_id,
@@ -251,5 +260,160 @@ class TweetAnalysisRepository(BaseRepository):
             'engagement_changes': engagement_changes,
             'comments_tracking': comments_tracking,
             'retweeters_tracking': retweeters_tracking,
-            'user_followers': user_followers
+            'user_followers': user_followers,
+            'ai_analysis': ai_analysis
+        }
+
+
+    async def prepare_insight_data(self, tweet_id: str) -> Dict[str, Any]:
+        """Analyze tweet history data and prepare insights"""
+        analyzed_history = await self.get_analyzed_tweet_history(tweet_id)
+        if not analyzed_history:
+            return {}
+        # Top Amplifiers Analysis
+        all_retweeters = []
+        for retweeters in analyzed_history['retweeters_tracking'].values():
+            all_retweeters.extend(retweeters)
+            
+        # Remove duplicates and get top retweeters by followers
+        seen_retweeters = {}
+        for retweeter in all_retweeters:
+            if retweeter['screen_name'] not in seen_retweeters:
+                seen_retweeters[retweeter['screen_name']] = {
+                    'screen_name': retweeter['screen_name'],
+                    'followers_count': retweeter['followers_count'],
+                    'verified': retweeter['verified']
+                }
+        top_retweeters = sorted(seen_retweeters.values(), 
+                            key=lambda x: x['followers_count'], 
+                            reverse=True)[:10]
+
+        # Get all commenters with timestamps
+        all_commenters = []
+        for timestamp, comments in analyzed_history['comments_tracking'].items():
+            for comment in comments:
+                filtered_comment = {
+                    'screen_name': comment['screen_name'],
+                    'followers_count': comment['followers_count'],
+                    'verified': comment['verified'],
+                    'timestamp': datetime.utcfromtimestamp(int(timestamp)).isoformat()
+                }
+                all_commenters.append(filtered_comment)
+                
+        # Remove duplicates and get top commenters by followers
+        seen_commenters = {}
+        for commenter in sorted(all_commenters, key=lambda x: x['followers_count'], reverse=True):
+            if commenter['screen_name'] not in seen_commenters:
+                seen_commenters[commenter['screen_name']] = commenter
+        top_commenters = list(seen_commenters.values())[:10]
+
+        # Time Analysis
+        time_metrics = []
+        for timestamp, metrics in analyzed_history['engagement_metrics'].items():
+            total_engagement = (metrics['favorite_count'] + metrics['retweet_count'] + 
+                            metrics['reply_count'] + metrics['quote_count'])
+            time_metrics.append({
+                'timestamp': datetime.utcfromtimestamp(int(timestamp)).isoformat(),
+                'total_engagement': total_engagement,
+                'views': metrics['views_count']
+            })
+
+        # Silent Engagement Analysis
+        silent_engagement = []
+        for timestamp, metrics in analyzed_history['engagement_metrics'].items():
+            silent = metrics['bookmark_count']
+            active = (metrics['favorite_count'] + metrics['retweet_count'] + 
+                    metrics['reply_count'] + metrics['quote_count'])
+            silent_engagement.append({
+                'timestamp': datetime.utcfromtimestamp(int(timestamp)).isoformat(),
+                'silent_ratio': silent / metrics['views_count'] if metrics['views_count'] else 0,
+                'silent_to_active_ratio': silent / active if active else 0
+            })
+
+        # Comment-to-Retweet Ratio
+        comment_retweet_ratio = []
+        for metrics in analyzed_history['engagement_metrics'].values():
+            ratio = metrics['reply_count'] / metrics['retweet_count'] if metrics['retweet_count'] else 0
+            comment_retweet_ratio.append({
+                'ratio': ratio,
+                'total_comments': metrics['reply_count'],
+                'total_retweets': metrics['retweet_count']
+            })
+
+        # Verified Impact Analysis
+        verified_impact = []
+        metrics_list = list(analyzed_history['engagement_metrics'].items())
+        for i, (timestamp, metrics) in enumerate(metrics_list[:-1]):
+            verified_activity = metrics['verified_replies'] + metrics['verified_retweets']
+            current_engagement = (metrics['favorite_count'] + metrics['retweet_count'] + 
+                                metrics['reply_count'] + metrics['quote_count'])
+            next_metrics = metrics_list[i + 1][1]
+            next_engagement = (next_metrics['favorite_count'] + next_metrics['retweet_count'] + 
+                            next_metrics['reply_count'] + next_metrics['quote_count'])
+            
+            verified_impact.append({
+                'timestamp': datetime.utcfromtimestamp(int(timestamp)).isoformat(),
+                'verified_engagement': verified_activity,
+                'engagement_change': next_engagement - current_engagement
+            })
+
+        # Quote vs Regular Retweet Analysis
+        quote_retweet_analysis = []
+        for timestamp, metrics in analyzed_history['engagement_metrics'].items():
+            quote_ratio = metrics['quote_count'] / metrics['retweet_count'] if metrics['retweet_count'] else 0
+            quote_retweet_analysis.append({
+                'timestamp': datetime.utcfromtimestamp(int(timestamp)).isoformat(),
+                'quote_ratio': quote_ratio,
+                'quotes': metrics['quote_count'],
+                'retweets': metrics['retweet_count']
+            })
+
+        # Follower Growth Analysis
+        follower_growth = []
+        follower_items = list(analyzed_history['user_followers'].items())
+        for i, (timestamp, count) in enumerate(follower_items):
+            growth = count - follower_items[i-1][1] if i > 0 else 0
+            if growth != 0:
+                follower_growth.append({
+                    'timestamp': datetime.utcfromtimestamp(int(timestamp)).isoformat(),
+                    'growth': growth,
+                    'total_followers': count
+                })
+
+        # Calculate peak engagement time
+        peak_engagement = max(time_metrics, key=lambda x: x['total_engagement'])
+
+        return {
+            'top_amplifiers': {
+                'retweeters': top_retweeters,
+                'commenters': top_commenters
+            },
+            'engagement_analysis': {
+                'peak_engagement_time': peak_engagement['timestamp'],
+                'silent_engagement': {
+                    'average_silent_ratio': sum(s['silent_ratio'] for s in silent_engagement) / len(silent_engagement),
+                    'peak_silent_ratio': max(s['silent_ratio'] for s in silent_engagement)
+                },
+                'comment_retweet_ratio': {
+                    'average': sum(c['ratio'] for c in comment_retweet_ratio) / len(comment_retweet_ratio),
+                    'trend': comment_retweet_ratio[-5:]
+                }
+            },
+            'verified_impact': {
+                'average_change_after_verified': sum(v['engagement_change'] for v in verified_impact 
+                                                if v['verified_engagement'] > 0) / 
+                                            len([v for v in verified_impact if v['verified_engagement'] > 0]),
+                'total_verified_engagements': sum(v['verified_engagement'] for v in verified_impact)
+            },
+            'quote_analysis': {
+                'average_quote_ratio': sum(q['quote_ratio'] for q in quote_retweet_analysis) / len(quote_retweet_analysis),
+                'total_quotes': quote_retweet_analysis[-1]['quotes'],
+                'quote_trend': quote_retweet_analysis[-5:]
+            },
+            'growth_metrics': {
+                'total_growth': sum(g['growth'] for g in follower_growth),
+                'peak_growth': max(follower_growth, key=lambda x: x['growth']),
+                'growth_during_peak_engagement': next((g for g in follower_growth 
+                                                    if g['timestamp'] == peak_engagement['timestamp']), None)
+            }
         }

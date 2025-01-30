@@ -6,6 +6,7 @@ import asyncio
 from db import connect_and_migrate
 from repositories.tw_data import TweetDataRepository
 from repositories.tw_analysis import TweetAnalysisRepository
+from repositories.accounts import AccountRepository
 from api_client import TwitterAPIClient
 
 logging.basicConfig(
@@ -38,6 +39,7 @@ class TweetMonitor:
         self.conn = connect_and_migrate(Path(db_path))
         self.tweet_data = TweetDataRepository(self.conn)
         self.tweet_analysis = TweetAnalysisRepository(self.conn)
+        self.accounts = AccountRepository(self.conn)
         self.api_client = TwitterAPIClient(api_key)
         self.interval_minutes = interval_minutes
         self.logger = logging.getLogger(__name__)
@@ -45,11 +47,11 @@ class TweetMonitor:
     async def monitor_account(self, screen_name: str):
         """Start monitoring an account"""
         try:
-            user_details = self.api_client.get_user_details_by_screen_name(screen_name)
+            user_details = await self.api_client.get_user_details_by_screen_name(screen_name)
             
             if user_details:
                 account_id = user_details['id_str']
-                self.tweet_data.add_monitored_account(account_id, screen_name)
+                self.accounts.add_monitored_account(account_id, screen_name)
                 self.logger.info(f"Started monitoring account {screen_name}")
                 return True
         except Exception as e:
@@ -59,7 +61,7 @@ class TweetMonitor:
     async def check_and_update_accounts(self):
         """Check monitored accounts for new tweets every 3 minutes"""
         try:
-            accounts = self.tweet_data.get_monitored_accounts()
+            accounts = self.accounts.get_monitored_accounts()
             for account in accounts:
                 if account['is_active']:
                     since_time = account['last_check']
@@ -82,7 +84,7 @@ class TweetMonitor:
                         )
                         
                     current_timestamp = int(datetime.now().timestamp())
-                    self.tweet_data.update_account_last_check(account['account_id'], current_timestamp)
+                    self.accounts.update_account_last_check(account['account_id'], current_timestamp)
 
             await asyncio.sleep(180)
 
@@ -91,7 +93,7 @@ class TweetMonitor:
 
     async def get_latest_user_tweets(self, username: str, since_time: Optional[str] = None) -> List[Dict[str, Any]]:
         try:
-            tweets = self.api_client.get_user_tweets(username, since_time)
+            tweets = await self.api_client.get_user_tweets(username, since_time)
             if tweets:
                 self.logger.info(f"Retrieved {len(tweets)} tweets for user {username}")
                 return tweets
@@ -143,7 +145,7 @@ class TweetMonitor:
 
     async def _fetch_tweet_details(self, tweet_id: str) -> Tuple[Optional[Dict], Optional[str]]:
         try:
-            details = self.api_client.get_tweet_details(tweet_id)
+            details = await self.api_client.get_tweet_details(tweet_id)
             if not details:
                 return None, None
             screen_name = details.get('user', {}).get('screen_name')
@@ -154,16 +156,16 @@ class TweetMonitor:
 
     async def _fetch_tweet_comments(self, tweet_id: str, screen_name: Optional[str]) -> List[Dict]:
         try:
-            comments = self.api_client.get_tweet_comments(tweet_id, screen_name)
-            return comments.get('data', []) if comments else []
+            comments = await self.api_client.get_tweet_comments(tweet_id, screen_name)
+            return comments['data'] if comments else []
         except Exception as e:
             self.logger.error(f"Error fetching comments for {tweet_id}: {str(e)}")
             return []
 
     async def _fetch_tweet_retweeters(self, tweet_id: str) -> List[Dict]:
         try:
-            retweeters = self.api_client.get_tweet_retweeters(tweet_id)
-            return retweeters.get('data', []) if retweeters else []
+            retweeters = await self.api_client.get_tweet_retweeters(tweet_id)
+            return retweeters['data'] if retweeters else []
         except Exception as e:
             self.logger.error(f"Error fetching retweeters for {tweet_id}: {str(e)}")
             return []
@@ -196,9 +198,10 @@ class TweetMonitor:
         if comments:
             try:
                 # Get existing comments to compare using the analysis repository
+                tweet_history = await self.tweet_analysis.get_raw_tweet_history(tweet_id)
                 existing_comments = {
                     comment['data']['id_str'] 
-                    for comment in self.tweet_analysis.get_raw_tweet_history(tweet_id).get('comments', [])
+                    for comment in tweet_history.get('comments', [])
                 }
                 
                 new_comments = [
@@ -226,9 +229,10 @@ class TweetMonitor:
         retweeters = await self._fetch_tweet_retweeters(tweet_id)
         if retweeters:
             try:
+                tweet_history = await self.tweet_analysis.get_raw_tweet_history(tweet_id)
                 existing_retweeters = {
                     retweeter['data']['id_str'] 
-                    for retweeter in self.tweet_analysis.get_raw_tweet_history(tweet_id).get('retweeters', [])
+                    for retweeter in tweet_history.get('retweeters', [])
                 }
                 
                 new_retweeters = [

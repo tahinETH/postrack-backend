@@ -8,7 +8,9 @@ class AccountRepository(BaseRepository):
             """INSERT INTO monitored_accounts (account_id, screen_name) 
                VALUES (?, ?)
                ON CONFLICT(account_id) 
-               DO UPDATE SET screen_name = excluded.screen_name, is_active = TRUE""",
+               DO UPDATE SET screen_name = excluded.screen_name, 
+                           is_active = TRUE,
+                           last_check = strftime('%s', 'now')""",
             (account_id, screen_name)
         )
         self._commit()
