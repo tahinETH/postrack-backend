@@ -1,28 +1,29 @@
 from datetime import datetime
 import logging
 import os
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Depends, Header, Path as FastAPIPath
 from pathlib import Path
 import asyncio
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import uvicorn
 from pydantic import BaseModel
 from monitor import TweetMonitor
-from repositories.tw_data import TweetDataRepository
-from repositories.tw_analysis import TweetAnalysisRepository
-from repositories.accounts import AccountRepository
-from ai.analyze import AIAnalyzer
+
+
+from db.service import Service
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import time
-import sqlite3
+
 import tracemalloc
+from auth.dependencies import auth_middleware
+from webhooks.clerk import router as clerk_router
 
 tracemalloc.start()
 load_dotenv()
 
-DB_PATH = os.getenv("DB_PATH")
-SOCIAL_DATA_API_KEY = os.getenv("SOCIAL_DATA_API_KEY")
+
+ADMIN_SECRET = os.getenv("ADMIN_SECRET")
 
 # Configure logging
 logging.basicConfig(
@@ -33,6 +34,9 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
+app.include_router(clerk_router)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -41,14 +45,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-INTERVAL_MINUTES = 5
 
-conn = sqlite3.connect(DB_PATH)
 
-monitor = TweetMonitor(DB_PATH, SOCIAL_DATA_API_KEY, INTERVAL_MINUTES)
-data = TweetDataRepository(conn)
-analysis = TweetAnalysisRepository(conn)
-accounts = AccountRepository(conn)
+
+
+service = Service()
 
 class TweetInput(BaseModel):
     tweet_id: str
@@ -57,52 +58,44 @@ class AccountInput(BaseModel):
     account_identifier: str  
     action: str  
 
+@app.get("/user")
+async def get_user(user_id: str = Depends(auth_middleware)):
+    """Get user details"""
+    try:
+        user = service.get_user(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return user
+    except Exception as e:
+        logger.error(f"Error getting user details at {int(time.time())}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Account endpoints
 @app.post("/account/monitor/{account_identifier}")
-async def monitor_account(account_identifier: str, action: str = Query(None, regex="^(start|stop)$")):
+async def monitor_account(
+    account_identifier: str, 
+    action: str = Query(None, regex="^(start|stop)$"),
+    user_id: str = Depends(auth_middleware)
+):
     """Start or stop monitoring an account"""
     try:
-        if action == "start":
-            success = await monitor.monitor_account(account_identifier)
-            
-            if success:
-                return {"status": "success", "message": f"Started monitoring account {account_identifier}"}
-            else:
-                raise HTTPException(status_code=500, detail="Failed to start monitoring account")
-        elif action == "stop":
-            accounts.stop_monitoring_account(account_identifier)
-            return {"status": "success", "message": f"Stopped monitoring account {account_identifier}"}
+        success = await service.handle_account_monitoring(user_id, account_identifier, action)
+        if success:
+            return {"status": "success", "message": f"{action.title()}ed monitoring account {account_identifier}"}
         else:
-            raise HTTPException(status_code=400, detail="Invalid action")
+            raise HTTPException(status_code=500, detail=f"Failed to {action} monitoring account")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Error monitoring account at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/account/monitor/start-all-accounts")
-async def start_all_accounts():
-    try:
-        monitor.accounts.start_all_accounts()
-        logger.info(f"Started monitoring all accounts at {int(time.time())}")
-        return {"status": "success", "message": f"Started monitoring all accounts"}
-    except Exception as e:
-        logger.error(f"Error starting all account monitoring at {int(time.time())}: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/account/monitor/stop-all-accounts")
-async def stop_all_accounts():
-    try:
-        accounts.stop_all_accounts()
-        logger.info(f"Stopped monitoring all accounts at {int(time.time())}")
-        return {"status": "success", "message": f"Stopped monitoring all accounts"}
-    except Exception as e:
-        logger.error(f"Error stopping all account monitoring at {int(time.time())}: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 # Tweet endpoints
 @app.get("/tweets")
-async def get_monitored_tweets():
+async def get_monitored_tweets(user_id: str = Depends(auth_middleware)):
     try:
-        tweets = data.get_monitored_tweets()
+        tweets = service.get_monitored_tweets()
         logger.info(f"Retrieved {len(tweets)} monitored tweets at {int(time.time())}")
         return tweets
     except Exception as e:
@@ -110,154 +103,124 @@ async def get_monitored_tweets():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/tweet/get-top-tweets")
-async def get_top_tweets(username: str):
+async def get_top_tweets(username: str, user_id: str = Depends(auth_middleware)):
     try:
-        tweets = await monitor.get_latest_user_tweets(username)
+        tweets = await service.get_latest_user_tweets(username)
         return tweets
     except Exception as e:
         logger.error(f"Error getting top tweets at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/tweet/monitor/{tweet_id}")
-async def monitor_tweet(tweet_id: str, action: str = Query(..., regex="^(start|stop)$")):
+async def monitor_tweet(
+    tweet_id: str, 
+    action: str = Query(..., regex="^(start|stop)$"),
+    user_id: str = Depends(auth_middleware)
+):
     """Start or stop monitoring a tweet"""
     try:
-        if action == "start":
-            data.add_monitored_tweet(tweet_id)
-            await monitor.monitor_tweet(tweet_id)
-            logger.info(f"Started monitoring tweet {tweet_id} at {int(time.time())}")
-            return {"status": "success", "message": f"Now monitoring tweet {tweet_id}"}
-        else:  # action == "stop"
-            monitor.tweet_data.stop_monitoring_tweet(tweet_id)
-            logger.info(f"Stopped monitoring tweet {tweet_id} at {int(time.time())}")
-            return {"status": "success", "message": f"Stopped monitoring tweet {tweet_id}"}
+        success = await service.handle_tweet_monitoring(user_id, tweet_id, action)
+        if success:
+            return {"status": "success", "message": f"{action.title()}ed monitoring tweet {tweet_id}"}
+        else:
+            raise HTTPException(status_code=500, detail=f"Failed to {action} monitoring tweet")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Error in tweet monitoring action at {int(time.time())}: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
-
-@app.post("/tweets/start-all")
-async def start_all_tweets():
-    try:
-        tweets = data.get_monitored_tweets()
-        started_count = 0
-        for tweet in tweets:
-            if not tweet['is_active']:
-                data.add_monitored_tweet(tweet['tweet_id'])
-                await monitor.monitor_tweet(tweet['tweet_id'])
-                started_count += 1
-        logger.info(f"Started monitoring {started_count} inactive tweets at {int(time.time())}")
-        return {"status": "success", "message": f"Started monitoring {started_count} inactive tweets"}
-    except Exception as e:
-        logger.error(f"Error starting all tweet monitoring at {int(time.time())}: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/tweets/stop-all")
-async def stop_all_tweets():
-    try:
-        tweets = data.get_monitored_tweets()
-        stopped_count = 0
-        for tweet in tweets:
-            if tweet['is_active']:
-                monitor.tweet_data.stop_monitoring_tweet(tweet['tweet_id'])
-                stopped_count += 1
-        logger.info(f"Stopped monitoring {stopped_count} active tweets at {int(time.time())}")
-        return {"status": "success", "message": f"Stopped monitoring {stopped_count} active tweets"}
-    except Exception as e:
-        logger.error(f"Error stopping all tweet monitoring at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.delete("/tweets/{tweet_id}")
-async def delete_monitored_tweet(tweet_id: str):
-    try:
-        data.delete_monitored_tweet(tweet_id)
-        logger.info(f"Deleted tweet {tweet_id} from monitoring at {int(time.time())}")
-        return {"status": "success", "message": f"Deleted tweet {tweet_id} from monitoring"}
-    except Exception as e:
-        logger.error(f"Error deleting monitored tweet at {int(time.time())}: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+
 
 @app.get("/tweet/analyze/{tweet_id}")
-async def analyze_tweet(tweet_id: str):
+async def analyze_tweet(tweet_id: str, user_id: str = Depends(auth_middleware)):
     """Analyze a tweet"""
     try:
-        ai_analysis = AIAnalyzer(analysis)
-        result = await ai_analysis.analyze_tweet(tweet_id)
+        result = await service.analyze_tweet(tweet_id)
         return result
     except Exception as e:
         logger.error(f"Error analyzing tweet {tweet_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/tweet/feed")
-async def get_tweet_feed():
+async def get_tweet_feed(user_id: Optional[str] = None, auth_user: str = Depends(auth_middleware)):
     """Get a feed of all monitored tweets with their latest data"""
     try:
-        # Get the feed data
-        feed = await analysis.get_feed()
-        print(feed)
-        
-        
+        feed = await service.get_feed(auth_user)
         return {
-            "status": "success", 
+            "status": "success",
             "count": len(feed),
             "feed": feed
         }
     except Exception as e:
-        # Add flush=True to error logs as well
         logger.error(f"Error getting tweet feed at {int(time.time())}: {str(e)}")
-        
         raise HTTPException(status_code=500, detail="Error retrieving tweet feed")
 
+
 @app.get("/tweet/{tweet_id}/history")
-async def get_tweet_history(tweet_id: str, format: str = Query(..., regex="^(raw|analyzed)$")):
+async def get_tweet_history(
+    tweet_id: str, 
+    format: str = Query(..., regex="^(raw|analyzed)$"),
+    user_id: str = Depends(auth_middleware)
+):
     """Get tweet history in raw or analyzed format"""
     try:
-        if format == "raw":
-            history = await analysis.get_raw_tweet_history(tweet_id)
-        else:  # format == "analyzed"
-            history = await analysis.get_analyzed_tweet_history(tweet_id)
-            
+        history = await service.get_tweet_history(tweet_id, format)
         if not history:
-            logger.warning(f"Tweet history not found for {tweet_id} at {int(time.time())}")
             raise HTTPException(status_code=404, detail="Tweet not found")
-            
-        logger.info(f"Retrieved {format} history for tweet {tweet_id} at {int(time.time())}")
         return history
     except Exception as e:
         logger.error(f"Error getting tweet history at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Background tasks
-async def periodic_single_tweet_check():
-    """Periodic task to check and update tweets"""
-    while True:
-        try:
-            logger.info(f"Running periodic tweet check at {int(time.time())}")
-            await monitor.check_and_update_tweets()
-        except Exception as e:
-            logger.error(f"Error in periodic check at {int(time.time())}: {str(e)}")
-        finally:
-            # Run check every minute
-            await asyncio.sleep(60)
 
-async def periodic_account_check():
-    """Periodic task to check and update accounts"""
-    while True:
-        try:
-            logger.info(f"Running periodic account check at {int(time.time())}")
-            await monitor.check_and_update_accounts()
-        except Exception as e:
-            logger.error(f"Error in periodic check at {int(time.time())}: {str(e)}")
-        finally:
-            # Run check every minute
-            await asyncio.sleep(60)
+
+
+
+@app.post("/admin/account/monitor/all-accounts")
+async def manage_all_accounts(action: str = Query(..., regex="^(start|stop)$"), admin_secret: str = Header(None)):
+    if not admin_secret or admin_secret != ADMIN_SECRET:
+        raise HTTPException(status_code=401, detail="Invalid admin secret")
+    try:
+        success = await service.handle_all_accounts(action)
+        if success:
+            return {"status": "success", "message": f"{action.title()}ed monitoring all accounts"}
+        raise HTTPException(status_code=500, detail=f"Failed to {action} monitoring all accounts")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error {action}ing all account monitoring at {int(time.time())}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    
+@app.post("/admin/tweets/{action}")
+async def handle_all_tweets(
+    action: str = FastAPIPath(..., regex="^(start|stop)$"),
+    admin_secret: str = Header(None)
+):
+    if not admin_secret or admin_secret != ADMIN_SECRET:
+        raise HTTPException(status_code=401, detail="Invalid admin secret")
+    try:
+        success = await service.handle_all_tweets(action)
+        if success:
+            return {"status": "success", "message": f"Successfully {action}ed tweets"}
+        raise HTTPException(status_code=500, detail=f"Failed to {action} tweets")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error handling all tweets at {int(time.time())}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Background tasks
+
 
 @app.on_event("startup")
 async def startup_event():
     """Start the periodic check on startup"""
     logger.info(f"Starting tweet monitoring background task at {int(time.time())}")
-    asyncio.create_task(periodic_single_tweet_check())
-    asyncio.create_task(periodic_account_check())
+    asyncio.create_task(service.periodic_single_tweet_check())
+    asyncio.create_task(service.periodic_account_check())
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=3001)

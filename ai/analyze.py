@@ -3,18 +3,19 @@ import logging
 import os
 import anthropic
 from typing import Dict, Any, Optional
-from repositories.tw_analysis import TweetAnalysisRepository
+from db.tw.structured import TweetStructuredRepository
 
 logger = logging.getLogger(__name__)
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 class AIAnalyzer:
-    def __init__(self, analysis_repo: TweetAnalysisRepository):
+    def __init__(self, analysis_repo: TweetStructuredRepository):
         self.analysis_repo = analysis_repo
         self.claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
     async def analyze_tweet(self, tweet_id: str) -> Dict[str, Any]:
         """Get insights and AI analysis for a tweet"""
+        
         try:
             # Get insight data
             insights = await self.analysis_repo.prepare_insight_data(tweet_id)
@@ -27,7 +28,7 @@ class AIAnalyzer:
             
             # Get Claude's analysis
             claude_response = await self._get_claude_analysis(prompt)
-            logger.info(f"Claude response: {claude_response}")
+            
             # Extract detailed analysis sections
             # Extract all detailed analysis sections into a single string
             detailed_analysis = ""

@@ -3,10 +3,10 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List, Tuple
 from pathlib import Path
 import asyncio
-from db import connect_and_migrate
-from repositories.tw_data import TweetDataRepository
-from repositories.tw_analysis import TweetAnalysisRepository
-from repositories.accounts import AccountRepository
+from db.migrations import connect_and_migrate
+from db.tw.repository import TweetDataRepository
+from db.tw.structured import TweetStructuredRepository
+from db.tw.accounts import AccountRepository
 from api_client import TwitterAPIClient
 
 logging.basicConfig(
@@ -38,7 +38,7 @@ class TweetMonitor:
     def __init__(self, db_path: str, api_key: str, interval_minutes: int = 5):
         self.conn = connect_and_migrate(Path(db_path))
         self.tweet_data = TweetDataRepository(self.conn)
-        self.tweet_analysis = TweetAnalysisRepository(self.conn)
+        self.tweet_analysis = TweetStructuredRepository(self.conn)
         self.accounts = AccountRepository(self.conn)
         self.api_client = TwitterAPIClient(api_key)
         self.interval_minutes = interval_minutes

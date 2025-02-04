@@ -1,41 +1,38 @@
-# auth/dependencies.py
 from typing import Optional
 from fastapi import Request, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from clerk_backend_api import Clerk
-from clerk_backend_api.jwks_helpers import authenticate_request, AuthenticateRequestOptions
+from clerk_backend_api.jwks_helpers import verify_token, VerifyTokenOptions
 import os
 
 class ClerkAuthMiddleware(HTTPBearer):
     def __init__(self, auto_error: bool = True):
         super().__init__(auto_error=auto_error)
-        self.clerk = Clerk(bearer_auth=os.getenv('CLERK_SECRET_KEY'))
 
     async def __call__(self, request: Request) -> Optional[str]:
         credentials: HTTPAuthorizationCredentials = await super().__call__(request)
-        
-        if not credentials:
+        if not credentials or credentials.scheme.lower() != "bearer":
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-
+        
+        token = credentials.credentials
+        
         try:
-            request_state = self.clerk.authenticate_request(
-                request,
-                AuthenticateRequestOptions(
-                    authorized_parties=['your-domain.com']  # Replace with your domain
+            # For Clerk integration tokens (from getToken()), use authorized_audiences instead
+            claims = verify_token(
+                token,
+                VerifyTokenOptions(
+                    authorized_parties=["http://localhost:3000"],
+                    secret_key=os.getenv('CLERK_SECRET_KEY')
                 )
             )
-            
-            if not request_state.is_signed_in:
-                raise HTTPException(status_code=401, detail=request_state.reason)
-                
-            # Add user info to request state
-            request.state.user_id = request_state.payload.get('sub')
-            request.state.session = request_state.payload
-            
-            return request_state.payload.get('sub')  # Returns user_id
-            
-        except Exception as e:
-            raise HTTPException(status_code=401, detail="Invalid authentication token")
+            request.state.user_id = claims.get("sub")
+            request.state.session = claims
+            return request.state.user_id
 
-# Create instance to use as dependency
+        except Exception as e:
+            print(f"Token verification failed: {str(e)}")
+            raise HTTPException(
+                status_code=401, 
+                detail=f"Authentication failed: {str(e)}"
+            )
+
 auth_middleware = ClerkAuthMiddleware()
