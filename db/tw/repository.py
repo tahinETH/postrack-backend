@@ -12,13 +12,63 @@ class TweetDataRepository(BaseRepository):
             "SELECT tweet_id, created_at FROM monitored_tweets WHERE account_id = ? ORDER BY created_at DESC LIMIT 1",
             (account_id,)
         ).fetchone()
-
+    
     def get_tweets_for_account(self, account_id: str) -> List[Dict[str, Any]]:
         return self.conn.execute(
             "SELECT tweet_id, created_at FROM monitored_tweets WHERE account_id = ? ORDER BY created_at DESC",
             (account_id,)
         ).fetchall()
+    
+    def get_tweets_for_user(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get tweets for a user based on their tracked items"""
+        tracked_items = self.conn.execute(
+            """SELECT tracked_type, tracked_id 
+               FROM user_tracked_items 
+               WHERE user_id = ?""",
+            (user_id,)
+        ).fetchall()
+        
+        tweets = []
+        for item in tracked_items:
+            tracked_type = item[0]  # Access tuple elements by index
+            tracked_id = item[1]
+            
+            if tracked_type == 'account':
+                # Get tweets for tracked account
+                account_tweets = self.conn.execute(
+                    """SELECT tweet_id, created_at, is_active 
+                       FROM monitored_tweets 
+                       WHERE account_id = ? 
+                       ORDER BY created_at DESC""",
+                    (tracked_id,)
+                ).fetchall()
+                for tweet in account_tweets:
+                    tweets.append({
+                        'tweet_id': tweet[0],
+                        'created_at': tweet[1], 
+                        'is_active': tweet[2],
+                        'tracking_type': 'account',
+                        'tracked_id': tracked_id
+                    })
+            elif tracked_type == 'tweet':
+                # Get individual tracked tweet
+                tweet = self.conn.execute(
+                    """SELECT tweet_id, created_at, is_active 
+                       FROM monitored_tweets 
+                       WHERE tweet_id = ?""",
+                    (tracked_id,)
+                ).fetchone()
+                if tweet:
+                    tweets.append({
+                        'tweet_id': tweet[0],
+                        'created_at': tweet[1],
+                        'is_active': tweet[2],
+                        'tracking_type': 'individual',
+                        'tracked_id': tracked_id
+                    })
 
+        return tweets
+    
     def add_monitored_tweet(self, tweet_id: str, screen_name: Optional[str] = None):
         self.conn.execute(
             """INSERT INTO monitored_tweets (tweet_id, user_screen_name, is_active) 
@@ -75,6 +125,7 @@ class TweetDataRepository(BaseRepository):
             (tweet_id, json.dumps(details), timestamp)
         )
         self._commit()
+    
     def remove_all_tweet_data(self, tweet_id: str):
         """Remove all data related to a tweet from all tables"""
         try:

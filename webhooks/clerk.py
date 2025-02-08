@@ -5,7 +5,7 @@ import logging
 from dotenv import load_dotenv
 from svix.webhooks import Webhook
 from pydantic import BaseModel
-from db.users.repository import UserRepository
+from db.users.repository import UserDataRepository
 
 load_dotenv()
 
@@ -68,7 +68,7 @@ async def handle_webhook(request: Request, background_tasks: BackgroundTasks):
 
 def handle_event(event_type: str, user_data: dict):
     conn = sqlite3.connect(DB_PATH)
-    user_repo = UserRepository(conn)
+    user_repo = UserDataRepository(conn)
 
     try:
         if event_type == "user.created":

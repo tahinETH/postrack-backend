@@ -4,12 +4,17 @@ from datetime import datetime
 from typing import Dict, List, Any
 from db.base import BaseRepository
 from db.tw.repository import TweetDataRepository
+from db.users.repository import UserDataRepository
+from db.tw.accounts import AccountRepository
 
 
 class TweetStructuredRepository(BaseRepository):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.tweet_data = TweetDataRepository(self.conn)
+        self.user_data = UserDataRepository(self.conn)
+        self.accounts = AccountRepository(self.conn)
+        
 
     def process_engagement_metrics(self, tweet_details: Dict) -> Dict[str, int]:
         """Extract engagement metrics from tweet details"""
@@ -22,6 +27,100 @@ class TweetStructuredRepository(BaseRepository):
             'bookmark_count': tweet_details.get('bookmark_count', 0)
         }
 
+    async def get_user_feed(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get latest data for all monitored tweets for a user"""
+        logger = logging.getLogger(__name__)
+        
+        logger.info("Starting feed retrieval for user")
+        monitored_tweets = self.tweet_data.get_tweets_for_user(user_id)
+        tracked_items = self.user_data.get_tracked_items(user_id)
+        
+        tracked_accounts = []
+        
+        if tracked_items.get('accounts'):
+            for account_id in tracked_items['accounts']:
+                account = self.accounts.get_account_by_id(account_id)
+                
+                if account:
+                    tracked_accounts.append({
+                        'account_id': account[0],  # Assuming first element is account_id
+                        'screen_name': account[1],  # Assuming second element is screen_name
+                        'is_active': bool(account[2]),  # Assuming third element is is_active
+                        'last_check': account[3],  # Assuming fourth element is last_check
+                        'created_at': account[4]  # Assuming fifth element is created_at
+                    })
+        
+        feed_data = []
+        
+        # Handle case where monitored_tweets is empty
+        if monitored_tweets:
+            for tweet in monitored_tweets:
+                logger.info(f"Processing tweet_id: {tweet['tweet_id']}")
+                
+                latest_details = self.conn.execute(
+                    """SELECT data_json, captured_at 
+                       FROM tweet_details 
+                       WHERE tweet_id = ? 
+                       ORDER BY captured_at DESC 
+                       LIMIT 1""",
+                    (tweet['tweet_id'],)
+                ).fetchone()
+                
+                if not latest_details:
+                    logger.warning(f"No details found for tweet_id: {tweet['tweet_id']}")
+                    continue
+                
+                tweet_data = json.loads(latest_details[0])
+                captured_at = latest_details[1]
+                engagement = self.process_engagement_metrics(tweet_data)
+                
+                comment_count = self.conn.execute(
+                    """SELECT COUNT(DISTINCT comment_id) 
+                       FROM tweet_comments 
+                       WHERE tweet_id = ?""",
+                    (tweet['tweet_id'],)
+                ).fetchone()[0]
+                
+                retweeter_count = self.conn.execute(
+                    """SELECT COUNT(DISTINCT user_id) 
+                       FROM tweet_retweeters 
+                       WHERE tweet_id = ?""",
+                    (tweet['tweet_id'],)
+                ).fetchone()[0]
+                
+                feed_item = {
+                    'tweet_id': tweet['tweet_id'],
+                    'is_monitored': bool(tweet['is_active']),
+                    'tracking_type': tweet['tracking_type'],  # 'account' or 'individual'
+                    'tracked_id': tweet['tracked_id'],  # account_id or tweet_id depending on type
+                    'author': {
+                        'id': tweet_data.get('author_id') or tweet_data.get('user', {}).get('id'),
+                        'screen_name': tweet_data.get('user', {}).get('screen_name') or tweet_data.get('author_username'),
+                        'followers_count': tweet_data.get('user', {}).get('followers_count', 0),
+                        'profile_image_url_https': tweet_data.get('user', {}).get('profile_image_url_https', '').replace('_normal', '')
+                    },
+                    'engagement_metrics': engagement,
+                    'total_comments': comment_count,
+                    'total_retweeters': retweeter_count,
+                    'last_updated': captured_at,
+                    'created_at': tweet_data.get('tweet_created_at')
+                }
+                
+                text = tweet_data.get('full_text') or tweet_data.get('text')
+                if text:
+                    feed_item['text'] = text
+                    
+                feed_data.append(feed_item)
+            
+        return {
+            'tweets': sorted(feed_data, key=lambda x: x['last_updated'], reverse=True) if feed_data else [],
+            'tracked_accounts': tracked_accounts
+        }
+
+
+
+
+    
     async def get_feed(self) -> List[Dict[str, Any]]:
         """Get latest data for all monitored tweets"""
         logger = logging.getLogger(__name__)

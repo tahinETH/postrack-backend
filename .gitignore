@@ -1,9 +1,9 @@
 .env
 deprecated
-.db
-.json
+*.db
+*.json
 community-archive
-x.json
+test
 archive.js
 venv
 deprecated

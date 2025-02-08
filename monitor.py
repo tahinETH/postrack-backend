@@ -53,10 +53,10 @@ class TweetMonitor:
                 account_id = user_details['id_str']
                 self.accounts.add_monitored_account(account_id, screen_name)
                 self.logger.info(f"Started monitoring account {screen_name}")
-                return True
+                return account_id
         except Exception as e:
             self.logger.error(f"Error monitoring account {screen_name}: {str(e)}")
-            return False
+            return None
 
     async def check_and_update_accounts(self):
         """Check monitored accounts for new tweets every 3 minutes"""

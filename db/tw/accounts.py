@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from db.base import BaseRepository
 
 
@@ -43,3 +43,11 @@ class AccountRepository(BaseRepository):
     def start_all_accounts(self):
         self.conn.execute("UPDATE monitored_accounts SET is_active = TRUE")
         self._commit()
+
+    def get_account_by_id(self, account_id: str) -> Optional[Dict[str, Any]]:
+        
+        cursor = self.conn.execute(
+            "SELECT account_id, screen_name, is_active, last_check, created_at FROM monitored_accounts WHERE account_id = ?",
+            (account_id,)
+        )
+        return cursor.fetchone()

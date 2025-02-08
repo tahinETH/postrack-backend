@@ -24,9 +24,11 @@ def migrations():
         """CREATE TABLE IF NOT EXISTS monitored_tweets (
             tweet_id TEXT PRIMARY KEY,
             user_screen_name TEXT,
+            account_id TEXT,
             created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
             last_check INTEGER,
-            is_active BOOLEAN DEFAULT TRUE
+            is_active BOOLEAN DEFAULT TRUE,
+            FOREIGN KEY (account_id) REFERENCES monitored_accounts(account_id)
         )""",
         
         """CREATE TABLE IF NOT EXISTS tweet_details (
@@ -75,6 +77,7 @@ def migrations():
             user_id TEXT NOT NULL,
             tracked_type TEXT NOT NULL, -- 'tweet' or 'account'
             tracked_id TEXT NOT NULL,
+            tracked_account_name TEXT,
             captured_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
             PRIMARY KEY (user_id, tracked_type, tracked_id),
             FOREIGN KEY (user_id) REFERENCES users(id)

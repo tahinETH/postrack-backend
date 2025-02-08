@@ -2,7 +2,7 @@ import time
 import asyncio
 from typing import Dict, Optional, List, Tuple
 import logging
-from db.users.repository import UserRepository
+from db.users.repository import UserDataRepository
 from db.tw.repository import TweetDataRepository
 from db.tw.structured import TweetStructuredRepository
 from db.tw.accounts import AccountRepository
@@ -34,15 +34,15 @@ class SubscriptionTier:
 
 class SubscriptionTiers:
     FREE = SubscriptionTier('free', 0, 1)
-    PREMIUM = SubscriptionTier('paid', 1, 3)
+    PAID = SubscriptionTier('paid', 1, 3) 
 
-    @classmethod
+    @classmethod 
     def get_tier(cls, tier_id: str) -> Optional[SubscriptionTier]:
         return getattr(cls, tier_id.upper(), cls.FREE)
 
 class Service:
     def __init__(self):
-        self.user_repository = UserRepository(conn)
+        self.user_repository = UserDataRepository(conn)
         self.monitor = TweetMonitor(DB_PATH, SOCIAL_DATA_API_KEY, INTERVAL_MINUTES)
         self.data = TweetDataRepository(conn)
         self.analysis = TweetStructuredRepository(conn)
@@ -52,10 +52,13 @@ class Service:
     def _get_user_limits(self, user_id: str) -> Tuple[int, int]:
         """Get user's max allowed accounts and tweets based on their tier"""
         user = self.user_repository.get_user(user_id)
+        
         if not user:
             raise ValueError(f"User {user_id} not found")
             
         tier = SubscriptionTiers.get_tier(user['current_tier'])
+        
+        
         return tier.max_accounts, tier.max_tweets
 
     def get_user(self, user_id: str) -> Dict:
@@ -71,6 +74,7 @@ class Service:
             max_accounts, _ = self._get_user_limits(user_id)
             tracked_items = self.user_repository.get_tracked_items(user_id)
             current_accounts = len(tracked_items['accounts'])
+
             
             return current_accounts < max_accounts
             
@@ -99,11 +103,11 @@ class Service:
                     raise ValueError("Account tracking limit reached for user's tier")
 
                 # Start monitoring the account
-                success = await self.monitor.monitor_account(account_identifier)
+                account_id = await self.monitor.monitor_account(account_identifier)
                 
-                if success:
+                if account_id:
                     # Add to user's tracked items
-                    self.user_repository.add_tracked_item(user_id, "account", account_identifier)
+                    self.user_repository.add_tracked_item(user_id, "account", account_id, account_identifier)
                     logger.info(f"Started monitoring account {account_identifier} for user {user_id}")
                     return True
                 return False
@@ -181,10 +185,11 @@ class Service:
             logger.error(f"Error analyzing tweet {tweet_id}: {str(e)}")
             raise
 
-    async def get_feed(self, user_id: str) -> List[Dict]:
-        """Get a feed of all monitored tweets with their latest data"""
+    async def get_user_feed(self, user_id: str) -> Dict:
+
         try:
-            feed = await self.analysis.get_feed(user_id)
+            feed = await self.analysis.get_user_feed(user_id)
+            
             logger.info(f"Retrieved feed for user {user_id}")
             return feed
         except Exception as e:

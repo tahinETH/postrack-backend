@@ -6,7 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class UserRepository(BaseRepository):
+class UserDataRepository(BaseRepository):
     def create_user(self, user_id: str, email: str, name: Optional[str] = None,
                    current_tier: Optional[str] = None, fe_metadata: Optional[Dict] = None) -> None:
         """Create a new user"""
@@ -92,14 +92,14 @@ class UserRepository(BaseRepository):
             logger.error(f"Error deleting user {user_id}: {str(e)}")
             raise
 
-    def add_tracked_item(self, user_id: str, tracked_type: str, tracked_id: str) -> bool:
+    def add_tracked_item(self, user_id: str, tracked_type: str, tracked_id: str, tracked_account_name: Optional[str] = None) -> bool:
         """Add a tracked item (tweet or account) for a user"""
         try:
             self.conn.execute(
                 """INSERT INTO user_tracked_items 
-                   (user_id, tracked_type, tracked_id)
-                   VALUES (?, ?, ?)""",
-                (user_id, tracked_type, tracked_id)
+                   (user_id, tracked_type, tracked_id, tracked_account_name)
+                   VALUES (?, ?, ?, ?)""",
+                (user_id, tracked_type, tracked_id, tracked_account_name)
             )
             self._commit()
             logger.info(f"Added tracked {tracked_type} {tracked_id} for user {user_id}")
@@ -138,5 +138,6 @@ class UserRepository(BaseRepository):
             elif row[0] == 'account':
                 items['accounts'].append(row[1])
         return items
+    
 
     

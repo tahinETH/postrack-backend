@@ -147,7 +147,8 @@ async def analyze_tweet(tweet_id: str, user_id: str = Depends(auth_middleware)):
 async def get_tweet_feed(user_id: Optional[str] = None, auth_user: str = Depends(auth_middleware)):
     """Get a feed of all monitored tweets with their latest data"""
     try:
-        feed = await service.get_feed(auth_user)
+        feed = await service.get_user_feed(auth_user)
+        
         return {
             "status": "success",
             "count": len(feed),
