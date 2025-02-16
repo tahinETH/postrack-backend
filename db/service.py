@@ -2,10 +2,10 @@ import time
 import asyncio
 from typing import Dict, Optional, List, Tuple
 import logging
-from db.users.repository import UserDataRepository
-from db.tw.repository import TweetDataRepository
+from db.users.user_db import UserDataRepository
+from db.tw.tweet_db import TweetDataRepository
 from db.tw.structured import TweetStructuredRepository
-from db.tw.accounts import AccountRepository
+from db.tw.account_db import AccountRepository
 from ai.analyze import AIAnalyzer
 from monitor import TweetMonitor
 from datetime import datetime
@@ -27,14 +27,17 @@ conn = sqlite3.connect(DB_PATH)
 
 
 class SubscriptionTier:
-    def __init__(self, tier_id: str, max_accounts: int, max_tweets: int):
+    def __init__(self, tier_id: str, max_accounts: int, max_tweets: int, max_followers: int):
         self.tier_id = tier_id
         self.max_accounts = max_accounts
         self.max_tweets = max_tweets
+        self.max_followers = max_followers
 
 class SubscriptionTiers:
-    FREE = SubscriptionTier('free', 0, 1)
-    PAID = SubscriptionTier('paid', 1, 3) 
+    FREE = SubscriptionTier('free', 0, 1, 1000)
+    PREMIUM = SubscriptionTier('premium', 1, 3, 5000) 
+    PRO = SubscriptionTier('pro', 1, 3, 50000)
+    ADMIN = SubscriptionTier('admin', 1000, 1000, 1000000000)
 
     @classmethod 
     def get_tier(cls, tier_id: str) -> Optional[SubscriptionTier]:
@@ -59,7 +62,7 @@ class Service:
         tier = SubscriptionTiers.get_tier(user['current_tier'])
         
         
-        return tier.max_accounts, tier.max_tweets
+        return tier.max_accounts, tier.max_tweets, tier.max_followers
 
     def get_user(self, user_id: str) -> Dict:
         """Get user details"""
@@ -71,12 +74,12 @@ class Service:
     def _can_track_account(self, user_id: str) -> bool:
         """Check if user can track another account based on their tier limits"""
         try:
-            max_accounts, _ = self._get_user_limits(user_id)
+            max_accounts, _, max_followers = self._get_user_limits(user_id)
             tracked_items = self.user_repository.get_tracked_items(user_id)
             current_accounts = len(tracked_items['accounts'])
 
             
-            return current_accounts < max_accounts
+            return current_accounts < max_accounts, max_followers
             
         except Exception as e:
             logger.error(f"Error checking account tracking limit for user {user_id}: {str(e)}")
@@ -99,14 +102,14 @@ class Service:
         """Handle starting or stopping monitoring of an account"""
         try:
             if action == "start":
-                if not self._can_track_account(user_id):
+                can_track_account, max_followers = self._can_track_account(user_id)
+                if not can_track_account:
                     raise ValueError("Account tracking limit reached for user's tier")
 
                 # Start monitoring the account
-                account_id = await self.monitor.monitor_account(account_identifier)
+                account_id = await self.monitor.monitor_account(account_identifier, max_followers)
                 
-                if account_id:
-                    # Add to user's tracked items
+                if account_id:  
                     self.user_repository.add_tracked_item(user_id, "account", account_id, account_identifier)
                     logger.info(f"Started monitoring account {account_identifier} for user {user_id}")
                     return True
@@ -133,17 +136,35 @@ class Service:
                 if not self._can_track_tweet(user_id):
                     raise ValueError("Tweet tracking limit reached for user's tier")
 
-                # Start monitoring the tweet
-                await self.monitor.monitor_tweet(tweet_id)
+                # Check if tweet exists first
+                existing_tweet = self.monitor.tweet_data.get_tweet_by_id(tweet_id)
                 
-                # Add to user's tracked items
-                self.user_repository.add_tracked_item(user_id, "tweet", tweet_id)
-                logger.info(f"Started monitoring tweet {tweet_id} for user {user_id}")
-                return True
+                if existing_tweet:
+                    # Tweet exists, just start monitoring it
+                    self.monitor.tweet_data.start_monitoring_tweet(tweet_id)
+                else:
+                    # Tweet doesn't exist, add it
+                    self.monitor.tweet_data.add_monitored_tweet(tweet_id)
+                
+                # Start monitoring the tweet
+                monitoring_run = await self.monitor.monitor_tweet(tweet_id)
+                
+                if monitoring_run.details_saved:
+                    # Get tweet details to get screen name
+                    details, screen_name = await self.monitor._fetch_tweet_details(tweet_id)
+                    
+                    # Add to user's tracked items
+                    self.user_repository.add_tracked_item(user_id, "tweet", tweet_id, screen_name)
+                    logger.info(f"Started monitoring tweet {tweet_id} for user {user_id}")
+                    return True
+                return False
 
             elif action == "stop":
                 success = self.user_repository.remove_tracked_item(user_id, "tweet", tweet_id)
                 if success:
+                    is_tweet_tracked = self.user_repository.is_tweet_tracked(tweet_id)
+                    if not is_tweet_tracked:
+                        self.monitor.tweet_data.stop_monitoring_tweet(tweet_id)
                     logger.info(f"Stopped monitoring tweet {tweet_id} for user {user_id}")
                 return success
 

@@ -4,9 +4,9 @@ from typing import Optional, Dict, Any, List, Tuple
 from pathlib import Path
 import asyncio
 from db.migrations import connect_and_migrate
-from db.tw.repository import TweetDataRepository
+from db.tw.tweet_db import TweetDataRepository
 from db.tw.structured import TweetStructuredRepository
-from db.tw.accounts import AccountRepository
+from db.tw.account_db import AccountRepository
 from api_client import TwitterAPIClient
 
 logging.basicConfig(
@@ -44,16 +44,20 @@ class TweetMonitor:
         self.interval_minutes = interval_minutes
         self.logger = logging.getLogger(__name__)
 
-    async def monitor_account(self, screen_name: str):
+    async def monitor_account(self, screen_name: str, max_followers: int):
         """Start monitoring an account"""
         try:
             user_details = await self.api_client.get_user_details_by_screen_name(screen_name)
-            
             if user_details:
                 account_id = user_details['id_str']
-                self.accounts.add_monitored_account(account_id, screen_name)
+                if user_details['followers_count'] > max_followers:
+                    self.accounts.upsert_account(account_id, screen_name, user_details, monitor=False, update_existing=True)
+                    self.logger.info(f"Account {screen_name} has too many followers ({user_details['followers_count']}), not monitoring")
+                    return None
+                self.accounts.upsert_account(account_id, screen_name, user_details, monitor=True, update_existing=True)
                 self.logger.info(f"Started monitoring account {screen_name}")
                 return account_id
+            return None
         except Exception as e:
             self.logger.error(f"Error monitoring account {screen_name}: {str(e)}")
             return None
@@ -72,6 +76,7 @@ class TweetMonitor:
                         account['screen_name'],
                         since_time=since_time
                     )
+                    
 
                     for tweet in new_tweets:
                         tweet_id = tweet['id_str']
@@ -148,6 +153,11 @@ class TweetMonitor:
             details = await self.api_client.get_tweet_details(tweet_id)
             if not details:
                 return None, None
+                
+            if isinstance(details, dict) and 'status' in details and details['status'] == 'error':
+                self.logger.error(f"Error response for tweet {tweet_id}: {details['message']}")
+                return None, None
+            
             screen_name = details.get('user', {}).get('screen_name')
             return details, screen_name
         except Exception as e:
@@ -174,15 +184,41 @@ class TweetMonitor:
         run_timestamp = int(datetime.now().timestamp())
         monitoring_run = MonitoringRun(tweet_id, run_timestamp)
         
-        # Step 1: Fetch and save tweet details
+        # Check if tweet needs update based on age
+        tweet_details = self.tweet_data.get_tweet_by_id(tweet_id)
+        if tweet_details:
+            current_time = datetime.now().timestamp()
+            tweet_age = current_time - int(tweet_details['created_at'])
+            hours_old = tweet_age / 3600
+            
+            if hours_old > 3 and int(tweet_details['last_check']) + 3600 > current_time:
+                return monitoring_run
+            elif hours_old > 1 and int(tweet_details['last_check']) + 900 > current_time:
+                return monitoring_run
+            elif int(tweet_details['last_check']) + 300 > current_time:
+                return monitoring_run
+        
         details, screen_name = await self._fetch_tweet_details(tweet_id)
+        
         if details:
             try:
+                user_data = details.get('user', {})
+                account_id = user_data.get('id_str')
+                screen_name = user_data.get('screen_name')
+                
+                if user_data:
+                    self.accounts.upsert_account(account_id, screen_name, user_data, monitor=None, update_existing=True)
+
+                if account_id and screen_name:
+                    self.tweet_data.add_account_info_to_monitored_tweet(account_id, tweet_id, screen_name)
+                
+                # Then save the tweet details
                 self.tweet_data.save_tweet_details(
                     tweet_id=tweet_id,
                     details=details,
                     timestamp=str(run_timestamp)
                 )
+                
                 monitoring_run.details_saved = True
                 self.logger.info(f"Saved details for tweet {tweet_id}")
             except Exception as e:
@@ -195,6 +231,7 @@ class TweetMonitor:
 
         # Step 2: Fetch and save new comments
         comments = await self._fetch_tweet_comments(tweet_id, screen_name)
+        
         if comments:
             try:
                 # Get existing comments to compare using the analysis repository
@@ -264,33 +301,4 @@ class TweetMonitor:
 
         return monitoring_run
 
-    async def monitor_all_tweets(self, interval_minutes: int = 5):
-        while True:
-            try:
-                tweets = self.tweet_data.get_monitored_tweets()
-                current_time = datetime.now().timestamp()
-                
-                for tweet in tweets:
-                    if not tweet['is_active']:
-                        continue
-                        
-                    tweet_age = current_time - int(tweet['created_at'])
-                    hours_old = tweet_age / 3600
-                    
-                    if hours_old > 6 and int(tweet['last_check']) + 3600 > current_time:
-                        continue
-                    elif hours_old > 1 and int(tweet['last_check']) + 1200 > current_time:
-                        continue
-                    elif int(tweet['last_check']) + 300 > current_time:
-                        continue
-                        
-                    run_result = await self.monitor_tweet(tweet['tweet_id'])
-                    if not run_result.is_successful():
-                        self.logger.warning(
-                            f"Monitoring run for tweet {tweet['tweet_id']} had issues: "
-                            f"{'; '.join(run_result.errors)}"
-                        )
-            except Exception as e:
-                self.logger.error(f"Error in monitoring loop: {str(e)}")
-            finally:
-                await asyncio.sleep(interval_minutes * 60)
+    

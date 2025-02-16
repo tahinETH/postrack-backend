@@ -3,9 +3,9 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Any
 from db.base import BaseRepository
-from db.tw.repository import TweetDataRepository
-from db.users.repository import UserDataRepository
-from db.tw.accounts import AccountRepository
+from db.tw.tweet_db import TweetDataRepository
+from db.users.user_db import UserDataRepository
+from db.tw.account_db import AccountRepository
 
 
 class TweetStructuredRepository(BaseRepository):
@@ -39,15 +39,16 @@ class TweetStructuredRepository(BaseRepository):
         
         if tracked_items.get('accounts'):
             for account_id in tracked_items['accounts']:
+                
                 account = self.accounts.get_account_by_id(account_id)
                 
                 if account:
                     tracked_accounts.append({
-                        'account_id': account[0],  # Assuming first element is account_id
-                        'screen_name': account[1],  # Assuming second element is screen_name
-                        'is_active': bool(account[2]),  # Assuming third element is is_active
-                        'last_check': account[3],  # Assuming fourth element is last_check
-                        'created_at': account[4]  # Assuming fifth element is created_at
+                        'account_id': account['account_id'],
+                        'screen_name': account['screen_name'],
+                        'is_active': account['is_active'],
+                        'last_check': account['last_check'],
+                        'created_at': account['created_at']
                     })
         
         feed_data = []
@@ -87,6 +88,7 @@ class TweetStructuredRepository(BaseRepository):
                        WHERE tweet_id = ?""",
                     (tweet['tweet_id'],)
                 ).fetchone()[0]
+                
                 
                 feed_item = {
                     'tweet_id': tweet['tweet_id'],
@@ -301,7 +303,8 @@ class TweetStructuredRepository(BaseRepository):
                     'bookmark_count': comment.get('bookmark_count', 0),
                     'screen_name': comment.get('user', {}).get('screen_name'),
                     'followers_count': comment.get('user', {}).get('followers_count', 0),
-                    'verified': is_verified
+                    'verified': is_verified,
+                    'profile_image_url_https': comment.get('user', {}).get('profile_image_url_https', '').replace('_normal', '')
                 })
                 existing_comment_ids.add(comment['id'])
         
@@ -330,7 +333,8 @@ class TweetStructuredRepository(BaseRepository):
                 retweeters_tracking[captured_at].append({
                     'screen_name': retweeter['screen_name'],
                     'followers_count': retweeter.get('followers_count', 0),
-                    'verified': is_verified
+                    'verified': is_verified,
+                    'profile_image_url_https': retweeter.get('profile_image_url_https', '').replace('_normal', '')
                 })
                 existing_retweeter_names.add(retweeter['screen_name'])
         
@@ -340,16 +344,43 @@ class TweetStructuredRepository(BaseRepository):
                 'verified_retweets': verified_retweets.get(ts, 0)
             })
 
-        
         ai_analysis_row = self.tweet_data.get_ai_analysis(tweet_id)
+        
         ai_analysis = None
         
         if ai_analysis_row:
+            input_data = json.loads(ai_analysis_row[1])
+            
+            # Add profile pictures to top amplifiers
+            if 'top_amplifiers' in input_data:
+                # Add profile pics for commenters
+                if 'commenters' in input_data['top_amplifiers']:
+                    for commenter in input_data['top_amplifiers']['commenters']:
+                        # Look up commenter in comments_tracking to get profile pic
+                        for ts, comments in comments_tracking.items():
+                            for comment in comments:
+                                if comment['screen_name'] == commenter['screen_name']:
+                                    commenter['profile_image_url_https'] = comment['profile_image_url_https']
+                                    break
+                            if 'profile_image_url' in commenter:
+                                break
+                
+                # Add profile pics for retweeters  
+                if 'retweeters' in input_data['top_amplifiers']:
+                    for retweeter in input_data['top_amplifiers']['retweeters']:
+                        # Look up retweeter in retweeters_tracking to get profile pic
+                        for ts, retweeters in retweeters_tracking.items():
+                            for rt in retweeters:
+                                if rt['screen_name'] == retweeter['screen_name']:
+                                    retweeter['profile_image_url_https'] = rt['profile_image_url_https']
+                                    break
+                            if 'profile_image_url' in retweeter:
+                                break
+            
             ai_analysis = {
                 'analysis': ai_analysis_row[0],
-                'input_data': json.loads(ai_analysis_row[1])
+                'input_data': input_data
             }
-        
         return {
             'tweet_id': tweet_id,
             'full_text': full_text,

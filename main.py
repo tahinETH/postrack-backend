@@ -72,7 +72,7 @@ async def get_user(user_id: str = Depends(auth_middleware)):
 
 # Account endpoints
 @app.post("/account/monitor/{account_identifier}")
-async def monitor_account(
+async def monitoring_account(
     account_identifier: str, 
     action: str = Query(None, regex="^(start|stop)$"),
     user_id: str = Depends(auth_middleware)
@@ -111,8 +111,8 @@ async def get_top_tweets(username: str, user_id: str = Depends(auth_middleware))
         logger.error(f"Error getting top tweets at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/tweet/monitor/{tweet_id}")
-async def monitor_tweet(
+@app.post("/tweet/monitoring/{tweet_id}")
+async def monitoring_tweet(
     tweet_id: str, 
     action: str = Query(..., regex="^(start|stop)$"),
     user_id: str = Depends(auth_middleware)

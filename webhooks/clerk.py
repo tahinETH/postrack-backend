@@ -5,7 +5,7 @@ import logging
 from dotenv import load_dotenv
 from svix.webhooks import Webhook
 from pydantic import BaseModel
-from db.users.repository import UserDataRepository
+from db.users.user_db import UserDataRepository
 
 load_dotenv()
 

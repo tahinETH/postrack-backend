@@ -3,6 +3,9 @@ import aiohttp
 from typing import Optional, Dict, Any
 import json
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 class TwitterAPIClient:
     def __init__(self, api_key: str):
@@ -19,7 +22,11 @@ class TwitterAPIClient:
             url = f'https://api.socialdata.tools/twitter/user/{screen_name}'
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=self.get_headers()) as response:
-                    return await response.json()
+                    data = await response.json()
+                    if data.get('status') == 'error' and data.get('message') == 'Insufficient balance':
+                        logger.error("Insufficient balance when getting user details")
+                        return None
+                    return data
         except Exception as e:
             print(f"Error getting user details: {str(e)}")
             return None
@@ -29,11 +36,16 @@ class TwitterAPIClient:
             url = f'https://api.socialdata.tools/twitter/tweets/{tweet_id}'
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=self.get_headers()) as response:
-                    return await response.json()
+                    data = await response.json()
+                    if data.get('status') == 'error' and data.get('message') == 'Insufficient balance':
+                        logger.error("Insufficient balance when getting tweet details")
+                        return None
+                    return data
         except Exception as e:
             print(f"Error getting tweet details: {str(e)}")
             return None
-            
+
+    #we should include a since: timestamp to decrease the spending on the api        
     async def get_tweet_comments(self, tweet_id: str, to_user: Optional[str] = None) -> Optional[Dict[str, Any]]:
         try:
             all_comments = []
@@ -49,6 +61,10 @@ class TwitterAPIClient:
                     params = {'cursor': next_cursor} if next_cursor else {}
                     async with session.get(url, headers=self.get_headers(), params=params) as response:
                         data = await response.json()
+                        
+                    if data.get('status') == 'error' and data.get('message') == 'Insufficient balance':
+                        logger.error("Insufficient balance when getting tweet comments")
+                        return None
                     
                     if 'tweets' in data:
                         all_comments.extend(data['tweets'])
@@ -74,6 +90,10 @@ class TwitterAPIClient:
                     
                     async with session.get(url, headers=self.get_headers(), params=params) as response:
                         data = await response.json()
+                        
+                    if data.get('status') == 'error' and data.get('message') == 'Insufficient balance':
+                        logger.error("Insufficient balance when getting tweet retweeters")
+                        return None
                     
                     if 'users' in data:
                         all_retweeters.extend(data['users'])
@@ -105,6 +125,10 @@ class TwitterAPIClient:
                         
                     async with session.get(url, headers=self.get_headers(), params=params) as response:
                         data = await response.json()
+                        
+                    if data.get('status') == 'error' and data.get('message') == 'Insufficient balance':
+                        logger.error("Insufficient balance when getting user tweets")
+                        return None
                     
                     if 'tweets' in data:
                         all_tweets.extend(data['tweets'])
@@ -138,6 +162,10 @@ class TwitterAPIClient:
                         
                     async with session.get(url, headers=self.get_headers(), params=params) as response:
                         data = await response.json()
+                        
+                    if data.get('status') == 'error' and data.get('message') == 'Insufficient balance':
+                        logger.error("Insufficient balance when getting top tweets")
+                        return None
                     
                     if 'tweets' in data:
                         all_tweets.extend(data['tweets'])

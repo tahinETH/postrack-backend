@@ -81,8 +81,8 @@ class UserDataRepository(BaseRepository):
             logger.error(f"Error updating user {user_id}: {str(e)}")
             raise
 
-    def delete_user(self, user_id: str) -> bool:
-        """Delete user by ID"""
+    """ def delete_user(self, user_id: str) -> bool:
+        
         try:
             self.conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
             self._commit()
@@ -90,7 +90,7 @@ class UserDataRepository(BaseRepository):
             return True
         except Exception as e:
             logger.error(f"Error deleting user {user_id}: {str(e)}")
-            raise
+            raise """
 
     def add_tracked_item(self, user_id: str, tracked_type: str, tracked_id: str, tracked_account_name: Optional[str] = None) -> bool:
         """Add a tracked item (tweet or account) for a user"""
@@ -138,6 +138,18 @@ class UserDataRepository(BaseRepository):
             elif row[0] == 'account':
                 items['accounts'].append(row[1])
         return items
-    
+    def is_tweet_tracked(self, tweet_id: str) -> bool:
+        """Check if a tweet is being tracked by any user"""
+        try:
+            cursor = self.conn.execute(
+                """SELECT COUNT(*) FROM user_tracked_items 
+                   WHERE tracked_type = 'tweet' AND tracked_id = ?""",
+                (tweet_id,)
+            )
+            count = cursor.fetchone()[0]
+            return count > 0
+        except Exception as e:
+            logger.error(f"Error checking if tweet {tweet_id} is tracked: {str(e)}")
+            raise
 
     

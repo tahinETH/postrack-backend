@@ -1,6 +1,7 @@
 .env
 deprecated
 *.db
+*.md
 *.json
 community-archive
 test
@@ -8,3 +9,6 @@ archive.js
 venv
 deprecated
 nohup.out
+*.sh
+__pycache__
+.DS_Store

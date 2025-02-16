@@ -7,6 +7,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 class TweetDataRepository(BaseRepository):
+    def get_tweet_by_id(self, tweet_id: str) -> Optional[Dict[str, Any]]:
+        return self.conn.execute(
+            "SELECT * FROM monitored_tweets WHERE tweet_id = ?",
+            (tweet_id,)
+        ).fetchone()
+    
     def get_latest_tweet_for_account(self, account_id: str) -> Optional[Dict[str, Any]]:
         return self.conn.execute(
             "SELECT tweet_id, created_at FROM monitored_tweets WHERE account_id = ? ORDER BY created_at DESC LIMIT 1",
@@ -68,6 +74,15 @@ class TweetDataRepository(BaseRepository):
                     })
 
         return tweets
+    def add_account_info_to_monitored_tweet(self, account_id: str, tweet_id: str, screen_name: Optional[str] = None):
+        self.conn.execute(
+            """INSERT INTO monitored_tweets (tweet_id, account_id, user_screen_name, is_active) 
+               VALUES (?, ?, ?, TRUE)
+               ON CONFLICT(tweet_id) 
+               DO UPDATE SET is_active = TRUE, account_id = excluded.account_id, user_screen_name = excluded.user_screen_name""",
+            (tweet_id, account_id, screen_name)
+        )
+        self._commit()
     
     def add_monitored_tweet(self, tweet_id: str, screen_name: Optional[str] = None):
         self.conn.execute(
@@ -79,7 +94,7 @@ class TweetDataRepository(BaseRepository):
         )
         self._commit()
 
-    def delete_monitored_tweet(self, tweet_id: str):
+    """  def delete_monitored_tweet(self, tweet_id: str):
         # Delete related records first to satisfy foreign key constraints
         self.conn.execute(
             "DELETE FROM tweet_details WHERE tweet_id = ?",
@@ -98,11 +113,18 @@ class TweetDataRepository(BaseRepository):
             "DELETE FROM monitored_tweets WHERE tweet_id = ?",
             (tweet_id,)
         )
-        self._commit()
+        self._commit() """
 
     def stop_monitoring_tweet(self, tweet_id: str):
         self.conn.execute(
             "UPDATE monitored_tweets SET is_active = FALSE WHERE tweet_id = ?",
+            (tweet_id,)
+        )
+        self._commit()
+
+    def start_monitoring_tweet(self, tweet_id: str):
+        self.conn.execute(
+            "UPDATE monitored_tweets SET is_active = TRUE WHERE tweet_id = ?",
             (tweet_id,)
         )
         self._commit()
