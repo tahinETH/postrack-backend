@@ -88,7 +88,7 @@ class Service:
     def _can_track_tweet(self, user_id: str) -> bool:
         """Check if user can track another tweet based on their tier limits"""
         try:
-            _, max_tweets = self._get_user_limits(user_id)
+            _, max_tweets, max_followers = self._get_user_limits(user_id)
             tracked_items = self.user_repository.get_tracked_items(user_id)
             current_tweets = len(tracked_items['tweets'])
             
@@ -106,7 +106,6 @@ class Service:
                 if not can_track_account:
                     raise ValueError("Account tracking limit reached for user's tier")
 
-                # Start monitoring the account
                 account_id = await self.monitor.monitor_account(account_identifier, max_followers)
                 
                 if account_id:  
@@ -132,25 +131,30 @@ class Service:
     async def handle_tweet_monitoring(self, user_id: str, tweet_id: str, action: str) -> bool:
         """Handle starting or stopping monitoring of a tweet"""
         try:
+            
             if action == "start":
                 if not self._can_track_tweet(user_id):
                     raise ValueError("Tweet tracking limit reached for user's tier")
 
                 # Check if tweet exists first
+                
                 existing_tweet = self.monitor.tweet_data.get_tweet_by_id(tweet_id)
                 
+                
                 if existing_tweet:
-                    # Tweet exists, just start monitoring it
+                    #db
                     self.monitor.tweet_data.start_monitoring_tweet(tweet_id)
                 else:
-                    # Tweet doesn't exist, add it
+                    #db
                     self.monitor.tweet_data.add_monitored_tweet(tweet_id)
+                    
                 
-                # Start monitoring the tweet
-                monitoring_run = await self.monitor.monitor_tweet(tweet_id)
                 
+                monitoring_run = await self.monitor.monitor_tweet(tweet_id=tweet_id)
+                
+            
+
                 if monitoring_run.details_saved:
-                    # Get tweet details to get screen name
                     details, screen_name = await self.monitor._fetch_tweet_details(tweet_id)
                     
                     # Add to user's tracked items
@@ -185,15 +189,7 @@ class Service:
             logger.error(f"Error getting monitored tweets: {str(e)}")
             raise
 
-    async def get_top_tweets(self, username: str) -> List[Dict]:
-        """Get latest tweets for a user"""
-        try:
-            tweets = await self.monitor.get_latest_user_tweets(username)
-            logger.info(f"Retrieved top tweets for user {username}")
-            return tweets
-        except Exception as e:
-            logger.error(f"Error getting top tweets for {username}: {str(e)}")
-            raise
+   
     
 
     async def analyze_tweet(self, tweet_id: str) -> Dict:
@@ -224,6 +220,7 @@ class Service:
                 history = await self.analysis.get_raw_tweet_history(tweet_id)
             else:  # format == "analyzed"
                 history = await self.analysis.get_analyzed_tweet_history(tweet_id)
+                
                 
             if not history:
                 logger.warning(f"Tweet history not found for {tweet_id}")
@@ -267,7 +264,7 @@ class Service:
                 for tweet in tweets:
                     if not tweet['is_active']:
                         self.monitor.tweet_data.add_monitored_tweet(tweet['tweet_id'])
-                        await self.monitor.monitor_tweet(tweet['tweet_id'])
+                        await self.monitor.monitor_tweet(tweet_id = tweet['tweet_id'])
                         count += 1
                 logger.info(f"Started monitoring {count} inactive tweets")
                 return True

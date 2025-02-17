@@ -56,7 +56,6 @@ class TweetStructuredRepository(BaseRepository):
         # Handle case where monitored_tweets is empty
         if monitored_tweets:
             for tweet in monitored_tweets:
-                logger.info(f"Processing tweet_id: {tweet['tweet_id']}")
                 
                 latest_details = self.conn.execute(
                     """SELECT data_json, captured_at 
@@ -215,6 +214,14 @@ class TweetStructuredRepository(BaseRepository):
             (tweet_id,)
         ).fetchall()
 
+        quotes = self.conn.execute(
+            """SELECT data_json, captured_at
+               FROM tweet_quotes
+               WHERE tweet_id = ?
+               ORDER BY captured_at""",
+            (tweet_id,)
+        ).fetchall()
+
         return {
             'tweet_id': tweet_id,
             'details': [
@@ -228,6 +235,10 @@ class TweetStructuredRepository(BaseRepository):
             'retweeters': [
                 {'data': json.loads(r[0]), 'captured_at': r[1]} 
                 for r in retweeters
+            ],
+            'quotes': [
+                {'data': json.loads(q[0]), 'captured_at': q[1]} 
+                for q in quotes
             ]
         }
 
@@ -337,11 +348,46 @@ class TweetStructuredRepository(BaseRepository):
                     'profile_image_url_https': retweeter.get('profile_image_url_https', '').replace('_normal', '')
                 })
                 existing_retweeter_names.add(retweeter['screen_name'])
+
+        quotes_tracking = {}
+        verified_quotes = {}
+        quotes_rows = self.conn.execute(
+            """SELECT data_json, captured_at
+               FROM tweet_quotes
+               WHERE tweet_id = ?
+               ORDER BY captured_at""",
+            (tweet_id,)
+        ).fetchall()
+        
+        existing_quote_ids = set()
+        for quote_json, captured_at in quotes_rows:
+            quote = json.loads(quote_json)
+            if quote['id'] not in existing_quote_ids:
+                if captured_at not in quotes_tracking:
+                    quotes_tracking[captured_at] = []
+                    verified_quotes[captured_at] = 0
+                    
+                is_verified = quote.get('user', {}).get('verified', False)
+                if is_verified:
+                    verified_quotes[captured_at] += 1
+                    
+                quotes_tracking[captured_at].append({
+                    'id': quote['id'],
+                    'favorite_count': quote.get('favorite_count', 0),
+                    'views_count': quote.get('views_count', 0),
+                    'bookmark_count': quote.get('bookmark_count', 0),
+                    'screen_name': quote.get('user', {}).get('screen_name'),
+                    'followers_count': quote.get('user', {}).get('followers_count', 0),
+                    'verified': is_verified,
+                    'profile_image_url_https': quote.get('user', {}).get('profile_image_url_https', '').replace('_normal', '')
+                })
+                existing_quote_ids.add(quote['id'])
         
         for ts in engagement_metrics:
             engagement_metrics[ts].update({
                 'verified_replies': verified_replies.get(ts, 0),
-                'verified_retweets': verified_retweets.get(ts, 0)
+                'verified_retweets': verified_retweets.get(ts, 0),
+                'verified_quotes': verified_quotes.get(ts, 0)
             })
 
         ai_analysis_row = self.tweet_data.get_ai_analysis(tweet_id)
@@ -376,11 +422,24 @@ class TweetStructuredRepository(BaseRepository):
                                     break
                             if 'profile_image_url' in retweeter:
                                 break
+
+                # Add profile pics for quoters
+                if 'quoters' in input_data['top_amplifiers']:
+                    for quoter in input_data['top_amplifiers']['quoters']:
+                        # Look up quoter in quotes_tracking to get profile pic
+                        for ts, quotes in quotes_tracking.items():
+                            for quote in quotes:
+                                if quote['screen_name'] == quoter['screen_name']:
+                                    quoter['profile_image_url_https'] = quote['profile_image_url_https']
+                                    break
+                            if 'profile_image_url' in quoter:
+                                break
             
             ai_analysis = {
                 'analysis': ai_analysis_row[0],
                 'input_data': input_data
             }
+            
         return {
             'tweet_id': tweet_id,
             'full_text': full_text,
@@ -390,6 +449,7 @@ class TweetStructuredRepository(BaseRepository):
             'engagement_changes': engagement_changes,
             'comments_tracking': comments_tracking,
             'retweeters_tracking': retweeters_tracking,
+            'quotes_tracking': quotes_tracking,
             'user_followers': user_followers,
             'ai_analysis': ai_analysis
         }

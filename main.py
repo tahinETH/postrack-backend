@@ -102,23 +102,16 @@ async def get_monitored_tweets(user_id: str = Depends(auth_middleware)):
         logger.error(f"Error getting monitored tweets at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/tweet/get-top-tweets")
-async def get_top_tweets(username: str, user_id: str = Depends(auth_middleware)):
-    try:
-        tweets = await service.get_latest_user_tweets(username)
-        return tweets
-    except Exception as e:
-        logger.error(f"Error getting top tweets at {int(time.time())}: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/tweet/monitoring/{tweet_id}")
+
+@app.post("/tweet/monitor/{tweet_id}")
 async def monitoring_tweet(
     tweet_id: str, 
     action: str = Query(..., regex="^(start|stop)$"),
     user_id: str = Depends(auth_middleware)
 ):
-    """Start or stop monitoring a tweet"""
     try:
+        
         success = await service.handle_tweet_monitoring(user_id, tweet_id, action)
         if success:
             return {"status": "success", "message": f"{action.title()}ed monitoring tweet {tweet_id}"}

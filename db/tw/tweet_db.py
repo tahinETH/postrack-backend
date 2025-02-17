@@ -138,6 +138,17 @@ class TweetDataRepository(BaseRepository):
         )
         self._commit()
 
+    def get_latest_tweet_details(self, tweet_id: str) -> Optional[Dict[str, Any]]:
+        result = self.conn.execute(
+            """SELECT data_json 
+               FROM tweet_details 
+               WHERE tweet_id = ? 
+               ORDER BY captured_at DESC 
+               LIMIT 1""",
+            (tweet_id,)
+        ).fetchone()
+        return json.loads(result[0]) if result else None
+    
     def save_tweet_details(self, tweet_id: str, details: Dict[str, Any], timestamp: Optional[int] = None):
         """Save tweet details with timestamp"""
         if timestamp is None:
@@ -191,6 +202,19 @@ class TweetDataRepository(BaseRepository):
             )
         self._commit()
 
+    def save_tweet_quotes(self, tweet_id: str, quotes: List[Dict[str, Any]], timestamp: Optional[int] = None):
+        """Save tweet quotes with timestamp"""
+        if timestamp is None:
+            timestamp = int(datetime.now().timestamp())
+        for quote in quotes:
+            self.conn.execute(
+                """INSERT OR REPLACE INTO tweet_quotes 
+                   (quote_id, tweet_id, data_json, captured_at) 
+                   VALUES (?, ?, ?, ?)""",
+                (quote['id'], tweet_id, json.dumps(quote), timestamp)
+            )
+        self._commit()
+
     def save_tweet_retweeters(self, tweet_id: str, retweeters: List[Dict[str, Any]], timestamp: Optional[int] = None):
         """Save tweet retweeters with timestamp"""
         if timestamp is None:
@@ -203,6 +227,9 @@ class TweetDataRepository(BaseRepository):
                 (retweeter['id'], tweet_id, json.dumps(retweeter), timestamp)
             )
         self._commit()
+    
+    
+    
 
     def get_monitored_tweets(self) -> List[Dict[str, Any]]:
         cursor = self.conn.execute(
@@ -226,6 +253,13 @@ class TweetDataRepository(BaseRepository):
                WHERE tweet_id = ?
                ORDER BY created_at DESC
                LIMIT 1""",
+            (tweet_id,)
+        )
+        return cursor.fetchone()
+
+    def get_latest_monitoring_run(self, tweet_id: str) -> Optional[Dict[str, Any]]:
+        cursor = self.conn.execute(
+            "SELECT last_check FROM monitored_tweets WHERE tweet_id = ?",
             (tweet_id,)
         )
         return cursor.fetchone()

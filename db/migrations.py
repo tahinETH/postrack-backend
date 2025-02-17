@@ -18,7 +18,7 @@ def migrations():
             screen_name TEXT,
             created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
             last_check INTEGER,
-            is_active BOOLEAN DEFAULT TRUE,
+            is_active BOOLEAN DEFAULT FALSE,
             account_details TEXT
         )""",
 
@@ -45,7 +45,13 @@ def migrations():
             captured_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
             FOREIGN KEY (tweet_id) REFERENCES monitored_tweets(tweet_id)
         )""",
-        
+        """CREATE TABLE IF NOT EXISTS tweet_quotes (
+            quote_id TEXT PRIMARY KEY,
+            tweet_id TEXT NOT NULL,
+            data_json TEXT NOT NULL,
+            captured_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+            FOREIGN KEY (tweet_id) REFERENCES monitored_tweets(tweet_id)
+        )""",
         """CREATE TABLE IF NOT EXISTS tweet_retweeters (
             user_id TEXT NOT NULL,
             tweet_id TEXT NOT NULL,
