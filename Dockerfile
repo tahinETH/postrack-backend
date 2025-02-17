@@ -13,6 +13,8 @@ COPY requirements.txt .
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install clerk-backend-api
+RUN pip install svix
 
 # Copy the rest of your code
 COPY . .
