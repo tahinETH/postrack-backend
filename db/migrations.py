@@ -88,6 +88,15 @@ def migrations():
             PRIMARY KEY (user_id, tracked_type, tracked_id),
             FOREIGN KEY (user_id) REFERENCES users(id)
         )""",
+
+        """CREATE TABLE IF NOT EXISTS api_calls (
+            monitor_timestamp INTEGER NOT NULL PRIMARY KEY,
+            tweet_details_calls INTEGER,
+            retweet_api_calls INTEGER,
+            quote_api_calls INTEGER,
+            comment_api_calls INTEGER,
+            total_api_calls INTEGER
+        )""",
         
         "CREATE INDEX IF NOT EXISTS idx_tweet_details ON tweet_details (tweet_id, captured_at)",
         "CREATE INDEX IF NOT EXISTS idx_tweet_comments ON tweet_comments (tweet_id, captured_at)",

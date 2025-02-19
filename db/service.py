@@ -286,26 +286,34 @@ class Service:
             raise
 
     ## PERIODIC CHECKS ##
-    async def periodic_single_tweet_check(self):
-        """Periodic task to check and update tweets"""
-        while True:
-            try:
-                logger.info(f"Running periodic tweet check at {int(time.time())}")
-                await self.monitor.check_and_update_tweets()
-            except Exception as e:
-                logger.error(f"Error in periodic check at {int(time.time())}: {str(e)}")
-            finally:
-                # Run check every minute
-                await asyncio.sleep(60)
+    async def check_single_tweet(self, timestamp: int):
+        """Single run of tweet check and update"""
+        try:
+            logger.info(f"Running periodic tweet check at {timestamp}")
+            await self.monitor.check_and_update_tweets()
+        except Exception as e:
+            logger.error(f"Error in tweet check at {timestamp}: {str(e)}")
 
-    async def periodic_account_check(self):
-        """Periodic task to check and update accounts"""
+    async def check_account(self, timestamp: int):
+        """Single run of account check and update"""
+        try:
+            logger.info(f"Running periodic account check at {timestamp}")
+            await self.monitor.check_and_update_accounts()
+        except Exception as e:
+            logger.error(f"Error in account check at {timestamp}: {str(e)}")
+
+    async def handle_periodic_checks(self):
+        """Periodic task to check and update tweets and accounts"""
         while True:
+            timestamp = int(time.time())
+            
             try:
-                logger.info(f"Running periodic account check at {int(time.time())}")
-                await self.monitor.check_and_update_accounts()
+                await self.check_single_tweet(timestamp)
             except Exception as e:
-                logger.error(f"Error in periodic check at {int(time.time())}: {str(e)}")
-            finally:
-                # Run check every minute
-                await asyncio.sleep(60)
+                logger.error(f"Error checking tweets at {int(time.time())}: {str(e)}")
+
+            try:
+                await self.check_account(timestamp)
+            except Exception as e:
+                logger.error(f"Error checking accounts at {int(time.time())}: {str(e)}")
+            await asyncio.sleep(60)

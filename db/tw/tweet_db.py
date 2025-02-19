@@ -129,7 +129,7 @@ class TweetDataRepository(BaseRepository):
         )
         self._commit()
 
-    def update_tweet_check(self, tweet_id: str, timestamp: Optional[int] = None):
+    def update_tweet_last_check(self, tweet_id: str, timestamp: Optional[int] = None):
         if timestamp is None:
             timestamp = int(datetime.now().timestamp())
         self.conn.execute(

@@ -213,8 +213,6 @@ async def handle_all_tweets(
 async def startup_event():
     """Start the periodic check on startup"""
     logger.info(f"Starting tweet monitoring background task at {int(time.time())}")
-    asyncio.create_task(service.periodic_single_tweet_check())
-    asyncio.create_task(service.periodic_account_check())
-
+    asyncio.create_task(service.handle_periodic_checks())
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=3001)
