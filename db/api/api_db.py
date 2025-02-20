@@ -10,7 +10,6 @@ class APICallLogRepository(BaseRepository):
                         retweet_api_calls: int = 0, quote_api_calls: int = 0,
                         comment_api_calls: int = 0, total_api_calls: int = 0) -> None:
         """Log API calls for a monitoring timestamp"""
-        print(monitor_timestamp, tweet_details_calls, retweet_api_calls, quote_api_calls, comment_api_calls, total_api_calls)
         try:
             self.conn.execute(
                 """INSERT INTO api_calls 

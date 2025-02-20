@@ -89,12 +89,9 @@ class TweetMonitor:
         elif hours_old > 1:
             return last_check + 900 < current_time
             
-        # Over 30 minutes old - check every 5 minutes
-        elif hours_old > 0.5:
+        # In the first hour - check every 5 minutes
+        else:
             return last_check + 300 < current_time
-            
-        # Less than 30 minutes old - always check
-        return True
 
 
     async def _process_monitoring_results(self, results):
