@@ -1,87 +1,103 @@
 from typing import List, Dict, Any, Optional
-from db.base import BaseRepository
 import json
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from db.migrations import get_async_session
+from db.schemas import MonitoredAccount
+from datetime import datetime
 
 
-class AccountRepository(BaseRepository):
-    def upsert_account(self, account_id: str, screen_name: str, account_details: Dict[str, Any], 
-                       monitor: Optional[bool] = None, update_existing: bool = True) -> None:
-        """
-        Args:
-            account_id: The unique identifier of the account
-            screen_name: The screen name of the account
-            account_details: Dictionary containing account details
-            monitor: If True, account will be set as active for monitoring. If None, monitoring status won't change
-            update_existing: If True, will update existing records on conflict
-        """
-        # Serialize account_details to JSON string
-        account_details_json = json.dumps(account_details)
-        
-        if update_existing:
-            self.conn.execute(
-                """INSERT INTO monitored_accounts (account_id, screen_name, is_active, account_details) 
-                   VALUES (?, ?, COALESCE(?, TRUE), ?)
-                   ON CONFLICT(account_id) 
-                   DO UPDATE SET screen_name = excluded.screen_name,
-                               is_active = CASE WHEN ? IS NULL THEN is_active ELSE ? END,
-                               account_details = excluded.account_details,
-                               last_check = CASE WHEN ? IS NOT NULL AND ? THEN strftime('%s', 'now') ELSE last_check END""",
-                (account_id, screen_name, monitor, account_details_json, monitor, monitor, monitor, monitor)
+class AccountRepository():
+    async def upsert_account(self, account_id: str, screen_name: str, account_details: Dict[str, Any],
+                            is_active: Optional[bool] = None, update_existing: bool = True) -> None:
+        async with await get_async_session() as session:
+            result = await session.execute(
+                select(MonitoredAccount).filter(MonitoredAccount.account_id == account_id)
             )
-        else:
-            self.conn.execute(
-                """INSERT INTO monitored_accounts (account_id, screen_name, is_active, account_details, last_check) 
-                   VALUES (?, ?, COALESCE(?, TRUE), ?, strftime('%s', 'now'))
-                   ON CONFLICT(account_id) DO NOTHING""",
-                (account_id, screen_name, monitor, account_details_json)
+            account = result.scalars().first()
+
+            if account and update_existing:
+                if is_active is not None:
+                    account.is_active = is_active
+                account.screen_name = screen_name
+                account.account_details = json.dumps(account_details)
+            elif not account:
+                current_timestamp = int(datetime.now().timestamp())
+                new_account = MonitoredAccount(
+                    account_id=account_id,
+                    screen_name=screen_name,
+                    created_at=current_timestamp,
+                    last_check=current_timestamp,
+                    is_active=is_active if is_active is not None else True,
+                    account_details=json.dumps(account_details)
+                )
+                session.add(new_account)
+            await session.commit()
+
+    async def stop_monitoring_account(self, account_id: str):
+        async with await get_async_session() as session:
+            result = await session.execute(
+                select(MonitoredAccount).filter(MonitoredAccount.account_id == account_id)
             )
-        self._commit()
+            account = result.scalars().first()
+            if account:
+                account.is_active = False
+                await session.commit()
 
-    def stop_monitoring_account(self, account_id: str):
-        self.conn.execute(
-            "UPDATE monitored_accounts SET is_active = FALSE WHERE account_id = ?",
-            (account_id,)
-        )
-        self._commit()
+    async def update_account_last_check(self, account_id: str, timestamp: int):
+        async with await get_async_session() as session:
+            result = await session.execute(
+                select(MonitoredAccount).filter(MonitoredAccount.account_id == account_id)
+            )
+            account = result.scalars().first()
+            if account:
+                account.last_check = timestamp
+                await session.commit()
 
-    def update_account_last_check(self, account_id: str, timestamp: int):
-        self.conn.execute(
-            "UPDATE monitored_accounts SET last_check = ? WHERE account_id = ?",
-            (timestamp, account_id)
-        )
-        self._commit()
-    
-    def get_monitored_accounts(self) -> List[Dict[str, Any]]:
-        cursor = self.conn.execute(
-            "SELECT account_id, screen_name, is_active, last_check, created_at, account_details FROM monitored_accounts"
-        )
-        results = []
-        for row in cursor.fetchall():
-            row_dict = dict(zip(['account_id', 'screen_name', 'is_active', 'last_check', 'created_at', 'account_details'], row))
-            if row_dict['account_details']:
-                row_dict['account_details'] = json.loads(row_dict['account_details'])
-            results.append(row_dict)
-        return results
-    
-    def stop_all_accounts(self):
-        self.conn.execute("UPDATE monitored_accounts SET is_active = FALSE")
-        self._commit()
-        
-    def start_all_accounts(self):
-        self.conn.execute("UPDATE monitored_accounts SET is_active = TRUE")
-        self._commit()
+    async def get_monitored_accounts(self) -> List[Dict[str, Any]]:
+        async with await get_async_session() as session:
+            result = await session.execute(select(MonitoredAccount))
+            accounts = result.scalars().all()
+            
+            return [{
+                'account_id': account.account_id,
+                'screen_name': account.screen_name,
+                'is_active': account.is_active,
+                'last_check': account.last_check,
+                'created_at': account.created_at,
+                'account_details': json.loads(account.account_details) if account.account_details else None
+            } for account in accounts]
 
-    def get_account_by_id(self, account_id: str) -> Optional[Dict[str, Any]]:
-        cursor = self.conn.execute(
-            "SELECT account_id, screen_name, is_active, last_check, created_at, account_details FROM monitored_accounts WHERE account_id = ?",
-            (account_id,)
-        )
-        row = cursor.fetchone()
-        if row:
-            result = dict(zip(['account_id', 'screen_name', 'is_active', 'last_check', 'created_at', 'account_details'], row))
-            if result['account_details']:
-                result['account_details'] = json.loads(result['account_details'])
-            return result
-        return None
+    async def stop_all_accounts(self):
+        async with await get_async_session() as session:
+            result = await session.execute(select(MonitoredAccount))
+            accounts = result.scalars().all()
+            for account in accounts:
+                account.is_active = False
+            await session.commit()
 
-    
+    async def start_all_accounts(self):
+        async with await get_async_session() as session:
+            result = await session.execute(select(MonitoredAccount))
+            accounts = result.scalars().all()
+            for account in accounts:
+                account.is_active = True
+            await session.commit()
+
+    async def get_account_by_id(self, account_id: str) -> Optional[Dict[str, Any]]:
+        async with await get_async_session() as session:
+            result = await session.execute(
+                select(MonitoredAccount).filter(MonitoredAccount.account_id == account_id)
+            )
+            account = result.scalars().first()
+            
+            if account:
+                return {
+                    'account_id': account.account_id,
+                    'screen_name': account.screen_name, 
+                    'is_active': account.is_active,
+                    'last_check': account.last_check,
+                    'created_at': account.created_at,
+                    'account_details': json.loads(account.account_details) if account.account_details else None
+                }
+            return None

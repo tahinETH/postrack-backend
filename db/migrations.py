@@ -1,115 +1,75 @@
-import sqlite3
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, text, MetaData, Table, Column, String, Integer, Boolean, ForeignKey, JSON
+from sqlalchemy.engine import Engine
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
+import psycopg2
+import os
+from dotenv import load_dotenv
+from psycopg2.extensions import connection as PGConnection
+from .schemas import (
+    Base
+)
+from config import config
 
-def connect(path: Path) -> sqlite3.Connection:
-    conn = sqlite3.connect(path)
-    conn.execute("PRAGMA foreign_keys = ON")
-    conn.execute("PRAGMA trusted_schema = OFF")
-    conn.execute("PRAGMA sqlite_check_constraints = ON")
-    conn.execute("PRAGMA trusted_schema = ON")
-    return conn
+async def create_async_db_engine(db_url: str):
+    # Convert the URL to async format if needed
+    if not db_url.startswith("postgresql+asyncpg://"):
+        db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
+    
+    engine = create_async_engine(
+        db_url,
+        echo=False,  # Set to True for SQL query logging
+        pool_pre_ping=True,
+        pool_size=10,
+        max_overflow=20
+    )
+    
+    return engine
+
+async def get_async_session():
+    """Create a session factory for async operations"""
+    load_dotenv()
+    
+    engine = await create_async_db_engine(config.DB_PATH)
+    async_session = sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False
+    )
+    # Return the session instance instead of the sessionmaker
+    return async_session()
+
+def connect(db_url: str, use_async: bool = False) -> Engine:
+    if use_async:
+        return create_async_db_engine(db_url)
+    return create_engine(db_url)
 
 def migrations():
+    metadata = Base.metadata
+
     return [
-        """CREATE TABLE IF NOT EXISTS monitored_accounts (
-            account_id TEXT PRIMARY KEY,
-            screen_name TEXT,
-            created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-            last_check INTEGER,
-            is_active BOOLEAN DEFAULT FALSE,
-            account_details TEXT
-        )""",
+        # Create tables
+        lambda conn: metadata.create_all(conn),
 
-        """CREATE TABLE IF NOT EXISTS monitored_tweets (
-            tweet_id TEXT PRIMARY KEY,
-            user_screen_name TEXT,
-            account_id TEXT,
-            created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-            last_check INTEGER,
-            is_active BOOLEAN DEFAULT TRUE
-        )""",
-        
-        """CREATE TABLE IF NOT EXISTS tweet_details (
-            tweet_id TEXT NOT NULL,
-            data_json TEXT NOT NULL,
-            captured_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-            FOREIGN KEY (tweet_id) REFERENCES monitored_tweets(tweet_id)
-        )""",
-        
-        """CREATE TABLE IF NOT EXISTS tweet_comments (
-            comment_id TEXT PRIMARY KEY,
-            tweet_id TEXT NOT NULL,
-            data_json TEXT NOT NULL,
-            captured_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-            FOREIGN KEY (tweet_id) REFERENCES monitored_tweets(tweet_id)
-        )""",
-        """CREATE TABLE IF NOT EXISTS tweet_quotes (
-            quote_id TEXT PRIMARY KEY,
-            tweet_id TEXT NOT NULL,
-            data_json TEXT NOT NULL,
-            captured_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-            FOREIGN KEY (tweet_id) REFERENCES monitored_tweets(tweet_id)
-        )""",
-        """CREATE TABLE IF NOT EXISTS tweet_retweeters (
-            user_id TEXT NOT NULL,
-            tweet_id TEXT NOT NULL,
-            data_json TEXT NOT NULL,
-            captured_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-            PRIMARY KEY (user_id, tweet_id),
-            FOREIGN KEY (tweet_id) REFERENCES monitored_tweets(tweet_id)
-        )""",
-
-        """CREATE TABLE IF NOT EXISTS ai_analysis (
-            tweet_id TEXT NOT NULL,
-            analysis TEXT NOT NULL,
-            input_data TEXT NOT NULL,
-            created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-            FOREIGN KEY (tweet_id) REFERENCES monitored_tweets(tweet_id)
-        )""",
-
-        """CREATE TABLE IF NOT EXISTS users (
-            id TEXT PRIMARY KEY,
-            email TEXT NOT NULL,
-            name TEXT,
-            current_tier TEXT REFERENCES subscription_tiers(tier_id),
-            current_period_start INTEGER,
-            current_period_end INTEGER,
-            fe_metadata JSON
-        )""",
-
-        """CREATE TABLE IF NOT EXISTS user_tracked_items (
-            user_id TEXT NOT NULL,
-            tracked_type TEXT NOT NULL, -- 'tweet' or 'account'
-            tracked_id TEXT NOT NULL,
-            tracked_account_name TEXT,
-            captured_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-            PRIMARY KEY (user_id, tracked_type, tracked_id),
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        )""",
-
-        """CREATE TABLE IF NOT EXISTS api_calls (
-            monitor_timestamp INTEGER NOT NULL PRIMARY KEY,
-            tweet_details_calls INTEGER,
-            retweet_api_calls INTEGER,
-            quote_api_calls INTEGER,
-            comment_api_calls INTEGER,
-            total_api_calls INTEGER
-        )""",
-        
-        "CREATE INDEX IF NOT EXISTS idx_tweet_details ON tweet_details (tweet_id, captured_at)",
-        "CREATE INDEX IF NOT EXISTS idx_tweet_comments ON tweet_comments (tweet_id, captured_at)",
-        "CREATE INDEX IF NOT EXISTS idx_tweet_retweeters ON tweet_retweeters (tweet_id, captured_at)",
-        "CREATE INDEX IF NOT EXISTS idx_monitored_accounts ON monitored_accounts (account_id, screen_name)",
-        "CREATE INDEX IF NOT EXISTS idx_ai_analysis ON ai_analysis (tweet_id, created_at)",
-        "CREATE INDEX IF NOT EXISTS idx_users ON users (id, email)",
-        "CREATE INDEX IF NOT EXISTS idx_user_tracked_items ON user_tracked_items (user_id, tracked_type, tracked_id)"
+        # Create indexes
+        """CREATE INDEX IF NOT EXISTS idx_tweet_details ON tweet_details (tweet_id, captured_at)""",
+        """CREATE INDEX IF NOT EXISTS idx_tweet_comments ON tweet_comments (tweet_id, captured_at)""",
+        """CREATE INDEX IF NOT EXISTS idx_tweet_retweeters ON tweet_retweeters (tweet_id, captured_at)""",
+        """CREATE INDEX IF NOT EXISTS idx_monitored_accounts ON monitored_accounts (account_id, screen_name)""",
+        """CREATE INDEX IF NOT EXISTS idx_ai_analysis ON ai_analysis (tweet_id, created_at)""",
+        """CREATE INDEX IF NOT EXISTS idx_users ON users (id, email)""",
+        """CREATE INDEX IF NOT EXISTS idx_user_tracked_items ON user_tracked_items (user_id, tracked_type, tracked_id)"""
     ]
 
-def connect_and_migrate(path: Path):
-    conn = connect(path)
-    for cmd in migrations():
-        conn.execute(cmd)
-    conn.commit()
-    return conn
+def connect_and_migrate(db_url: str):
+    engine = connect(db_url)
+    with engine.begin() as conn:
+        for cmd in migrations():
+            if callable(cmd):
+                cmd(conn)
+            else:
+                conn.execute(text(cmd))
+    return engine

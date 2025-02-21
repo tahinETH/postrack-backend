@@ -2,18 +2,18 @@ import json
 import logging
 from datetime import datetime
 from typing import Dict, List, Any
-from db.base import BaseRepository
+from db.migrations import get_async_session
 from db.tw.tweet_db import TweetDataRepository
 from db.users.user_db import UserDataRepository
 from db.tw.account_db import AccountRepository
 
 
-class TweetStructuredRepository(BaseRepository):
+class TweetStructuredRepository():
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.tweet_data = TweetDataRepository(self.conn)
-        self.user_data = UserDataRepository(self.conn)
-        self.accounts = AccountRepository(self.conn)
+        self.tweet_data = TweetDataRepository()
+        self.user_data = UserDataRepository()
+        self.accounts = AccountRepository()
         
 
     def process_engagement_metrics(self, tweet_details: Dict) -> Dict[str, int]:
@@ -30,17 +30,18 @@ class TweetStructuredRepository(BaseRepository):
     async def get_user_feed(self, user_id: str) -> List[Dict[str, Any]]:
         """Get latest data for all monitored tweets for a user"""
         logger = logging.getLogger(__name__)
+    
+        monitored_tweets = await self.tweet_data.get_tweets_for_user(user_id)
+        tracked_items = await self.user_data.get_tracked_items(user_id)
         
-        logger.info("Starting feed retrieval for user")
-        monitored_tweets = self.tweet_data.get_tweets_for_user(user_id)
-        tracked_items = self.user_data.get_tracked_items(user_id)
         
         tracked_accounts = []
+        
         
         if tracked_items.get('accounts'):
             for account_id in tracked_items['accounts']:
                 
-                account = self.accounts.get_account_by_id(account_id)
+                account = await self.accounts.get_account_by_id(account_id)
                 
                 if account:
                     tracked_accounts.append({
@@ -48,70 +49,64 @@ class TweetStructuredRepository(BaseRepository):
                         'screen_name': account['screen_name'],
                         'is_active': account['is_active'],
                         'last_check': account['last_check'],
-                        'created_at': account['created_at']
+                        'created_at': account['created_at'],
+                        'account_details': account['account_details']
                     })
         
         feed_data = []
         
         # Handle case where monitored_tweets is empty
         if monitored_tweets:
-            for tweet in monitored_tweets:
-                
-                latest_details = self.conn.execute(
-                    """SELECT data_json, captured_at 
-                       FROM tweet_details 
-                       WHERE tweet_id = ? 
-                       ORDER BY captured_at DESC 
-                       LIMIT 1""",
-                    (tweet['tweet_id'],)
-                ).fetchone()
-                
-                if not latest_details:
-                    logger.warning(f"No details found for tweet_id: {tweet['tweet_id']}")
-                    continue
-                
-                tweet_data = json.loads(latest_details[0])
-                captured_at = latest_details[1]
-                engagement = self.process_engagement_metrics(tweet_data)
-                
-                comment_count = self.conn.execute(
-                    """SELECT COUNT(DISTINCT comment_id) 
-                       FROM tweet_comments 
-                       WHERE tweet_id = ?""",
-                    (tweet['tweet_id'],)
-                ).fetchone()[0]
-                
-                retweeter_count = self.conn.execute(
-                    """SELECT COUNT(DISTINCT user_id) 
-                       FROM tweet_retweeters 
-                       WHERE tweet_id = ?""",
-                    (tweet['tweet_id'],)
-                ).fetchone()[0]
-                
-                
-                feed_item = {
-                    'tweet_id': tweet['tweet_id'],
-                    'is_monitored': bool(tweet['is_active']),
-                    'tracking_type': tweet['tracking_type'],  # 'account' or 'individual'
-                    'tracked_id': tweet['tracked_id'],  # account_id or tweet_id depending on type
-                    'author': {
-                        'id': tweet_data.get('author_id') or tweet_data.get('user', {}).get('id'),
-                        'screen_name': tweet_data.get('user', {}).get('screen_name') or tweet_data.get('author_username'),
-                        'followers_count': tweet_data.get('user', {}).get('followers_count', 0),
-                        'profile_image_url_https': tweet_data.get('user', {}).get('profile_image_url_https', '').replace('_normal', '')
-                    },
-                    'engagement_metrics': engagement,
-                    'total_comments': comment_count,
-                    'total_retweeters': retweeter_count,
-                    'last_updated': captured_at,
-                    'created_at': tweet_data.get('tweet_created_at')
-                }
-                
-                text = tweet_data.get('full_text') or tweet_data.get('text')
-                if text:
-                    feed_item['text'] = text
+          
+                for tweet in monitored_tweets:
+                    # Get latest tweet details
+                    latest_details = await self.tweet_data.get_latest_tweet_details(tweet['tweet_id'])
                     
-                feed_data.append(feed_item)
+                    if not latest_details:
+                        logger.warning(f"No details found for tweet_id: {tweet['tweet_id']}")
+                        continue
+                        
+                    tweet_data = latest_details
+                    captured_at = int(datetime.now().timestamp())
+                    engagement = self.process_engagement_metrics(tweet_data)
+                    
+                    # Get comments
+                    comments = await self.tweet_data.get_tweet_comments(tweet['tweet_id'])
+                    comment_count = len(comments)
+                    
+                    # Get retweeters 
+                    retweeters = await self.tweet_data.get_tweet_retweeters(tweet['tweet_id'])
+                    retweeter_count = len(retweeters)
+
+
+                    # Get Quotes
+                    quotes = await self.tweet_data.get_tweet_quotes(tweet['tweet_id'])
+                    quote_count = len(quotes)
+                    
+                    feed_item = {
+                        'tweet_id': tweet['tweet_id'],
+                        'is_monitored': bool(tweet['is_active']),
+                        'tracking_type': tweet['tracking_type'],  # 'account' or 'individual'
+                        'tracked_id': tweet['tracked_id'],  # account_id or tweet_id depending on type
+                        'author': {
+                            'id': tweet_data.get('author_id') or tweet_data.get('user', {}).get('id'),
+                            'screen_name': tweet_data.get('user', {}).get('screen_name') or tweet_data.get('author_username'),
+                            'followers_count': tweet_data.get('user', {}).get('followers_count', 0),
+                            'profile_image_url_https': tweet_data.get('user', {}).get('profile_image_url_https', '').replace('_normal', '')
+                        },
+                        'engagement_metrics': engagement,
+                        'total_comments': comment_count,
+                        'total_retweeters': retweeter_count,
+                        'total_quotes': quote_count,
+                        'last_updated': captured_at,
+                        'created_at': tweet_data.get('tweet_created_at')
+                    }
+                    
+                    text = tweet_data.get('full_text') or tweet_data.get('text')
+                    if text:
+                        feed_item['text'] = text
+                        
+                    feed_data.append(feed_item)
             
         return {
             'tweets': sorted(feed_data, key=lambda x: x['last_updated'], reverse=True) if feed_data else [],
@@ -119,108 +114,19 @@ class TweetStructuredRepository(BaseRepository):
         }
 
 
-
-
-    
-    async def get_feed(self) -> List[Dict[str, Any]]:
-        """Get latest data for all monitored tweets"""
-        logger = logging.getLogger(__name__)
-        
-        logger.info("Starting feed retrieval")
-        monitored_tweets = self.tweet_data.get_monitored_tweets()
-        
-        feed_data = []
-        for tweet in monitored_tweets:
-            logger.info(f"Processing tweet_id: {tweet['tweet_id']}")
-            
-            latest_details = self.conn.execute(
-                """SELECT data_json, captured_at 
-                   FROM tweet_details 
-                   WHERE tweet_id = ? 
-                   ORDER BY captured_at DESC 
-                   LIMIT 1""",
-                (tweet['tweet_id'],)
-            ).fetchone()
-            
-            if not latest_details:
-                logger.warning(f"No details found for tweet_id: {tweet['tweet_id']}")
-                continue
-            
-            tweet_data = json.loads(latest_details[0])
-            captured_at = latest_details[1]
-            engagement = self.process_engagement_metrics(tweet_data)
-            
-            comment_count = self.conn.execute(
-                """SELECT COUNT(DISTINCT comment_id) 
-                   FROM tweet_comments 
-                   WHERE tweet_id = ?""",
-                (tweet['tweet_id'],)
-            ).fetchone()[0]
-            
-            retweeter_count = self.conn.execute(
-                """SELECT COUNT(DISTINCT user_id) 
-                   FROM tweet_retweeters 
-                   WHERE tweet_id = ?""",
-                (tweet['tweet_id'],)
-            ).fetchone()[0]
-            
-            feed_item = {
-                'tweet_id': tweet['tweet_id'],
-                'is_monitored': bool(tweet['is_active'] ),
-                'author': {
-                    'id': tweet_data.get('author_id') or tweet_data.get('user', {}).get('id'),
-                    'screen_name': tweet_data.get('user', {}).get('screen_name') or tweet_data.get('author_username'),
-                    'followers_count': tweet_data.get('user', {}).get('followers_count', 0),
-                    'profile_image_url_https': tweet_data.get('user', {}).get('profile_image_url_https', '').replace('_normal', '')
-                },
-                'engagement_metrics': engagement,
-                'total_comments': comment_count,
-                'total_retweeters': retweeter_count,
-                'last_updated': captured_at,
-                'created_at': tweet_data.get('tweet_created_at')
-            }
-            
-            text = tweet_data.get('full_text') or tweet_data.get('text')
-            if text:
-                feed_item['text'] = text
-                
-            feed_data.append(feed_item)
-            
-        return sorted(feed_data, key=lambda x: x['last_updated'], reverse=True)
-
     async def get_raw_tweet_history(self, tweet_id: str) -> Dict[str, Any]:
         """Get raw, unprocessed history data for a tweet"""
-        details = self.conn.execute(
-            """SELECT data_json, captured_at 
-               FROM tweet_details 
-               WHERE tweet_id = ? 
-               ORDER BY captured_at""",
-            (tweet_id,)
-        ).fetchall()
+        # Get latest tweet details
+        details = await self.tweet_data.get_tweet_details(tweet_id)
+        
+        # Get comments
+        comments = await self.tweet_data.get_tweet_comments(tweet_id)
+        
+        # Get retweeters 
+        retweeters = await self.tweet_data.get_tweet_retweeters(tweet_id)
 
-        comments = self.conn.execute(
-            """SELECT data_json, captured_at
-               FROM tweet_comments
-               WHERE tweet_id = ?
-               ORDER BY captured_at""",
-            (tweet_id,)
-        ).fetchall()
-
-        retweeters = self.conn.execute(
-            """SELECT data_json, captured_at
-               FROM tweet_retweeters
-               WHERE tweet_id = ?
-               ORDER BY captured_at""",
-            (tweet_id,)
-        ).fetchall()
-
-        quotes = self.conn.execute(
-            """SELECT data_json, captured_at
-               FROM tweet_quotes
-               WHERE tweet_id = ?
-               ORDER BY captured_at""",
-            (tweet_id,)
-        ).fetchall()
+        # Get Quotes
+        quotes = await self.tweet_data.get_tweet_quotes(tweet_id)
 
         return {
             'tweet_id': tweet_id,
@@ -244,15 +150,10 @@ class TweetStructuredRepository(BaseRepository):
 
     async def get_analyzed_tweet_history(self, tweet_id: str) -> Dict[str, Any]:
         """Get processed and analyzed history data for a tweet"""
-        details_rows = self.conn.execute(
-            """SELECT data_json, captured_at 
-               FROM tweet_details 
-               WHERE tweet_id = ? 
-               ORDER BY captured_at""",
-            (tweet_id,)
-        ).fetchall()
+        # Get latest tweet details
+        details = await self.tweet_data.get_tweet_details(tweet_id)
         
-        if not details_rows:
+        if not details:
             return {}
             
         engagement_metrics = {}
@@ -260,7 +161,7 @@ class TweetStructuredRepository(BaseRepository):
         user_info = None
         user_followers = {}
         
-        for detail_json, captured_at in details_rows:
+        for detail_json, captured_at in details:
             detail = json.loads(detail_json)
             engagement_metrics[captured_at] = self.process_engagement_metrics(detail)
             
@@ -287,16 +188,12 @@ class TweetStructuredRepository(BaseRepository):
             
         comments_tracking = {}
         verified_replies = {}
-        comments_rows = self.conn.execute(
-            """SELECT data_json, captured_at
-               FROM tweet_comments
-               WHERE tweet_id = ?
-               ORDER BY captured_at""",
-            (tweet_id,)
-        ).fetchall()
+
+        # Get comments
+        comments = await self.tweet_data.get_tweet_comments(tweet_id)
         
         existing_comment_ids = set()
-        for comment_json, captured_at in comments_rows:
+        for comment_json, captured_at in comments:
             comment = json.loads(comment_json)
             if comment['id'] not in existing_comment_ids:
                 if captured_at not in comments_tracking:
@@ -321,16 +218,12 @@ class TweetStructuredRepository(BaseRepository):
         
         retweeters_tracking = {}
         verified_retweets = {}
-        retweeter_rows = self.conn.execute(
-            """SELECT data_json, captured_at
-               FROM tweet_retweeters
-               WHERE tweet_id = ?
-               ORDER BY captured_at""",
-            (tweet_id,)
-        ).fetchall()
+        
+        # Get retweeters
+        retweeters = await self.tweet_data.get_tweet_retweeters(tweet_id)
         
         existing_retweeter_names = set()
-        for retweeter_json, captured_at in retweeter_rows:
+        for retweeter_json, captured_at in retweeters:
             retweeter = json.loads(retweeter_json)
             if retweeter['screen_name'] not in existing_retweeter_names:
                 if captured_at not in retweeters_tracking:
@@ -351,16 +244,12 @@ class TweetStructuredRepository(BaseRepository):
 
         quotes_tracking = {}
         verified_quotes = {}
-        quotes_rows = self.conn.execute(
-            """SELECT data_json, captured_at
-               FROM tweet_quotes
-               WHERE tweet_id = ?
-               ORDER BY captured_at""",
-            (tweet_id,)
-        ).fetchall()
+        
+        # Get quotes
+        quotes = await self.tweet_data.get_tweet_quotes(tweet_id)
         
         existing_quote_ids = set()
-        for quote_json, captured_at in quotes_rows:
+        for quote_json, captured_at in quotes:
             quote = json.loads(quote_json)
             if quote['id'] not in existing_quote_ids:
                 if captured_at not in quotes_tracking:

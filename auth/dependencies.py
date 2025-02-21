@@ -2,7 +2,7 @@ from typing import Optional
 from fastapi import Request, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from clerk_backend_api.jwks_helpers import verify_token, VerifyTokenOptions
-import os
+from config import config
 
 class ClerkAuthMiddleware(HTTPBearer):
     def __init__(self, auto_error: bool = True):
@@ -21,7 +21,7 @@ class ClerkAuthMiddleware(HTTPBearer):
                 token,
                 VerifyTokenOptions(
                     authorized_parties=["http://localhost:3000"],
-                    secret_key=os.getenv('CLERK_SECRET_KEY')
+                    secret_key=config.CLERK_SECRET_KEY
                 )
             )
             request.state.user_id = claims.get("sub")

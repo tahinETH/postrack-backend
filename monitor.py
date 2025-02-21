@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List, Tuple
 from pathlib import Path
 import asyncio
-from db.migrations import connect_and_migrate
 from db.tw.tweet_db import TweetDataRepository
 from db.tw.structured import TweetStructuredRepository
 from db.tw.account_db import AccountRepository
@@ -44,14 +43,12 @@ class MonitoringRun:
 
 
 class TweetMonitor:
-    def __init__(self, db_path: str, api_key: str, interval_minutes: int = 5):
-        self.conn = connect_and_migrate(Path(db_path))
-        self.tweet_data = TweetDataRepository(self.conn)
-        self.tweet_analysis = TweetStructuredRepository(self.conn)
-        self.accounts = AccountRepository(self.conn)
-        self.api_logger = APICallLogRepository(self.conn)
+    def __init__(self, db_path: str, api_key: str):
+        self.tweet_data = TweetDataRepository()
+        self.tweet_analysis = TweetStructuredRepository()
+        self.accounts = AccountRepository()
+        self.api_logger = APICallLogRepository()
         self.api_client = TwitterAPIClient(api_key)
-        self.interval_minutes = interval_minutes
         self.logger = logging.getLogger(__name__)
         
 
@@ -126,7 +123,7 @@ class TweetMonitor:
                 comment_api_calls
             )
             
-            self.api_logger.upsert_api_calls(
+            await self.api_logger.upsert_api_calls(
                 monitor_timestamp,
                 tweet_details_calls,
                 retweet_api_calls,
@@ -185,7 +182,7 @@ class TweetMonitor:
         self.logger.info(f"Starting monitoring run for tweet {tweet_id}")
         monitoring_run = MonitoringRun(tweet_id, run_timestamp)
         self.logger.debug(f"Fetching existing tweet details for {tweet_id}")
-        latest_tweet_details = self.tweet_data.get_latest_tweet_details(tweet_id)
+        latest_tweet_details = await self.tweet_data.get_latest_tweet_details(tweet_id)
         if tweet:
             details = tweet
             screen_name = tweet['user']['screen_name']
@@ -204,21 +201,21 @@ class TweetMonitor:
 
                 if user_data:
                     self.logger.debug(f"Upserting account {screen_name} for tweet {tweet_id}")
-                    self.accounts.upsert_account(account_id, screen_name, user_data, monitor=None, update_existing=True)
+                    await self.accounts.upsert_account(account_id, screen_name, user_data, is_active=None, update_existing=True)
 
                 if account_id and screen_name:
                     self.logger.debug(f"Adding account info to monitored tweet {tweet_id}")
-                    self.tweet_data.add_account_info_to_monitored_tweet(account_id, tweet_id, screen_name)
+                    await self.tweet_data.add_account_info_to_monitored_tweet(account_id, tweet_id, screen_name)
 
                 self.logger.debug(f"Saving tweet details for {tweet_id}")
                 
-                self.tweet_data.save_tweet_details(
+                await self.tweet_data.save_tweet_details(
                     tweet_id=tweet_id,
                     details=details,
                     timestamp=str(run_timestamp)
                 )
 
-                self.tweet_data.update_tweet_last_check(tweet_id, run_timestamp)
+                await self.tweet_data.update_tweet_last_check(tweet_id, run_timestamp)
                 
                 monitoring_run.details_saved = True
                 self.logger.info(f"Successfully saved details for tweet {tweet_id}")
@@ -231,7 +228,7 @@ class TweetMonitor:
             return monitoring_run
 
         self.logger.debug(f"Getting latest monitoring run for {tweet_id}")
-        latest_run = self.tweet_data.get_latest_monitoring_run(tweet_id)
+        latest_run = await self.tweet_data.get_latest_monitoring_run(tweet_id)
         
         since_timestamp = str(latest_run[0]) if latest_run else None
         self.logger.debug(f"Using since_timestamp {since_timestamp} for tweet {tweet_id}")
@@ -361,7 +358,7 @@ class TweetMonitor:
     async def check_and_update_tweets(self):
         "monitors existing tweets and updates if needed"
         try:
-            tweets = self.tweet_data.get_monitored_tweets()
+            tweets = await self.tweet_data.get_monitored_tweets()
             
             update_tasks = []
             run_timestamp = int(datetime.now().timestamp())
@@ -391,10 +388,10 @@ class TweetMonitor:
             if user_details:
                 account_id = user_details['id_str']
                 if user_details['followers_count'] > max_followers:
-                    self.accounts.upsert_account(account_id, screen_name, user_details, monitor=False, update_existing=True, is_active=False)
+                    await self.accounts.upsert_account(account_id, screen_name, user_details, update_existing=True, is_active=False)
                     self.logger.info(f"Account {screen_name} has too many followers ({user_details['followers_count']}), not monitoring")
                     return None
-                self.accounts.upsert_account(account_id, screen_name, user_details, monitor=True, update_existing=True, is_active=True)
+                await self.accounts.upsert_account(account_id, screen_name, user_details,update_existing=True, is_active=True)
                 self.logger.info(f"Started monitoring account {screen_name}")
                 return account_id
             return None
@@ -405,7 +402,7 @@ class TweetMonitor:
     async def check_and_update_accounts(self):
             "monitors accounts for new tweets"
             try:
-                accounts = self.accounts.get_monitored_accounts()
+                accounts = await self.accounts.get_monitored_accounts()
                 for account in accounts:
                     if account['is_active']:
                         since_time = account['last_check']
@@ -430,7 +427,7 @@ class TweetMonitor:
                             )
                             
                         current_timestamp = int(datetime.now().timestamp())
-                        self.accounts.update_account_last_check(account['account_id'], current_timestamp)
+                        await self.accounts.update_account_last_check(account['account_id'], current_timestamp)
 
                 await asyncio.sleep(180)
 

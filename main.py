@@ -1,16 +1,16 @@
-from datetime import datetime
+
 import logging
 import os
 from fastapi import FastAPI, HTTPException, Query, Depends, Header, Path as FastAPIPath
-from pathlib import Path
 import asyncio
-from typing import List, Dict, Any, Optional
+from typing import Optional
 import uvicorn
 from pydantic import BaseModel
-from monitor import TweetMonitor
+from db.migrations import connect_and_migrate
 
 
 from db.service import Service
+from config import config
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import time
@@ -18,6 +18,7 @@ import time
 import tracemalloc
 from auth.dependencies import auth_middleware
 from webhooks.clerk import router as clerk_router
+from webhooks.stripe import router as stripe_router
 
 tracemalloc.start()
 load_dotenv()
@@ -35,7 +36,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 app.include_router(clerk_router)
-
+app.include_router(stripe_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -85,6 +86,8 @@ async def monitoring_account(
         else:
             raise HTTPException(status_code=500, detail=f"Failed to {action} monitoring account")
     except ValueError as e:
+        if str(e) == "Account tracking limit reached for user's tier":
+            raise HTTPException(status_code=403, detail=str(e))
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Error monitoring account at {int(time.time())}: {str(e)}")
@@ -111,13 +114,14 @@ async def monitoring_tweet(
     user_id: str = Depends(auth_middleware)
 ):
     try:
-        
         success = await service.handle_tweet_monitoring(user_id, tweet_id, action)
         if success:
             return {"status": "success", "message": f"{action.title()}ed monitoring tweet {tweet_id}"}
         else:
             raise HTTPException(status_code=500, detail=f"Failed to {action} monitoring tweet")
     except ValueError as e:
+        if str(e) == "Tweet tracking limit reached for user's tier":
+            raise HTTPException(status_code=403, detail=str(e))
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Error in tweet monitoring action at {int(time.time())}: {str(e)}")
@@ -172,7 +176,7 @@ async def get_tweet_history(
 
 
 
-@app.post("/admin/account/monitor/all-accounts")
+""" @app.post("/admin/account/monitor/all-accounts")
 async def manage_all_accounts(action: str = Query(..., regex="^(start|stop)$"), admin_secret: str = Header(None)):
     if not admin_secret or admin_secret != ADMIN_SECRET:
         raise HTTPException(status_code=401, detail="Invalid admin secret")
@@ -186,8 +190,8 @@ async def manage_all_accounts(action: str = Query(..., regex="^(start|stop)$"), 
     except Exception as e:
         logger.error(f"Error {action}ing all account monitoring at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-    
-    
+     """
+"""     
 @app.post("/admin/tweets/{action}")
 async def handle_all_tweets(
     action: str = FastAPIPath(..., regex="^(start|stop)$"),
@@ -204,15 +208,29 @@ async def handle_all_tweets(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Error handling all tweets at {int(time.time())}: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) """
 
 # Background tasks
 
 
 @app.on_event("startup")
 async def startup_event():
-    """Start the periodic check on startup"""
-    logger.info(f"Starting tweet monitoring background task at {int(time.time())}")
-    asyncio.create_task(service.handle_periodic_checks())
+    """Initialize database and start the periodic check on startup"""
+    try:
+        
+        if not config.DB_PATH:
+            raise ValueError("DB_PATH environment variable not set")
+            
+        # Run migrations
+        connect_and_migrate(config.DB_PATH)
+        logger.info("Database migrations completed successfully")
+        
+        # Start periodic checks
+        logger.info(f"Starting tweet monitoring background task at {int(time.time())}")
+        asyncio.create_task(service.handle_periodic_checks())
+    except Exception as e:
+        logger.error(f"Error during startup: {str(e)}")
+        raise
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=3001)

@@ -35,7 +35,7 @@ class AIAnalyzer:
            
             
             # Save the analysis and input data
-            self.analysis_repo.tweet_data.save_ai_analysis(tweet_id, claude_response, insights)
+            await self.analysis_repo.tweet_data.save_ai_analysis(tweet_id, claude_response, insights)
 
             return {
                 "insights": insights,
