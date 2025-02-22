@@ -81,7 +81,7 @@ async def monitoring_account(
 ):
     """Start or stop monitoring an account"""
     try:
-        logger.info(f"Monitoring account {account_identifier} for user {user_id}")
+        
         success = await service.handle_account_monitoring(user_id, account_identifier, action)
         if success:
             return {"status": "success", "message": f"{action.title()}ed monitoring account {account_identifier}"}

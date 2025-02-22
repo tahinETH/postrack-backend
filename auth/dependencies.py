@@ -20,7 +20,7 @@ class ClerkAuthMiddleware(HTTPBearer):
             claims = verify_token(
                 token,
                 VerifyTokenOptions(
-                    authorized_parties=["http://localhost:3000"],
+                    authorized_parties=["http://localhost:3000", "https://app.postrack.co"],
                     secret_key=config.CLERK_SECRET_KEY
                 )
             )
