@@ -16,6 +16,8 @@ class EnvConfig:
             self.CLERK_WEBHOOK_SECRET = os.getenv("CLERK_WEBHOOK_SECRET_PROD")
             self.STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY_PROD")
             self.STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY_PROD")
+            self.STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET_PROD")
+            
            
         else:
             self.DB_PATH = os.getenv("DB_PATH_LOCAL")
