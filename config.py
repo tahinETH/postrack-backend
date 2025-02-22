@@ -20,6 +20,7 @@ class EnvConfig:
             self.CLERK_WEBHOOK_SECRET = os.getenv("CLERK_WEBHOOK_SECRET_LOCAL")
             self.STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY_LOCAL")
             self.STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY_LOCAL")
+            self.STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET_LOCAL")
 
 # Create an instance of the config
 config = EnvConfig()

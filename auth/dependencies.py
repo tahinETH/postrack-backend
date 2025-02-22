@@ -16,7 +16,7 @@ class ClerkAuthMiddleware(HTTPBearer):
         token = credentials.credentials
         
         try:
-            # For Clerk integration tokens (from getToken()), use authorized_audiences instead
+            print
             claims = verify_token(
                 token,
                 VerifyTokenOptions(

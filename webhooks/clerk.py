@@ -6,6 +6,7 @@ from svix.webhooks import Webhook
 from pydantic import BaseModel
 from db.users.user_db import UserDataRepository
 from config import config
+import stripe
 
 load_dotenv()
 
@@ -78,6 +79,22 @@ async def handle_event(event_type: str, user_data: dict):
                 "first_name": user_data.get("first_name"),
                 "last_name": user_data.get("last_name")
             }
+            
+            # Create Stripe customer
+            try:
+                stripe_customer = stripe.Customer.create(
+                    email=email,
+                    name=name,
+                    metadata={
+                        "clerk_user_id": user_id
+                    }
+                )
+                
+                fe_metadata["stripe_customer_id"] = stripe_customer.id
+                logger.info(f"Created Stripe customer {stripe_customer.id} for user {user_id}")
+            except Exception as e:
+                logger.error(f"Failed to create Stripe customer for user {user_id}: {str(e)}")
+                # Continue with user creation even if Stripe customer creation fails
             
             await user_repo.create_user(
                 user_id=user_id,

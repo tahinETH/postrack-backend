@@ -101,8 +101,22 @@ class UserDataRepository():
     async def add_tracked_item(self, user_id: str, tracked_type: str, tracked_id: str, tracked_account_name: Optional[str] = None) -> bool:
         """Add a tracked item (tweet or account) for a user"""
         try:
-            now = int(datetime.now().timestamp())
             async with await get_async_session() as session:
+                # Check if item already exists
+                result = await session.execute(
+                    select(UserTrackedItem).filter(
+                        UserTrackedItem.user_id == user_id,
+                        UserTrackedItem.tracked_type == tracked_type,
+                        UserTrackedItem.tracked_id == tracked_id
+                    )
+                )
+                existing_item = result.scalars().first()
+                
+                if existing_item:
+                    logger.info(f"Tracked {tracked_type} {tracked_id} already exists for user {user_id}")
+                    return True
+                    
+                now = int(datetime.now().timestamp())
                 tracked_item = UserTrackedItem(
                     user_id=user_id,
                     tracked_type=tracked_type,
@@ -112,6 +126,7 @@ class UserDataRepository():
                 )
                 session.add(tracked_item)
                 await session.commit()
+                
             logger.info(f"Added tracked {tracked_type} {tracked_id} for user {user_id}")
             return True
         except Exception as e:
