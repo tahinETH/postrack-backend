@@ -6,6 +6,9 @@ load_dotenv()
 class EnvConfig:
     def __init__(self):
         self.ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")
+        self.ADMIN_SECRET = os.getenv("ADMIN_SECRET")
+        self.SOCIAL_DATA_API_KEY = os.getenv("SOCIAL_DATA_API_KEY")
+        self.ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
         
         if self.ENVIRONMENT == "prod":
             self.DB_PATH = os.getenv("DB_PATH_PROD") 
