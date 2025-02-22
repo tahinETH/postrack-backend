@@ -13,6 +13,7 @@ from db.service import Service
 from config import config
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from config import config
 import time
 
 import tracemalloc
@@ -23,8 +24,8 @@ from webhooks.stripe import router as stripe_router
 tracemalloc.start()
 load_dotenv()
 
+ADMIN_SECRET = config.ADMIN_SECRET
 
-ADMIN_SECRET = os.getenv("ADMIN_SECRET")
 
 # Configure logging
 logging.basicConfig(

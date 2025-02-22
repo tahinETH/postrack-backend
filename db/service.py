@@ -10,17 +10,15 @@ from db.tw.account_db import AccountRepository
 from ai.analyze import AIAnalyzer
 from monitor import TweetMonitor
 from datetime import datetime
-import psycopg2
-import os
+from config import config
+
 
 from dotenv import load_dotenv
-load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = os.getenv("DB_PATH")
-SOCIAL_DATA_API_KEY = os.getenv("SOCIAL_DATA_API_KEY")
-conn = psycopg2.connect(DB_PATH)
+DB_PATH = config.DB_PATH
+SOCIAL_DATA_API_KEY = config.SOCIAL_DATA_API_KEY
 
 
 
