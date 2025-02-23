@@ -117,7 +117,7 @@ class TweetStructuredRepository():
     async def get_raw_tweet_history(self, tweet_id: str) -> Dict[str, Any]:
         """Get raw, unprocessed history data for a tweet"""
         # Get latest tweet details
-        details = await self.tweet_data.get_tweet_details(tweet_id)
+        details = await self.tweet_data.get_latest_tweet_details(tweet_id)
         
         # Get comments
         comments = await self.tweet_data.get_tweet_comments(tweet_id)
@@ -151,7 +151,7 @@ class TweetStructuredRepository():
     async def get_analyzed_tweet_history(self, tweet_id: str) -> Dict[str, Any]:
         """Get processed and analyzed history data for a tweet"""
         # Get latest tweet details
-        details = await self.tweet_data.get_tweet_details(tweet_id)
+        details = await self.tweet_data.get_latest_tweet_details(tweet_id)
         
         if not details:
             return {}
