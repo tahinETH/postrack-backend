@@ -145,7 +145,7 @@ class TweetMonitor:
             if isinstance(details, dict) and 'status' in details and details['status'] == 'error':
                 self.logger.error(f"Error response for tweet {tweet_id}: {details['message']}")
                 if details['message'] == 'Tweet not found':
-                    self.tweet_data.stop_monitoring_tweet(tweet_id)
+                    await self.tweet_data.stop_monitoring_tweet(tweet_id)
                 return None, None
             
             screen_name = details.get('user', {}).get('screen_name')
@@ -270,7 +270,7 @@ class TweetMonitor:
                     
                     if new_comments:
                         self.logger.debug(f"Saving {len(new_comments)} new comments for tweet {tweet_id}")
-                        self.tweet_data.save_tweet_comments(
+                        await self.tweet_data.save_tweet_comments(
                             tweet_id=tweet_id,
                             comments=new_comments,
                             timestamp=run_timestamp
@@ -307,7 +307,7 @@ class TweetMonitor:
                     
                     if new_retweeters:
                         self.logger.debug(f"Saving {len(new_retweeters)} new retweeters for tweet {tweet_id}")
-                        self.tweet_data.save_tweet_retweeters(
+                        await self.tweet_data.save_tweet_retweeters(
                             tweet_id=tweet_id,
                             retweeters=new_retweeters,
                             timestamp=run_timestamp
@@ -340,7 +340,7 @@ class TweetMonitor:
                     ]
                     if new_quotes:
                         self.logger.debug(f"Saving {len(new_quotes)} new quotes for tweet {tweet_id}")
-                        self.tweet_data.save_tweet_quotes(
+                        await self.tweet_data.save_tweet_quotes(
                             tweet_id=tweet_id,
                             quotes=new_quotes,
                             timestamp=run_timestamp
