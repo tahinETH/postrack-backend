@@ -117,7 +117,7 @@ class TweetStructuredRepository():
     async def get_raw_tweet_history(self, tweet_id: str) -> Dict[str, Any]:
         """Get raw, unprocessed history data for a tweet"""
         # Get latest tweet details
-        details = await self.tweet_data.get_latest_tweet_details(tweet_id)
+        details = await self.tweet_data.get_all_tweet_details(tweet_id)
         
         # Get comments
         comments = await self.tweet_data.get_tweet_comments(tweet_id)
@@ -151,8 +151,9 @@ class TweetStructuredRepository():
     async def get_analyzed_tweet_history(self, tweet_id: str) -> Dict[str, Any]:
         """Get processed and analyzed history data for a tweet"""
         # Get latest tweet details
-        details = await self.tweet_data.get_latest_tweet_details(tweet_id)
-        
+        details = await self.tweet_data.get_all_tweet_details(tweet_id)
+        print(details)
+
         if not details:
             return {}
             
@@ -279,7 +280,7 @@ class TweetStructuredRepository():
                 'verified_quotes': verified_quotes.get(ts, 0)
             })
 
-        ai_analysis_row = self.tweet_data.get_ai_analysis(tweet_id)
+        ai_analysis_row = await self.tweet_data.get_ai_analysis(tweet_id)
         
         ai_analysis = None
         
@@ -328,7 +329,7 @@ class TweetStructuredRepository():
                 'analysis': ai_analysis_row[0],
                 'input_data': input_data
             }
-            
+        
         return {
             'tweet_id': tweet_id,
             'full_text': full_text,

@@ -217,7 +217,7 @@ class Service:
             else:  # format == "analyzed"
                 history = await self.analysis.get_analyzed_tweet_history(tweet_id)
                 
-                
+            
             if not history:
                 logger.warning(f"Tweet history not found for {tweet_id}")
                 return None

@@ -1,6 +1,6 @@
 from datetime import datetime
 import json
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 import logging
 from sqlalchemy import select
 from db.migrations import get_async_session
@@ -153,6 +153,15 @@ class TweetDataRepository():
             if tweet:
                 tweet.last_check = timestamp
                 await session.commit()
+    
+    async def get_all_tweet_details(self, tweet_id: str) -> List[Tuple[str, int]]:
+        async with get_async_session() as session:
+            result = await session.execute(
+                select(TweetDetail.data_json, TweetDetail.captured_at)
+                .where(TweetDetail.tweet_id == tweet_id)
+                .order_by(TweetDetail.captured_at)
+            )
+            return result.all()
 
     async def get_latest_tweet_details(self, tweet_id: str) -> Optional[Dict[str, Any]]:
         async with get_async_session() as session:
