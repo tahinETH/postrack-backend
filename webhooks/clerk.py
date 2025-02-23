@@ -54,7 +54,6 @@ async def handle_webhook(request: Request, background_tasks: BackgroundTasks):
         payload = await request.json()
         event_type = payload.get("type")
         user_data = payload.get("data", {})
-        print(f"Received event: {event_type}")
         # Process in background if needed
         background_tasks.add_task(handle_event, event_type, user_data)
         

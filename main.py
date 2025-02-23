@@ -224,7 +224,7 @@ async def startup_event():
             raise ValueError("DB_PATH environment variable not set")
             
         # Run migrations
-        connect_and_migrate(config.DB_PATH)
+        await connect_and_migrate(config.DB_PATH)
         logger.info("Database migrations completed successfully")
         
         # Start periodic checks

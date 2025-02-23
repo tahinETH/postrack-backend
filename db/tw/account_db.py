@@ -10,7 +10,7 @@ from datetime import datetime
 class AccountRepository():
     async def upsert_account(self, account_id: str, screen_name: str, account_details: Dict[str, Any],
                             is_active: Optional[bool] = None, update_existing: bool = True) -> None:
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(MonitoredAccount).filter(MonitoredAccount.account_id == account_id)
             )
@@ -35,7 +35,7 @@ class AccountRepository():
             await session.commit()
 
     async def stop_monitoring_account(self, account_id: str):
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(MonitoredAccount).filter(MonitoredAccount.account_id == account_id)
             )
@@ -45,7 +45,7 @@ class AccountRepository():
                 await session.commit()
 
     async def update_account_last_check(self, account_id: str, timestamp: int):
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(MonitoredAccount).filter(MonitoredAccount.account_id == account_id)
             )
@@ -55,7 +55,7 @@ class AccountRepository():
                 await session.commit()
 
     async def get_monitored_accounts(self) -> List[Dict[str, Any]]:
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(select(MonitoredAccount))
             accounts = result.scalars().all()
             
@@ -69,7 +69,7 @@ class AccountRepository():
             } for account in accounts]
 
     async def stop_all_accounts(self):
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(select(MonitoredAccount))
             accounts = result.scalars().all()
             for account in accounts:
@@ -77,7 +77,7 @@ class AccountRepository():
             await session.commit()
 
     async def start_all_accounts(self):
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(select(MonitoredAccount))
             accounts = result.scalars().all()
             for account in accounts:
@@ -85,7 +85,7 @@ class AccountRepository():
             await session.commit()
 
     async def get_account_by_id(self, account_id: str) -> Optional[Dict[str, Any]]:
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(MonitoredAccount).filter(MonitoredAccount.account_id == account_id)
             )

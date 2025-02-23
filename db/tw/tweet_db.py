@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class TweetDataRepository():
     async def get_tweet_by_id(self, tweet_id: str) -> Optional[Dict[str, Any]]:
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(MonitoredTweet).where(MonitoredTweet.tweet_id == tweet_id)
             )
@@ -18,7 +18,7 @@ class TweetDataRepository():
             return tweet.__dict__ if tweet else None
     
     async def get_latest_tweet_for_account(self, account_id: str) -> Optional[Dict[str, Any]]:
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(MonitoredTweet)
                 .where(MonitoredTweet.account_id == account_id)
@@ -29,7 +29,7 @@ class TweetDataRepository():
             return tweet.__dict__ if tweet else None
     
     async def get_tweets_for_account(self, account_id: str) -> List[Dict[str, Any]]:
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(MonitoredTweet)
                 .where(MonitoredTweet.account_id == account_id)
@@ -40,7 +40,7 @@ class TweetDataRepository():
     
     async def get_tweets_for_user(self, user_id: str) -> List[Dict[str, Any]]:
         """Get tweets for a user based on their tracked items"""
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             tracked_items = await session.execute(
                 select(UserTrackedItem).where(UserTrackedItem.user_id == user_id)
             )
@@ -81,7 +81,7 @@ class TweetDataRepository():
             return tweets
 
     async def add_account_info_to_monitored_tweet(self, account_id: str, tweet_id: str, screen_name: Optional[str] = None):
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             tweet = await session.execute(
                 select(MonitoredTweet).where(MonitoredTweet.tweet_id == tweet_id)
             )
@@ -103,7 +103,7 @@ class TweetDataRepository():
             await session.commit()
     
     async def add_monitored_tweet(self, tweet_id: str, screen_name: Optional[str] = None):
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             tweet = await session.execute(
                 select(MonitoredTweet).where(MonitoredTweet.tweet_id == tweet_id)
             )
@@ -123,7 +123,7 @@ class TweetDataRepository():
             await session.commit()
 
     async def stop_monitoring_tweet(self, tweet_id: str):
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(MonitoredTweet).where(MonitoredTweet.tweet_id == tweet_id)
             )
@@ -133,7 +133,7 @@ class TweetDataRepository():
                 await session.commit()
 
     async def start_monitoring_tweet(self, tweet_id: str):
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(MonitoredTweet).where(MonitoredTweet.tweet_id == tweet_id)
             )
@@ -145,7 +145,7 @@ class TweetDataRepository():
     async def update_tweet_last_check(self, tweet_id: str, timestamp: Optional[int] = None):
         if timestamp is None:
             timestamp = int(datetime.now().timestamp())
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(MonitoredTweet).where(MonitoredTweet.tweet_id == tweet_id)
             )
@@ -155,7 +155,7 @@ class TweetDataRepository():
                 await session.commit()
 
     async def get_latest_tweet_details(self, tweet_id: str) -> Optional[Dict[str, Any]]:
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(TweetDetail)
                 .where(TweetDetail.tweet_id == tweet_id)
@@ -169,7 +169,7 @@ class TweetDataRepository():
         """Save tweet details with timestamp"""
         if timestamp is None:
             timestamp = int(datetime.now().timestamp())
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             new_detail = TweetDetail(
                 tweet_id=tweet_id,
                 data_json=json.dumps(details),
@@ -181,7 +181,7 @@ class TweetDataRepository():
     async def remove_all_tweet_data(self, tweet_id: str):
         """Remove all data related to a tweet from all tables"""
         try:
-            async with await get_async_session() as session:
+            async with get_async_session() as session:
                 await session.execute(
                     select(TweetDetail).where(TweetDetail.tweet_id == tweet_id).delete()
                 )
@@ -204,7 +204,7 @@ class TweetDataRepository():
             raise
     
     async def get_tweet_comments(self, tweet_id: str) -> List[Dict[str, Any]]:
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(TweetComment).where(TweetComment.tweet_id == tweet_id)
             )
@@ -214,7 +214,7 @@ class TweetDataRepository():
         """Save tweet comments with timestamp"""
         if timestamp is None:
             timestamp = int(datetime.now().timestamp())
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             for comment in comments:
                 new_comment = TweetComment(
                     comment_id=comment['id'],
@@ -226,7 +226,7 @@ class TweetDataRepository():
             await session.commit()
 
     async def get_tweet_quotes(self, tweet_id: str) -> List[Dict[str, Any]]:
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(TweetQuote).where(TweetQuote.tweet_id == tweet_id)
             )
@@ -236,7 +236,7 @@ class TweetDataRepository():
         """Save tweet quotes with timestamp"""
         if timestamp is None:
             timestamp = int(datetime.now().timestamp())
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             for quote in quotes:
                 new_quote = TweetQuote(
                     quote_id=quote['id'],
@@ -247,7 +247,7 @@ class TweetDataRepository():
                 session.add(new_quote)
             await session.commit()
     async def get_tweet_retweeters(self, tweet_id: str) -> List[Dict[str, Any]]:
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(TweetRetweeter).where(TweetRetweeter.tweet_id == tweet_id)
             )
@@ -257,7 +257,7 @@ class TweetDataRepository():
         """Save tweet retweeters with timestamp"""
         if timestamp is None:
             timestamp = int(datetime.now().timestamp())
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             for retweeter in retweeters:
                 new_retweeter = TweetRetweeter(
                     user_id=retweeter['id'],
@@ -269,7 +269,7 @@ class TweetDataRepository():
             await session.commit()
 
     async def get_monitored_tweets(self) -> List[Dict[str, Any]]:
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(select(MonitoredTweet))
             tweets = result.scalars().all()
             return [{
@@ -282,7 +282,7 @@ class TweetDataRepository():
     
     async def save_ai_analysis(self, tweet_id: str, analysis: str, input_data: Dict[str, Any]):
         timestamp = int(datetime.now().timestamp())
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             new_analysis = AIAnalysis(
                 tweet_id=tweet_id,
                 analysis=analysis,
@@ -293,7 +293,7 @@ class TweetDataRepository():
             await session.commit()
 
     async def get_ai_analysis(self, tweet_id: str) -> Optional[Dict[str, Any]]:
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(AIAnalysis)
                 .where(AIAnalysis.tweet_id == tweet_id)
@@ -304,7 +304,7 @@ class TweetDataRepository():
             return (analysis.analysis, analysis.input_data) if analysis else None
 
     async def get_latest_monitoring_run(self, tweet_id: str) -> Optional[Dict[str, Any]]:
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(MonitoredTweet).where(MonitoredTweet.tweet_id == tweet_id)
             )

@@ -13,7 +13,7 @@ class APICallLogRepository():
                         comment_api_calls: int = 0, total_api_calls: int = 0) -> None:
         """Log API calls for a monitoring timestamp"""
         try:
-            async with await get_async_session() as session:
+            async with get_async_session() as session:
                 result = await session.execute(
                     select(APICall).filter(APICall.monitor_timestamp == monitor_timestamp)
                 )
@@ -44,7 +44,7 @@ class APICallLogRepository():
     async def get_api_calls(self, monitor_timestamp: int) -> Optional[Dict[str, int]]:
         """Get API call logs for a specific timestamp"""
         try:
-            async with await get_async_session() as session:
+            async with get_async_session() as session:
                 result = await session.execute(
                     select(APICall).filter(APICall.monitor_timestamp == monitor_timestamp)
                 )

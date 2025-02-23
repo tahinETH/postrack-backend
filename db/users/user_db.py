@@ -13,7 +13,7 @@ class UserDataRepository():
                    current_tier: Optional[str] = None, fe_metadata: Optional[Dict] = None) -> None:
         try:
             now = int(datetime.now().timestamp())
-            async with await get_async_session() as session:
+            async with get_async_session() as session:
                 new_user = User(
                     id=user_id,
                     email=email,
@@ -31,7 +31,7 @@ class UserDataRepository():
 
     async def get_user(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Get user by ID"""
-        async with await get_async_session() as session:
+        async with get_async_session() as session:
             result = await session.execute(
                 select(User).filter(User.id == user_id)
             )
@@ -59,7 +59,7 @@ class UserDataRepository():
             valid_fields = {'email', 'name', 'current_tier', 
                           'current_period_start', 'current_period_end', 'fe_metadata'}
             
-            async with await get_async_session() as session:
+            async with get_async_session() as session:
                 result = await session.execute(
                     select(User).filter(User.id == user_id)
                 )
@@ -83,7 +83,7 @@ class UserDataRepository():
     """ async def delete_user(self, user_id: str) -> bool:
         
         try:
-            async with await get_async_session() as session:
+            async with get_async_session() as session:
                 result = await session.execute(
                     select(User).filter(User.id == user_id)
                 )
@@ -101,7 +101,7 @@ class UserDataRepository():
     async def add_tracked_item(self, user_id: str, tracked_type: str, tracked_id: str, tracked_account_name: Optional[str] = None) -> bool:
         """Add a tracked item (tweet or account) for a user"""
         try:
-            async with await get_async_session() as session:
+            async with get_async_session() as session:
                 # Check if item already exists
                 result = await session.execute(
                     select(UserTrackedItem).filter(
@@ -136,7 +136,7 @@ class UserDataRepository():
     async def remove_tracked_item(self, user_id: str, tracked_type: str, tracked_id: str) -> bool:
         """Remove a tracked item for a user"""
         try:
-            async with await get_async_session() as session:
+            async with get_async_session() as session:
                 result = await session.execute(
                     select(UserTrackedItem).filter(
                         UserTrackedItem.user_id == user_id,
@@ -157,7 +157,7 @@ class UserDataRepository():
     async def get_tracked_items(self, user_id: str) -> Dict[str, List[str]]:
         """Get all tracked items for a user"""
         try:
-            async with await get_async_session() as session:
+            async with get_async_session() as session:
                 result = await session.execute(
                     select(UserTrackedItem).filter(
                         UserTrackedItem.user_id == user_id,
@@ -185,7 +185,7 @@ class UserDataRepository():
     async def is_tweet_tracked(self, tweet_id: str) -> bool:
         """Check if a tweet is being tracked by any user"""
         try:
-            async with await get_async_session() as session:
+            async with get_async_session() as session:
                 result = await session.execute(
                     select(UserTrackedItem).filter(
                         UserTrackedItem.tracked_type == 'tweet',

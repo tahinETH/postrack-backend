@@ -16,7 +16,6 @@ class ClerkAuthMiddleware(HTTPBearer):
         token = credentials.credentials
         
         try:
-            print
             claims = verify_token(
                 token,
                 VerifyTokenOptions(
@@ -29,7 +28,6 @@ class ClerkAuthMiddleware(HTTPBearer):
             return request.state.user_id
 
         except Exception as e:
-            print(f"Token verification failed: {str(e)}")
             raise HTTPException(
                 status_code=401, 
                 detail=f"Authentication failed: {str(e)}"

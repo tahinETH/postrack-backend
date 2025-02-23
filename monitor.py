@@ -212,7 +212,7 @@ class TweetMonitor:
                 await self.tweet_data.save_tweet_details(
                     tweet_id=tweet_id,
                     details=details,
-                    timestamp=str(run_timestamp)
+                    timestamp=run_timestamp
                 )
 
                 await self.tweet_data.update_tweet_last_check(tweet_id, run_timestamp)
@@ -273,7 +273,7 @@ class TweetMonitor:
                         self.tweet_data.save_tweet_comments(
                             tweet_id=tweet_id,
                             comments=new_comments,
-                            timestamp=str(run_timestamp)
+                            timestamp=run_timestamp
                         )
                         monitoring_run.comments_saved = True
                         self.logger.info(f"Successfully saved {len(new_comments)} new comments for tweet {tweet_id}")
@@ -310,7 +310,7 @@ class TweetMonitor:
                         self.tweet_data.save_tweet_retweeters(
                             tweet_id=tweet_id,
                             retweeters=new_retweeters,
-                            timestamp=str(run_timestamp)
+                            timestamp=run_timestamp
                         )
                         monitoring_run.retweeters_saved = True
                         self.logger.info(f"Successfully saved {len(new_retweeters)} new retweeters for tweet {tweet_id}")
@@ -343,7 +343,7 @@ class TweetMonitor:
                         self.tweet_data.save_tweet_quotes(
                             tweet_id=tweet_id,
                             quotes=new_quotes,
-                            timestamp=str(run_timestamp)
+                            timestamp=run_timestamp
                         )
                         monitoring_run.quotes_saved = True
                         self.logger.info(f"Successfully saved {len(new_quotes)} new quotes for tweet {tweet_id}")
@@ -418,7 +418,7 @@ class TweetMonitor:
                         for tweet in new_tweets:
                             tweet_id = tweet['id_str']
                             screen_name = tweet['user']['screen_name']
-                            self.tweet_data.add_monitored_tweet(tweet_id, screen_name)
+                            await self.tweet_data.add_monitored_tweet(tweet_id, screen_name)
                             await self.monitor_tweet(tweet_id=tweet_id, tweet=tweet, run_timestamp=run_timestamp)
 
                         if new_tweets:
