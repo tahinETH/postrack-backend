@@ -143,14 +143,26 @@ async def analyze_tweet(tweet_id: str, user_id: str = Depends(auth_middleware)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/tweet/feed")
-async def get_tweet_feed(user_id: Optional[str] = None, auth_user: str = Depends(auth_middleware)):
-    """Get a feed of all monitored tweets with their latest data"""
+async def get_tweet_feed(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    auth_user: str = Depends(auth_middleware)
+):
+    """Get a paginated feed of all monitored tweets with their latest data"""
     try:
-        feed = await service.get_user_feed(auth_user)
+        feed = await service.get_user_feed(
+            auth_user,
+            skip=(page - 1) * page_size,
+            limit=page_size
+        )
         
         return {
             "status": "success",
-            "count": len(feed),
+            "page": page,
+            "page_size": page_size,
+            "total_count": feed["total_count"],
+            "has_next": page * page_size < feed["total_count"],
+            "has_previous": page > 1,
             "feed": feed
         }
     except Exception as e:

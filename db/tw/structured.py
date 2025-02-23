@@ -16,7 +16,7 @@ class TweetStructuredRepository():
         self.accounts = AccountRepository()
         
 
-    def process_engagement_metrics(self, tweet_details: Dict) -> Dict[str, int]:
+    async def process_engagement_metrics(self, tweet_details: Dict) -> Dict[str, int]:
         """Extract engagement metrics from tweet details"""
         return {
             'quote_count': tweet_details.get('quote_count', 0),
@@ -27,22 +27,24 @@ class TweetStructuredRepository():
             'bookmark_count': tweet_details.get('bookmark_count', 0)
         }
 
-    async def get_user_feed(self, user_id: str) -> List[Dict[str, Any]]:
-        """Get latest data for all monitored tweets for a user"""
+    async def get_user_feed(self, user_id: str, skip: int = 0, limit: int = 20) -> Dict[str, Any]:
+        """Get latest data for all monitored tweets for a user with pagination"""
         logger = logging.getLogger(__name__)
-    
+
+        # Get total count first
         monitored_tweets = await self.tweet_data.get_tweets_for_user(user_id)
+        total_count = len(monitored_tweets) if monitored_tweets else 0
+        
+        # Apply pagination to monitored tweets
+        if monitored_tweets:
+            monitored_tweets = monitored_tweets[skip:skip + limit]
+
         tracked_items = await self.user_data.get_tracked_items(user_id)
-        
-        
         tracked_accounts = []
-        
-        
+
         if tracked_items.get('accounts'):
             for account_id in tracked_items['accounts']:
-                
                 account = await self.accounts.get_account_by_id(account_id)
-                
                 if account:
                     tracked_accounts.append({
                         'account_id': account['account_id'],
@@ -52,63 +54,48 @@ class TweetStructuredRepository():
                         'created_at': account['created_at'],
                         'account_details': account['account_details']
                     })
-        
+
         feed_data = []
-        
-        # Handle case where monitored_tweets is empty
+
         if monitored_tweets:
-          
-                for tweet in monitored_tweets:
-                    # Get latest tweet details
-                    latest_details = await self.tweet_data.get_latest_tweet_details(tweet['tweet_id'])
-                    
-                    if not latest_details:
-                        logger.warning(f"No details found for tweet_id: {tweet['tweet_id']}")
-                        continue
-                        
-                    tweet_data = latest_details
-                    captured_at = int(datetime.now().timestamp())
-                    engagement = self.process_engagement_metrics(tweet_data)
-                    
-                    # Get comments
-                    comments = await self.tweet_data.get_tweet_comments(tweet['tweet_id'])
-                    comment_count = len(comments)
-                    
-                    # Get retweeters 
-                    retweeters = await self.tweet_data.get_tweet_retweeters(tweet['tweet_id'])
-                    retweeter_count = len(retweeters)
+            for tweet in monitored_tweets:
+                # Get latest tweet details
+                latest_details = await self.tweet_data.get_latest_tweet_details(tweet['tweet_id'])
+                if not latest_details:
+                    logger.warning(f"No details found for tweet_id: {tweet['tweet_id']}")
+                    continue
 
+                tweet_data = latest_details
+                captured_at = int(datetime.now().timestamp())
+                engagement = await self.process_engagement_metrics(tweet_data)
 
-                    # Get Quotes
-                    quotes = await self.tweet_data.get_tweet_quotes(tweet['tweet_id'])
-                    quote_count = len(quotes)
-                    
-                    feed_item = {
-                        'tweet_id': tweet['tweet_id'],
-                        'is_monitored': bool(tweet['is_active']),
-                        'tracking_type': tweet['tracking_type'],  # 'account' or 'individual'
-                        'tracked_id': tweet['tracked_id'],  # account_id or tweet_id depending on type
-                        'author': {
-                            'id': tweet_data.get('author_id') or tweet_data.get('user', {}).get('id'),
-                            'screen_name': tweet_data.get('user', {}).get('screen_name') or tweet_data.get('author_username'),
-                            'followers_count': tweet_data.get('user', {}).get('followers_count', 0),
-                            'profile_image_url_https': tweet_data.get('user', {}).get('profile_image_url_https', '').replace('_normal', '')
-                        },
-                        'engagement_metrics': engagement,
-                        'total_comments': comment_count,
-                        'total_retweeters': retweeter_count,
-                        'total_quotes': quote_count,
-                        'last_updated': captured_at,
-                        'created_at': tweet_data.get('tweet_created_at')
-                    }
-                    
-                    text = tweet_data.get('full_text') or tweet_data.get('text')
-                    if text:
-                        feed_item['text'] = text
-                        
-                    feed_data.append(feed_item)
-            
+                feed_item = {
+                    'tweet_id': tweet['tweet_id'],
+                    'is_monitored': bool(tweet['is_active']),
+                    'tracking_type': tweet['tracking_type'],
+                    'tracked_id': tweet['tracked_id'],
+                    'author': {
+                        'id': tweet_data.get('author_id') or tweet_data.get('user', {}).get('id'),
+                        'screen_name': tweet_data.get('user', {}).get('screen_name') or tweet_data.get('author_username'),
+                        'followers_count': tweet_data.get('user', {}).get('followers_count', 0),
+                        'profile_image_url_https': tweet_data.get('user', {}).get('profile_image_url_https', '').replace('_normal', '')
+                    },
+                    'engagement_metrics': engagement,
+                    'total_comments': tweet_data.get('reply_count', 0),
+                    'total_retweeters': tweet_data.get('retweet_count', 0),
+                    'total_quotes': tweet_data.get('quote_count', 0),
+                    'last_updated': captured_at,
+                    'created_at': tweet_data.get('tweet_created_at')
+                }
+
+                text = tweet_data.get('full_text') or tweet_data.get('text')
+                if text:
+                    feed_item['text'] = text
+
+                feed_data.append(feed_item)
+
         return {
+            'total_count': total_count,
             'tweets': sorted(feed_data, key=lambda x: x['last_updated'], reverse=True) if feed_data else [],
             'tracked_accounts': tracked_accounts
         }
@@ -164,7 +151,7 @@ class TweetStructuredRepository():
         
         for detail_json, captured_at in details:
             detail = json.loads(detail_json)
-            engagement_metrics[captured_at] = self.process_engagement_metrics(detail)
+            engagement_metrics[captured_at] = await self.process_engagement_metrics(detail)
             
             if detail.get('full_text'):
                 full_text = detail['full_text']
