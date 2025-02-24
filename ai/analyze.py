@@ -16,7 +16,6 @@ class AIAnalyzer:
 
     async def analyze_tweet(self, tweet_id: str) -> Dict[str, Any]:
         """Get insights and AI analysis for a tweet"""
-        
         try:
             # Get insight data
             insights = await self.analysis_repo.prepare_insight_data(tweet_id)

@@ -139,7 +139,6 @@ class TweetStructuredRepository():
         """Get processed and analyzed history data for a tweet"""
         # Get latest tweet details
         details = await self.tweet_data.get_all_tweet_details(tweet_id)
-        print(details)
 
         if not details:
             return {}

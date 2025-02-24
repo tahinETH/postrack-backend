@@ -225,8 +225,9 @@ class TweetDataRepository():
             timestamp = int(datetime.now().timestamp())
         async with get_async_session() as session:
             for comment in comments:
+                comment_id = str(comment['id'])
                 new_comment = TweetComment(
-                    comment_id=comment['id'],
+                    comment_id=comment_id,
                     tweet_id=tweet_id,
                     data_json=json.dumps(comment),
                     captured_at=timestamp
@@ -247,8 +248,9 @@ class TweetDataRepository():
             timestamp = int(datetime.now().timestamp())
         async with get_async_session() as session:
             for quote in quotes:
+                quote_id = str(quote['id'])
                 new_quote = TweetQuote(
-                    quote_id=quote['id'],
+                    quote_id=quote_id,
                     tweet_id=tweet_id,
                     data_json=json.dumps(quote),
                     captured_at=timestamp
@@ -268,8 +270,10 @@ class TweetDataRepository():
             timestamp = int(datetime.now().timestamp())
         async with get_async_session() as session:
             for retweeter in retweeters:
+                # Convert user_id to string if it's not already
+                user_id = str(retweeter['id'])
                 new_retweeter = TweetRetweeter(
-                    user_id=retweeter['id'],
+                    user_id=user_id,  # Now guaranteed to be a string
                     tweet_id=tweet_id,
                     data_json=json.dumps(retweeter),
                     captured_at=timestamp
