@@ -303,7 +303,7 @@ class TweetMonitor:
                             self.logger.debug(f"Getting tweet history for retweeters comparison for {tweet_id}")
                             tweet_history = await self.tweet_analysis.get_raw_tweet_history(tweet_id)
                             existing_retweeters = {
-                                retweeter['data']['id_str'] 
+                                json.loads(retweeter.data_json)['id_str']
                                 for retweeter in tweet_history.get('retweeters', [])
                             }
                             
@@ -341,7 +341,7 @@ class TweetMonitor:
                             self.logger.debug(f"Getting tweet history for quotes comparison for {tweet_id}")
                             tweet_history = await self.tweet_analysis.get_raw_tweet_history(tweet_id)
                             existing_quotes = {
-                                quote['data']['id_str']
+                                json.loads(quote.data_json)['id_str']
                                 for quote in tweet_history.get('quotes', [])
                             }
                             new_quotes = [
