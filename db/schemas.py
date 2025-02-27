@@ -67,21 +67,35 @@ class SubscriptionTier(Base):
     is_active = Column(Boolean, default=True)
 
 class User(Base):
-    __tablename__ = 'users'
+    __tablename__ = "users"
+    
     id = Column(String, primary_key=True)
-    email = Column(String, nullable=False)
-    name = Column(String)
-    current_tier = Column(String, default="tier0")
-    current_period_start = Column(Integer)
-    current_period_end = Column(Integer)
-    fe_metadata = Column(JSON)
+    email = Column(String, unique=True, nullable=False)
+    name = Column(String, nullable=True)
+    
+    # Subscription related fields
+    current_tier = Column(String, default="tier0")  # free tier by default
+    current_period_start = Column(Integer, nullable=True)
+    current_period_end = Column(Integer, nullable=True)
+    
+    # Stripe specific fields
+    stripe_customer_id = Column(String, unique=True, nullable=True, index=True)
+    stripe_subscription_id = Column(String, unique=True, nullable=True)
+    
+    # Additional metadata
+    fe_metadata = Column(JSON, nullable=True)
+    created_at = Column(Integer, nullable=False)
+    updated_at = Column(Integer, nullable=False)
+
 
 class UserTrackedItem(Base):
-    __tablename__ = 'user_tracked_items'
-    user_id = Column(String, ForeignKey('users.id'), primary_key=True)
-    tracked_type = Column(String, primary_key=True)
-    tracked_id = Column(String, primary_key=True)
-    tracked_account_name = Column(String)
+    __tablename__ = "user_tracked_items"
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    tracked_type = Column(String, nullable=False)  # 'tweet' or 'account'
+    tracked_id = Column(String, nullable=False)
+    tracked_account_name = Column(String, nullable=True)  # Only for accounts
     captured_at = Column(Integer, nullable=False)
 
 class APICall(Base):

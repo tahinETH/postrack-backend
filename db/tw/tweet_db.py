@@ -41,12 +41,13 @@ class TweetDataRepository():
     async def get_tweets_for_user(self, user_id: str) -> List[Dict[str, Any]]:
         """Get tweets for a user based on their tracked items"""
         async with get_async_session() as session:
-            tracked_items = await session.execute(
+            tracked_items_result = await session.execute(
                 select(UserTrackedItem).where(UserTrackedItem.user_id == user_id)
             )
+            tracked_items = tracked_items_result.scalars().all()
             
             tweets = []
-            for item in tracked_items.scalars():
+            for item in tracked_items:
                 if item.tracked_type == 'account':
                     # Get tweets for tracked account
                     account_tweets = await session.execute(

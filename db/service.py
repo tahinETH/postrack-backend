@@ -129,7 +129,7 @@ class Service:
         try:
             
             if action == "start":
-                if not self._can_track_tweet(user_id):
+                if not await self._can_track_tweet(user_id):
                     raise ValueError("Tweet tracking limit reached for user's tier")
 
                 # Check if tweet exists first
@@ -139,10 +139,10 @@ class Service:
                 
                 if existing_tweet:
                     #db
-                    self.monitor.tweet_data.start_monitoring_tweet(tweet_id)
+                    await self.monitor.tweet_data.start_monitoring_tweet(tweet_id)
                 else:
                     #db
-                    self.monitor.tweet_data.add_monitored_tweet(tweet_id)
+                   await self.monitor.tweet_data.add_monitored_tweet(tweet_id)
                     
                 
                 
@@ -258,7 +258,7 @@ class Service:
             if action == "start":
                 for tweet in tweets:
                     if not tweet['is_active']:
-                        self.monitor.tweet_data.add_monitored_tweet(tweet['tweet_id'])
+                        await self.monitor.tweet_data.add_monitored_tweet(tweet['tweet_id'])
                         await self.monitor.monitor_tweet(tweet_id = tweet['tweet_id'])
                         count += 1
                 logger.info(f"Started monitoring {count} inactive tweets")

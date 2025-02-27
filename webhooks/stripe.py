@@ -41,6 +41,7 @@ async def handle_webhook(request: Request, background_tasks: BackgroundTasks):
         logger.info(f"Received webhook from {request.client.host}")
         
         body = await request.body()
+        print(body)
         event = verify_stripe_webhook(request, body)
         
         # Add event ID to logs for tracking

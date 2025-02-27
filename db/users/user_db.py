@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class UserDataRepository():
-    async def create_user(self, user_id: str, email: str, name: Optional[str] = None,
+    async def create_user(self, user_id: str, email: str, stripe_customer_id: Optional[str] = None, name: Optional[str] = None,
                    current_tier: Optional[str] = None, fe_metadata: Optional[Dict] = None) -> None:
         try:
             now = int(datetime.now().timestamp())
@@ -18,9 +18,11 @@ class UserDataRepository():
                     id=user_id,
                     email=email,
                     name=name,
+                    stripe_customer_id=stripe_customer_id,
                     current_tier=current_tier or 'tier0',
-                    current_period_start=now,
-                    fe_metadata=fe_metadata
+                    fe_metadata=fe_metadata,
+                    created_at=now,
+                    updated_at=now
                 )
                 session.add(new_user)
                 await session.commit()
@@ -80,7 +82,7 @@ class UserDataRepository():
             logger.error(f"Error updating user {user_id}: {str(e)}")
             raise
 
-    """ async def delete_user(self, user_id: str) -> bool:
+    async def delete_user(self, user_id: str) -> bool:
         
         try:
             async with get_async_session() as session:
@@ -96,7 +98,7 @@ class UserDataRepository():
                 return False
         except Exception as e:
             logger.error(f"Error deleting user {user_id}: {str(e)}")
-            raise """
+            raise
 
     async def add_tracked_item(self, user_id: str, tracked_type: str, tracked_id: str, tracked_account_name: Optional[str] = None) -> bool:
         """Add a tracked item (tweet or account) for a user"""

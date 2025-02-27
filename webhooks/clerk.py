@@ -78,6 +78,7 @@ async def handle_event(event_type: str, user_data: dict):
                 "first_name": user_data.get("first_name"),
                 "last_name": user_data.get("last_name")
             }
+            stripe_customer_id = None
             
             # Create Stripe customer
             try:
@@ -89,7 +90,7 @@ async def handle_event(event_type: str, user_data: dict):
                     }
                 )
                 
-                fe_metadata["stripe_customer_id"] = stripe_customer.id
+                stripe_customer_id = stripe_customer.id
                 logger.info(f"Created Stripe customer {stripe_customer.id} for user {user_id}")
             except Exception as e:
                 logger.error(f"Failed to create Stripe customer for user {user_id}: {str(e)}")
@@ -99,6 +100,7 @@ async def handle_event(event_type: str, user_data: dict):
                 user_id=user_id,
                 email=email,
                 name=name,
+                stripe_customer_id=stripe_customer_id,
                 fe_metadata=fe_metadata
             )
 
@@ -121,6 +123,11 @@ async def handle_event(event_type: str, user_data: dict):
             updates["fe_metadata"] = fe_metadata
 
             await user_repo.update_user(user_id, **updates)
+
+        elif event_type == "user.deleted":
+            user_id = user_data.get("id")
+            await user_repo.delete_user(user_id)
+            logger.info(f"Deleted user {user_id}")
 
     except Exception as e:
         logger.error(f"Error handling {event_type} event: {str(e)}")
