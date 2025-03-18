@@ -9,6 +9,10 @@ class ClerkAuthMiddleware(HTTPBearer):
         super().__init__(auto_error=auto_error)
 
     async def __call__(self, request: Request) -> Optional[str]:
+        # Check if we're in development mode
+        """ if config.ENVIRONMENT == "dev":
+            return "test_user_id" """
+
         credentials: HTTPAuthorizationCredentials = await super().__call__(request)
         if not credentials or credentials.scheme.lower() != "bearer":
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")

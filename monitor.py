@@ -8,6 +8,7 @@ from db.tw.structured import TweetStructuredRepository
 from db.tw.account_db import AccountRepository
 from db.api.api_db import APICallLogRepository
 from api_client import TwitterAPIClient
+from ai.analyze import AIAnalyzer
 import json
 logging.basicConfig(
     level=logging.INFO,
@@ -49,6 +50,7 @@ class TweetMonitor:
         self.accounts = AccountRepository()
         self.api_logger = APICallLogRepository()
         self.api_client = TwitterAPIClient(api_key)
+        self.ai_analyze = AIAnalyzer(self.tweet_analysis)
         self.logger = logging.getLogger(__name__)
         
 
@@ -157,6 +159,7 @@ class TweetMonitor:
     async def _fetch_tweet_comments(self, tweet_id: str, screen_name: Optional[str], since_timestamp: Optional[str] = None) -> List[Dict]:
         try:
             comments = await self.api_client.api_get_tweet_comments(tweet_id, screen_name, since_timestamp)
+            
             return comments['data'] if comments else []
         except Exception as e:
             self.logger.error(f"Error fetching comments for {tweet_id}: {str(e)}")
@@ -182,33 +185,33 @@ class TweetMonitor:
         try:
             self.logger.info(f"Starting monitoring run for tweet {tweet_id}")
             monitoring_run = MonitoringRun(tweet_id, run_timestamp)
-            self.logger.debug(f"Fetching existing tweet details for {tweet_id}")
+            self.logger.info(f"Fetching existing tweet details for {tweet_id}")
             latest_tweet_details = await self.tweet_data.get_latest_tweet_details(tweet_id)
             if tweet:
                 details = tweet
                 screen_name = tweet['user']['screen_name']
-                self.logger.debug(f"Using provided tweet details for {tweet_id}")
+                self.logger.info(f"Using provided tweet details for {tweet_id}")
                 monitoring_run.api_calls['tweet_details_calls'] += 1
             else:
-                self.logger.debug(f"Fetching tweet details from API for {tweet_id}")
+                self.logger.info(f"Fetching tweet details from API for {tweet_id}")
                 details, screen_name = await self._fetch_tweet_details(tweet_id)
                 monitoring_run.api_calls['tweet_details_calls'] += 1
             if details:
                 try:
-                    self.logger.debug(f"Processing user data for tweet {tweet_id}")
+                    self.logger.info(f"Processing user data for tweet {tweet_id}")
                     user_data = details.get('user', {})
                     account_id = user_data.get('id_str')
                     screen_name = user_data.get('screen_name')
 
                     if user_data:
-                        self.logger.debug(f"Upserting account {screen_name} for tweet {tweet_id}")
+                        self.logger.info(f"Upserting account {screen_name} for tweet {tweet_id}")
                         await self.accounts.upsert_account(account_id, screen_name, user_data, is_active=False, update_existing=True)
 
                     if account_id and screen_name:
-                        self.logger.debug(f"Adding account info to monitored tweet {tweet_id}")
+                        self.logger.info(f"Adding account info to monitored tweet {tweet_id}")
                         await self.tweet_data.add_account_info_to_monitored_tweet(account_id, tweet_id, screen_name)
 
-                    self.logger.debug(f"Saving tweet details for {tweet_id}")
+                    self.logger.info(f"Saving tweet details for {tweet_id}")
                     
                     await self.tweet_data.save_tweet_details(
                         tweet_id=tweet_id,
@@ -229,11 +232,11 @@ class TweetMonitor:
                 return monitoring_run
 
             try:
-                self.logger.debug(f"Getting latest monitoring run for {tweet_id}")
+                self.logger.info(f"Getting latest monitoring run for {tweet_id}")
                 latest_run = await self.tweet_data.get_latest_monitoring_run(tweet_id)
                 
                 since_timestamp = str(latest_run[0]) if latest_run else None
-                self.logger.debug(f"Using since_timestamp {since_timestamp} for tweet {tweet_id}")
+                self.logger.info(f"Using since_timestamp {since_timestamp} for tweet {tweet_id}")
 
                 # Check if tweet details exist and compare engagement metrics
                 comments_needs_update = True
@@ -241,12 +244,12 @@ class TweetMonitor:
                 quotes_needs_update = True
                 
                 if latest_tweet_details:
-                    self.logger.debug(f"Comparing engagement metrics for tweet {tweet_id}")
+                    self.logger.info(f"Comparing engagement metrics for tweet {tweet_id}")
                     try:
                         quotes_needs_update = latest_tweet_details.get('quote_count') != details.get('quote_count')
                         comments_needs_update = latest_tweet_details.get('reply_count') != details.get('reply_count')
                         retweets_needs_update = latest_tweet_details.get('retweet_count') != details.get('retweet_count')
-                        self.logger.debug(f"Tweet {tweet_id} needs updates - comments: {comments_needs_update}, retweets: {retweets_needs_update}")
+                        self.logger.info(f"Tweet {tweet_id} needs updates - comments: {comments_needs_update}, retweets: {retweets_needs_update}")
                     except Exception as e:
                         self.logger.error(f"Error comparing tweet engagement for {tweet_id}: {str(e)}")
             except Exception as e:
@@ -254,13 +257,12 @@ class TweetMonitor:
 
             try:
                 if comments_needs_update:
-                    self.logger.debug(f"Fetching comments for tweet {tweet_id}")
+                    self.logger.info(f"Fetching comments for tweet {tweet_id}")
                     comments = await self._fetch_tweet_comments(tweet_id, screen_name, since_timestamp)
-                    
                     if comments:
                         monitoring_run.api_calls['comment_api_calls'] += len(comments) + 1
                         try:
-                            self.logger.debug(f"Getting tweet history for comments comparison for {tweet_id}")
+                            self.logger.info(f"Getting tweet history for comments comparison for {tweet_id}")
                             tweet_history = await self.tweet_analysis.get_raw_tweet_history(tweet_id)
                             existing_comments = {
                                 comment['data']['id_str'] 
@@ -273,7 +275,7 @@ class TweetMonitor:
                             ]
                             
                             if new_comments:
-                                self.logger.debug(f"Saving {len(new_comments)} new comments for tweet {tweet_id}")
+                                self.logger.info(f"Saving {len(new_comments)} new comments for tweet {tweet_id}")
                                 await self.tweet_data.save_tweet_comments(
                                     tweet_id=tweet_id,
                                     comments=new_comments,
@@ -294,14 +296,15 @@ class TweetMonitor:
 
             try:
                 if retweets_needs_update:
-                    self.logger.debug(f"Fetching retweeters for tweet {tweet_id}")
+                    self.logger.info(f"Fetching retweeters for tweet {tweet_id}")
                     retweeters = await self._fetch_tweet_retweeters(tweet_id)
                     
                     if retweeters:
                         monitoring_run.api_calls['retweet_api_calls'] += len(retweeters) + 1
                         try:
-                            self.logger.debug(f"Getting tweet history for retweeters comparison for {tweet_id}")
+                            self.logger.info(f"Getting tweet history for retweeters comparison for {tweet_id}")
                             tweet_history = await self.tweet_analysis.get_raw_tweet_history(tweet_id)
+                            self.logger.info(tweet_history)
                             existing_retweeters = {
                                 json.loads(retweeter.data_json)['id_str']
                                 for retweeter in tweet_history.get('retweeters', [])
@@ -313,7 +316,7 @@ class TweetMonitor:
                             ]
                             
                             if new_retweeters:
-                                self.logger.debug(f"Saving {len(new_retweeters)} new retweeters for tweet {tweet_id}")
+                                self.logger.info(f"Saving {len(new_retweeters)} new retweeters for tweet {tweet_id}")
                                 await self.tweet_data.save_tweet_retweeters(
                                     tweet_id=tweet_id,
                                     retweeters=new_retweeters,
@@ -333,23 +336,31 @@ class TweetMonitor:
 
             try:
                 if quotes_needs_update:
-                    self.logger.debug(f"Fetching quotes for tweet {tweet_id}")
+                    self.logger.info(f"Fetching quotes for tweet {tweet_id}")
                     quotes = await self._fetch_tweet_quotes(tweet_id)
                     if quotes:
                         monitoring_run.api_calls['quote_api_calls'] += len(quotes) + 1
                         try:
-                            self.logger.debug(f"Getting tweet history for quotes comparison for {tweet_id}")
+                            self.logger.info(f"Getting tweet history for quotes comparison for {tweet_id}")
                             tweet_history = await self.tweet_analysis.get_raw_tweet_history(tweet_id)
-                            existing_quotes = {
-                                json.loads(quote.data_json)['id_str']
-                                for quote in tweet_history.get('quotes', [])
-                            }
+                            
+                            # Modified to handle TweetRetweeter objects properly
+                            existing_quotes = set()
+                            if tweet_history and 'quotes' in tweet_history:
+                                for quote in tweet_history['quotes']:
+                                    try:
+                                        quote_data = json.loads(quote.data_json)
+                                        existing_quotes.add(quote_data['id_str'])
+                                    except (AttributeError, KeyError, json.JSONDecodeError) as e:
+                                        self.logger.warning(f"Error parsing quote data: {str(e)}")
+                            
                             new_quotes = [
                                 quote for quote in quotes
                                 if quote['id_str'] not in existing_quotes
                             ]
+                            
                             if new_quotes:
-                                self.logger.debug(f"Saving {len(new_quotes)} new quotes for tweet {tweet_id}")
+                                self.logger.info(f"Saving {len(new_quotes)} new quotes for tweet {tweet_id}")
                                 await self.tweet_data.save_tweet_quotes(
                                     tweet_id=tweet_id,
                                     quotes=new_quotes,
@@ -367,12 +378,21 @@ class TweetMonitor:
             except Exception as e:
                 self.logger.error(f"Error processing quotes for {tweet_id}: {str(e)}")
 
+            try:
+                await self.ai_analyze.analyze_tweet(tweet_id)
+            except Exception as e:
+                self.logger.error(f"Error analyzing tweet {tweet_id}: {str(e)}")
+
             return monitoring_run
 
         except Exception as e:
             self.logger.error(f"Error in monitor_tweet for {tweet_id}: {str(e)}")
             monitoring_run.add_error("monitor_tweet", str(e), critical=True)
             return monitoring_run
+        
+
+
+
     async def check_and_update_tweets(self):
         "monitors existing tweets and updates if needed"
         try:

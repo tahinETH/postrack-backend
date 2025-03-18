@@ -14,7 +14,7 @@ class AIAnalyzer:
         self.analysis_repo = analysis_repo
         self.claude = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
 
-    async def analyze_tweet(self, tweet_id: str) -> Dict[str, Any]:
+    async def analyze_tweet(self, tweet_id: str, with_ai: bool = False) -> Dict[str, Any]:
         """Get insights and AI analysis for a tweet"""
         try:
             # Get insight data
@@ -27,11 +27,13 @@ class AIAnalyzer:
             prompt = self._prepare_claude_prompt(insights)
             
             # Get Claude's analysis
-            claude_response = await self._get_claude_analysis(prompt)
+            claude_response = None
+            if with_ai:
+                claude_response = await self._get_claude_analysis(prompt)
             
             # Extract detailed analysis sections
             # Extract all detailed analysis sections into a single string
-            detailed_analysis = ""
+            
            
             
             # Save the analysis and input data

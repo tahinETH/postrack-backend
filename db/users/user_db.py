@@ -176,7 +176,6 @@ class UserDataRepository():
                     elif item.tracked_type == 'account':
                         items['accounts'].append(item.tracked_id)
                         
-                logger.info(f"Retrieved {len(items['tweets'])} tweets and {len(items['accounts'])} accounts for user {user_id}")
                 return items
                 
         except Exception as e:
@@ -198,4 +197,120 @@ class UserDataRepository():
                 return tracked_item is not None
         except Exception as e:
             logger.error(f"Error checking if tweet {tweet_id} is tracked: {str(e)}")
+            raise
+
+
+    async def get_user_by_stripe_customer(self, stripe_customer_id: str) -> Optional[Dict[str, Any]]:
+        """Get user by Stripe customer ID"""
+        try:
+            async with get_async_session() as session:
+                result = await session.execute(
+                    select(User).filter(User.stripe_customer_id == stripe_customer_id)
+                )
+                user = result.scalars().first()
+                
+                if user:
+                    # Get tracked items
+                    tracked_items = await self.get_tracked_items(user.id)
+                    
+                    return {
+                        'id': user.id,
+                        'email': user.email,
+                        'name': user.name,
+                        'current_tier': user.current_tier,
+                        'current_period_start': user.current_period_start,
+                        'current_period_end': user.current_period_end,
+                        'fe_metadata': user.fe_metadata,
+                        'tracked_items': tracked_items
+                    }
+                return None
+        except Exception as e:
+            logger.error(f"Error getting user by Stripe customer ID {stripe_customer_id}: {str(e)}")
+            raise
+
+
+    async def update_user_subscription(self, user_id: str, subscription_data: Dict[str, Any]) -> bool:
+        """Update user's subscription details from Stripe data"""
+        try:
+            tier = subscription_data.get('tier', 'tier0')
+            period_start = subscription_data.get('current_period_start')
+            period_end = subscription_data.get('current_period_end')
+            
+            updates = {
+                'current_tier': tier,
+                'updated_at': int(datetime.now().timestamp())
+            }
+            
+            if period_start:
+                updates['current_period_start'] = period_start
+            if period_end:
+                updates['current_period_end'] = period_end
+                
+            logger.info(f"Updating subscription for user {user_id} to tier {tier}")
+            return await self.update_user(user_id, **updates)
+        except Exception as e:
+            logger.error(f"Error updating subscription for user {user_id}: {str(e)}")
+            raise
+
+
+
+    async def handle_subscription_cancellation(self, user_id: str) -> bool:
+        """Reset user to free tier when subscription is cancelled"""
+        try:
+            updates = {
+                'current_tier': 'tier0',
+                'current_period_start': None,
+                'current_period_end': None,
+                'updated_at': int(datetime.now().timestamp())
+            }
+            
+            logger.info(f"Cancelling subscription for user {user_id}")
+            return await self.update_user(user_id, **updates)
+        except Exception as e:
+            logger.error(f"Error cancelling subscription for user {user_id}: {str(e)}")
+            raise
+
+
+
+    async def process_payment_failure(self, user_id: str, payment_data: Dict[str, Any]) -> bool:
+        """Handle failed payment scenarios"""
+        try:
+            # Log the payment failure
+            failure_message = payment_data.get('failure_message', 'Unknown error')
+            failure_code = payment_data.get('failure_code', 'unknown')
+            
+            logger.error(f"Payment failure for user {user_id}: {failure_code} - {failure_message}")
+            
+            # You might want to update user metadata or status here
+            # For now, we're just logging the failure
+            
+            return True
+        except Exception as e:
+            logger.error(f"Error processing payment failure for user {user_id}: {str(e)}")
+            raise
+
+
+
+    async def handle_subscription_update(self, user_id: str, subscription_data: Dict[str, Any]) -> bool:
+        """Process subscription changes (upgrades/downgrades)"""
+        try:
+            # Extract relevant subscription data
+            tier = subscription_data.get('tier', 'tier0')
+            period_start = subscription_data.get('current_period_start')
+            period_end = subscription_data.get('current_period_end')
+            
+            updates = {
+                'current_tier': tier,
+                'updated_at': int(datetime.now().timestamp())
+            }
+            
+            if period_start:
+                updates['current_period_start'] = period_start
+            if period_end:
+                updates['current_period_end'] = period_end
+                
+            logger.info(f"Updating subscription for user {user_id} to tier {tier}")
+            return await self.update_user(user_id, **updates)
+        except Exception as e:
+            logger.error(f"Error updating subscription for user {user_id}: {str(e)}")
             raise

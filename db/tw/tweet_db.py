@@ -71,7 +71,7 @@ class TweetDataRepository():
                     )
                     tweet = tweet_result.scalars().first()
                     if tweet:
-                        tweets.append({
+                        tweets.insert(0, {
                             'tweet_id': tweet.tweet_id,
                             'created_at': tweet.created_at,
                             'is_active': tweet.is_active,
@@ -294,16 +294,31 @@ class TweetDataRepository():
                 'is_active': tweet.is_active
             } for tweet in tweets]
     
-    async def save_ai_analysis(self, tweet_id: str, analysis: str, input_data: Dict[str, Any]):
+    async def save_ai_analysis(self, tweet_id: str, analysis: Optional[str], input_data: Dict[str, Any]):
         timestamp = int(datetime.now().timestamp())
         async with get_async_session() as session:
-            new_analysis = AIAnalysis(
-                tweet_id=tweet_id,
-                analysis=analysis,
-                input_data=json.dumps(input_data),
-                created_at=timestamp
+            # Check if analysis for this tweet already exists
+            result = await session.execute(
+                select(AIAnalysis).where(AIAnalysis.tweet_id == tweet_id)
             )
-            session.add(new_analysis)
+            existing_analysis = result.scalars().first()
+            
+            if existing_analysis:
+                # Update existing analysis
+                if isinstance(analysis, str):
+                    existing_analysis.analysis = analysis
+                existing_analysis.input_data = json.dumps(input_data)
+                existing_analysis.created_at = timestamp
+            else:
+                # Create new analysis
+                new_analysis = AIAnalysis(
+                    tweet_id=tweet_id,
+                    analysis=analysis if isinstance(analysis, str) else None,
+                    input_data=json.dumps(input_data),
+                    created_at=timestamp
+                )
+                session.add(new_analysis)
+            
             await session.commit()
 
     async def get_ai_analysis(self, tweet_id: str) -> Optional[Dict[str, Any]]:

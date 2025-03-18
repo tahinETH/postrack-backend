@@ -27,18 +27,14 @@ class TweetStructuredRepository():
             'bookmark_count': tweet_details.get('bookmark_count', 0)
         }
 
-    async def get_user_feed(self, user_id: str, skip: int = 0, limit: int = 20) -> Dict[str, Any]:
+    async def get_user_feed(self, user_id: str, skip: int = 0, limit: int = 20, type: str = "time", sort: str = "desc") -> Dict[str, Any]:
         """Get latest data for all monitored tweets for a user with pagination"""
         logger = logging.getLogger(__name__)
 
-        # Get total count first
+        # Get all monitored tweets for the user
         monitored_tweets = await self.tweet_data.get_tweets_for_user(user_id)
         total_count = len(monitored_tweets) if monitored_tweets else 0
         
-        # Apply pagination to monitored tweets
-        if monitored_tweets:
-            monitored_tweets = monitored_tweets[skip:skip + limit]
-
         tracked_items = await self.user_data.get_tracked_items(user_id)
         tracked_accounts = []
 
@@ -94,9 +90,31 @@ class TweetStructuredRepository():
 
                 feed_data.append(feed_item)
 
+        # Separate individual tweets and account tweets
+        individual_tweets = [tweet for tweet in feed_data if tweet['tracking_type'] == 'individual']
+        account_tweets = [tweet for tweet in feed_data if tweet['tracking_type'] == 'account']
+        
+        # Define reverse_sort before using it
+        reverse_sort = sort.lower() == "desc"
+        
+        # Sort based on type and sort parameters
+        if type == "time":
+            sort_key = 'created_at'
+            # Sort account tweets
+            account_tweets = sorted(account_tweets, key=lambda x: x[sort_key], reverse=reverse_sort)
+        else:  # type == "view"
+            # Sort account tweets by views count
+            account_tweets = sorted(account_tweets, key=lambda x: x['engagement_metrics']['views_count'], reverse=reverse_sort)
+        
+        # Combine with individual tweets always at the start
+        sorted_feed = individual_tweets + account_tweets
+        
+        # Apply pagination AFTER sorting
+        paginated_feed = sorted_feed[skip:skip + limit] if sorted_feed else []
+
         return {
             'total_count': total_count,
-            'tweets': sorted(feed_data, key=lambda x: x['last_updated'], reverse=True) if feed_data else [],
+            'tweets': paginated_feed,
             'tracked_accounts': tracked_accounts
         }
 
@@ -122,16 +140,16 @@ class TweetStructuredRepository():
                 for d in details
             ],
             'comments': [
-                {'data': json.loads(c[0]), 'captured_at': c[1]} 
-                for c in comments
+                {'data': json.loads(comment.data_json), 'captured_at': comment.captured_at} 
+                for comment in comments
             ],
             'retweeters': [
-                {'data': json.loads(r[0]), 'captured_at': r[1]} 
-                for r in retweeters
+                {'data': json.loads(retweeter.data_json), 'captured_at': retweeter.captured_at} 
+                for retweeter in retweeters
             ],
             'quotes': [
-                {'data': json.loads(q[0]), 'captured_at': q[1]} 
-                for q in quotes
+                {'data': json.loads(quote.data_json), 'captured_at': quote.captured_at} 
+                for quote in quotes
             ]
         }
 
@@ -210,24 +228,32 @@ class TweetStructuredRepository():
         retweeters = await self.tweet_data.get_tweet_retweeters(tweet_id)
         
         existing_retweeter_names = set()
-        for retweeter_json, captured_at in retweeters:
-            retweeter = json.loads(retweeter_json)
-            if retweeter['screen_name'] not in existing_retweeter_names:
+        for retweeter in retweeters:
+            # Check if retweeter is already a dictionary, if not convert it to JSON
+            if isinstance(retweeter, dict):
+                retweeter_data = retweeter
+                captured_at = int(datetime.now().timestamp())  # Use current timestamp as fallback
+            else:
+                # Assuming retweeter has data and timestamp attributes
+                retweeter_data = json.loads(retweeter.data) if hasattr(retweeter, 'data') else {}
+                captured_at = retweeter.captured_at if hasattr(retweeter, 'captured_at') else int(datetime.now().timestamp())
+
+            if retweeter_data.get('screen_name') and retweeter_data['screen_name'] not in existing_retweeter_names:
                 if captured_at not in retweeters_tracking:
                     retweeters_tracking[captured_at] = []
                     verified_retweets[captured_at] = 0
                     
-                is_verified = retweeter.get('verified', False)
+                is_verified = retweeter_data.get('verified', False)
                 if is_verified:
                     verified_retweets[captured_at] += 1
                     
                 retweeters_tracking[captured_at].append({
-                    'screen_name': retweeter['screen_name'],
-                    'followers_count': retweeter.get('followers_count', 0),
+                    'screen_name': retweeter_data['screen_name'],
+                    'followers_count': retweeter_data.get('followers_count', 0),
                     'verified': is_verified,
-                    'profile_image_url_https': retweeter.get('profile_image_url_https', '').replace('_normal', '')
+                    'profile_image_url_https': retweeter_data.get('profile_image_url_https', '').replace('_normal', '')
                 })
-                existing_retweeter_names.add(retweeter['screen_name'])
+                existing_retweeter_names.add(retweeter_data['screen_name'])
 
         quotes_tracking = {}
         verified_quotes = {}
@@ -236,9 +262,11 @@ class TweetStructuredRepository():
         quotes = await self.tweet_data.get_tweet_quotes(tweet_id)
         
         existing_quote_ids = set()
-        for quote_json, captured_at in quotes:
-            quote = json.loads(quote_json)
+        for quote_obj in quotes:
+            quote = json.loads(quote_obj.data_json)  # Assuming TweetQuote has a quote_json field
             if quote['id'] not in existing_quote_ids:
+                captured_at = quote_obj.captured_at  # Assuming TweetQuote has a captured_at field
+                
                 if captured_at not in quotes_tracking:
                     quotes_tracking[captured_at] = []
                     verified_quotes[captured_at] = 0
@@ -330,7 +358,6 @@ class TweetStructuredRepository():
             'ai_analysis': ai_analysis
         }
 
-
     async def prepare_insight_data(self, tweet_id: str) -> Dict[str, Any]:
         """Analyze tweet history data and prepare insights"""
         analyzed_history = await self.get_analyzed_tweet_history(tweet_id)
@@ -341,6 +368,7 @@ class TweetStructuredRepository():
         if not analyzed_history['retweeters_tracking'] and not analyzed_history['comments_tracking']:
             return {
                 'top_amplifiers': {
+                    'quoters': [],
                     'retweeters': [],
                     'commenters': []
                 },
@@ -363,6 +391,11 @@ class TweetStructuredRepository():
                     'average_quote_ratio': 0,
                     'total_quotes': 0,
                     'quote_trend': []
+                },
+                'comment_analysis': {
+                    'average_comment_ratio': 0,
+                    'total_comments': 0,
+                    'comment_trend': []
                 },
                 'growth_metrics': {
                     'total_growth': 0,
@@ -402,11 +435,31 @@ class TweetStructuredRepository():
                 all_commenters.append(filtered_comment)
                 
         # Remove duplicates and get top commenters by followers
+        
         seen_commenters = {}
         for commenter in sorted(all_commenters, key=lambda x: x['followers_count'], reverse=True):
             if commenter['screen_name'] not in seen_commenters:
                 seen_commenters[commenter['screen_name']] = commenter
         top_commenters = list(seen_commenters.values())[:10]
+        
+        # Get all quoters with timestamps
+        all_quoters = []
+        for timestamp, quotes in analyzed_history['quotes_tracking'].items():
+            for quote in quotes:
+                filtered_quote = {
+                    'screen_name': quote['screen_name'],
+                    'followers_count': quote['followers_count'],
+                    'verified': quote['verified'],
+                    'timestamp': datetime.utcfromtimestamp(int(timestamp)).isoformat()
+                }
+                all_quoters.append(filtered_quote)
+                
+        # Remove duplicates and get top quoters by followers
+        seen_quoters = {}
+        for quoter in sorted(all_quoters, key=lambda x: x['followers_count'], reverse=True):
+            if quoter['screen_name'] not in seen_quoters:
+                seen_quoters[quoter['screen_name']] = quoter
+        top_quoters = list(seen_quoters.values())[:10]
 
         # Time Analysis
         time_metrics = []
@@ -469,6 +522,17 @@ class TweetStructuredRepository():
                 'retweets': metrics['retweet_count']
             })
 
+        # Comment Analysis
+        comment_analysis = []
+        for timestamp, metrics in analyzed_history['engagement_metrics'].items():
+            comment_ratio = metrics['reply_count'] / max(metrics['favorite_count'], 1)  # Protect division by zero
+            comment_analysis.append({
+                'timestamp': datetime.utcfromtimestamp(int(timestamp)).isoformat(),
+                'comment_ratio': comment_ratio,
+                'comments': metrics['reply_count'],
+                'favorites': metrics['favorite_count']
+            })
+
         # Follower Growth Analysis
         follower_growth = []
         follower_items = list(analyzed_history['user_followers'].items())
@@ -498,6 +562,9 @@ class TweetStructuredRepository():
         average_quote_ratio = (sum(q['quote_ratio'] for q in quote_retweet_analysis) / 
                              max(len(quote_retweet_analysis), 1))  # Protect division by zero
 
+        average_comment_ratio = (sum(c['comment_ratio'] for c in comment_analysis) / 
+                               max(len(comment_analysis), 1))  # Protect division by zero
+
         # Handle empty follower_growth
         peak_growth = max(follower_growth, key=lambda x: x['growth']) if follower_growth else None
         growth_during_peak = (
@@ -509,7 +576,8 @@ class TweetStructuredRepository():
         return {
             'top_amplifiers': {
                 'retweeters': top_retweeters,
-                'commenters': top_commenters
+                'commenters': top_commenters,
+                'quoters': top_quoters
             },
             'engagement_analysis': {
                 'peak_engagement_time': peak_engagement['timestamp'],
@@ -530,6 +598,11 @@ class TweetStructuredRepository():
                 'average_quote_ratio': average_quote_ratio,
                 'total_quotes': quote_retweet_analysis[-1]['quotes'] if quote_retweet_analysis else 0,
                 'quote_trend': quote_retweet_analysis[-5:] if quote_retweet_analysis else []
+            },
+            'comment_analysis': {
+                'average_comment_ratio': average_comment_ratio,
+                'total_comments': comment_analysis[-1]['comments'] if comment_analysis else 0,
+                'comment_trend': comment_analysis[-5:] if comment_analysis else []
             },
             'growth_metrics': {
                 'total_growth': sum(g['growth'] for g in follower_growth),

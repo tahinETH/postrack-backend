@@ -188,10 +188,10 @@ class Service:
    
     
 
-    async def analyze_tweet(self, tweet_id: str) -> Dict:
+    async def analyze_tweet(self, tweet_id: str, with_ai: bool = False) -> Dict:
         """Get AI analysis for a tweet"""
         try:
-            result = await self.ai_analyzer.analyze_tweet(tweet_id)
+            result = await self.ai_analyzer.analyze_tweet(tweet_id, with_ai)
             logger.info(f"Generated AI analysis for tweet {tweet_id}")
             return result
         except Exception as e:

@@ -132,11 +132,11 @@ async def monitoring_tweet(
 
 
 
-@app.get("/tweet/analyze/{tweet_id}")
+@app.post("/tweet/analyze/{tweet_id}")
 async def analyze_tweet(tweet_id: str, user_id: str = Depends(auth_middleware)):
     """Analyze a tweet"""
     try:
-        result = await service.analyze_tweet(tweet_id)
+        result = await service.analyze_tweet(tweet_id, with_ai=True)
         return result
     except Exception as e:
         logger.error(f"Error analyzing tweet {tweet_id}: {str(e)}")
