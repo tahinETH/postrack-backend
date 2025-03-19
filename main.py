@@ -146,6 +146,8 @@ async def analyze_tweet(tweet_id: str, user_id: str = Depends(auth_middleware)):
 async def get_tweet_feed(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
+    type: str = Query(default="time", regex="^(time|views)$"),
+    sort: str = Query(default="desc", regex="^(asc|desc)$"),
     auth_user: str = Depends(auth_middleware)
 ):
     """Get a paginated feed of all monitored tweets with their latest data"""
@@ -153,7 +155,9 @@ async def get_tweet_feed(
         feed = await service.get_user_feed(
             auth_user,
             skip=(page - 1) * page_size,
-            limit=page_size
+            limit=page_size,
+            type=type,
+            sort=sort
         )
         
         return {

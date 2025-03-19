@@ -198,10 +198,10 @@ class Service:
             logger.error(f"Error analyzing tweet {tweet_id}: {str(e)}")
             raise
 
-    async def get_user_feed(self, user_id: str, skip: int = 0, limit: int = 20) -> Dict:
+    async def get_user_feed(self, user_id: str, skip: int = 0, limit: int = 20, type: str = "time", sort: str = "desc") -> Dict:
         """Get paginated feed for a user"""
         try:
-            feed = await self.analysis.get_user_feed(user_id, skip, limit)
+            feed = await self.analysis.get_user_feed(user_id, skip, limit, type, sort)
             logger.info(f"Retrieved paginated feed for user {user_id}")
             return feed
         except Exception as e:
