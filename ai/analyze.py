@@ -27,7 +27,7 @@ class AIAnalyzer:
             prompt = self._prepare_claude_prompt(insights)
             
             # Get Claude's analysis
-            claude_response = None
+            claude_response = "_empty_"
             if with_ai:
                 claude_response = await self._get_claude_analysis(prompt)
             
