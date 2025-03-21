@@ -7,7 +7,8 @@ from db.users.user_db import UserDataRepository
 from db.tw.tweet_db import TweetDataRepository
 from db.tw.structured import TweetStructuredRepository
 from db.tw.account_db import AccountRepository
-from ai.analyze import AIAnalyzer
+from analysis.ai import AIAnalyzer
+from analysis.account import AccountAnalyzer
 from monitor import TweetMonitor
 from datetime import datetime
 from config import config
@@ -49,6 +50,7 @@ class Service:
         self.analysis = TweetStructuredRepository()
         self.accounts = AccountRepository()
         self.ai_analyzer = AIAnalyzer(self.analysis)
+        self.account_analyzer = AccountAnalyzer(self.analysis, SOCIAL_DATA_API_KEY)
 
     async def _get_user_limits(self, user_id: str) -> Tuple[int, int]:
         """Get user's max allowed accounts and tweets based on their tier"""
@@ -185,13 +187,31 @@ class Service:
             logger.error(f"Error getting monitored tweets: {str(e)}")
             raise
 
-   
-    
+    async def get_account_analysis(self, account_id: str) -> Dict:
+        """Get account analysis"""
+        try:
+            result = await self.account_analyzer.get_account_analysis(account_id)
+            return result
+        except Exception as e:
+            logger.error(f"Error getting account analysis: {str(e)}")
+            raise
 
+    async def analyze_account(self, account_id: str, new_fetch: bool = False) -> Dict:
+        """Get AI analysis for an account"""
+        try:
+            result = await self.account_analyzer.analyze_account(account_id, new_fetch)
+            logger.info(f"Generated AI analysis for account {account_id}")
+            return result
+        except Exception as e:
+            logger.error(f"Error analyzing account {account_id}: {str(e)}")
+            raise
+       
+       
+        
     async def analyze_tweet(self, tweet_id: str, with_ai: bool = False) -> Dict:
         """Get AI analysis for a tweet"""
         try:
-            result = await self.ai_analyzer.analyze_tweet(tweet_id, with_ai)
+            result = await self.ai_analyzer.generate_ai_analysis_tweet(tweet_id, with_ai)
             logger.info(f"Generated AI analysis for tweet {tweet_id}")
             return result
         except Exception as e:

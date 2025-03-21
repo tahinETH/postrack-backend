@@ -296,6 +296,10 @@ class TweetDataRepository():
     
     async def save_ai_analysis(self, tweet_id: str, analysis: str, input_data: Dict[str, Any]):
         timestamp = int(datetime.now().timestamp())
+        
+        if analysis is None:
+            analysis = "_empty_"
+            
         async with get_async_session() as session:
             # Check if analysis for this tweet already exists
             result = await session.execute(
@@ -313,7 +317,7 @@ class TweetDataRepository():
                 # Create new analysis
                 new_analysis = AIAnalysis(
                     tweet_id=tweet_id,
-                    analysis=analysis if analysis != "_empty_" else existing_analysis.analysis if existing_analysis else None,
+                    analysis=analysis if analysis != "_empty_" else "_empty_",
                     input_data=json.dumps(input_data),
                     created_at=timestamp
                 )

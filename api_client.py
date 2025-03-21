@@ -31,6 +31,44 @@ class TwitterAPIClient:
             logger.error(f"Error getting user details: {str(e)}")
             return None
 
+    async def api_get_user_top_tweets(self, screen_name: str, limit: int = 100) -> Optional[Dict[str, Any]]:
+        try:
+            all_tweets = []
+            next_cursor = None
+            async with aiohttp.ClientSession() as session:
+                while True:
+                    url = f'https://api.socialdata.tools/twitter/search'
+                    params = {
+                        'query': f'from:{screen_name}',
+                        'type': 'Top'
+                    }
+                    if next_cursor:
+                        params['cursor'] = next_cursor
+                        
+                    async with session.get(url, headers=self.get_headers(), params=params) as response:
+                        data = await response.json()
+                        
+                    if data.get('status') == 'error' and data.get('message') == 'Insufficient balance':
+                        logger.error("Insufficient balance when getting user's top tweets")
+                        return None
+                    
+                    if 'tweets' in data:
+                        all_tweets.extend(data['tweets'])
+                        
+                        # Break if we've reached the desired limit
+                        if len(all_tweets) >= limit:
+                            all_tweets = all_tweets[:limit]
+                            break
+                    
+                    next_cursor = data.get('next_cursor')
+                    if not next_cursor:
+                        break
+                   
+            return all_tweets
+        except Exception as e:
+            logger.error(f"Error getting user's top tweets: {str(e)}")
+            return None
+
     async def api_get_tweet(self, tweet_id: str) -> Optional[Dict[str, Any]]:
         try:
             url = f'https://api.socialdata.tools/twitter/tweets/{tweet_id}'

@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List, Tuple
+from fastapi import BackgroundTasks
 from pathlib import Path
 import asyncio
 from db.tw.tweet_db import TweetDataRepository
@@ -8,7 +9,7 @@ from db.tw.structured import TweetStructuredRepository
 from db.tw.account_db import AccountRepository
 from db.api.api_db import APICallLogRepository
 from api_client import TwitterAPIClient
-from ai.analyze import AIAnalyzer
+from analysis.ai import AIAnalyzer
 import json
 logging.basicConfig(
     level=logging.INFO,
@@ -304,9 +305,8 @@ class TweetMonitor:
                         try:
                             self.logger.info(f"Getting tweet history for retweeters comparison for {tweet_id}")
                             tweet_history = await self.tweet_analysis.get_raw_tweet_history(tweet_id)
-                            self.logger.info(tweet_history)
                             existing_retweeters = {
-                                json.loads(retweeter.data_json)['id_str']
+                                retweeter['data']['id_str']
                                 for retweeter in tweet_history.get('retweeters', [])
                             }
                             
@@ -344,14 +344,13 @@ class TweetMonitor:
                             self.logger.info(f"Getting tweet history for quotes comparison for {tweet_id}")
                             tweet_history = await self.tweet_analysis.get_raw_tweet_history(tweet_id)
                             
-                            # Modified to handle TweetRetweeter objects properly
                             existing_quotes = set()
                             if tweet_history and 'quotes' in tweet_history:
                                 for quote in tweet_history['quotes']:
                                     try:
-                                        quote_data = json.loads(quote.data_json)
+                                        quote_data = quote['data']  # Access data directly from dict
                                         existing_quotes.add(quote_data['id_str'])
-                                    except (AttributeError, KeyError, json.JSONDecodeError) as e:
+                                    except (KeyError, TypeError) as e:
                                         self.logger.warning(f"Error parsing quote data: {str(e)}")
                             
                             new_quotes = [
@@ -379,7 +378,7 @@ class TweetMonitor:
                 self.logger.error(f"Error processing quotes for {tweet_id}: {str(e)}")
 
             try:
-                await self.ai_analyze.analyze_tweet(tweet_id)
+                await self.ai_analyze.generate_ai_analysis_tweet(tweet_id, with_ai=False)
             except Exception as e:
                 self.logger.error(f"Error analyzing tweet {tweet_id}: {str(e)}")
 
@@ -419,7 +418,7 @@ class TweetMonitor:
 
 
 
-    async def monitor_account(self, screen_name: str, max_followers: int):
+    async def monitor_account(self, screen_name: str, max_followers: int, background_tasks: BackgroundTasks = BackgroundTasks()):
         """Start monitoring an account"""
         try:
             user_details = await self.api_client.api_get_user(screen_name)
@@ -430,13 +429,18 @@ class TweetMonitor:
                     self.logger.info(f"Account {screen_name} has too many followers ({user_details['followers_count']}), not monitoring")
                     return None
                 await self.accounts.upsert_account(account_id, screen_name, user_details,update_existing=True, is_active=True)
+                
+                try:
+                    background_tasks.add_task(self.account_analyzer.analyze_account, account_id, new_fetch=True)
+                except Exception as e:
+                    self.logger.error(f"Error starting account analysis for {screen_name}: {str(e)}")
+                
                 self.logger.info(f"Started monitoring account {screen_name}")
                 return account_id
             return None
         except Exception as e:
             self.logger.error(f"Error monitoring account {screen_name}: {str(e)}")
             return None
-        
     async def check_and_update_accounts(self):
             "monitors accounts for new tweets"
             try:

@@ -57,6 +57,17 @@ class AIAnalysis(Base):
     input_data = Column(String, nullable=False)
     created_at = Column(Integer, nullable=False)
 
+class AccountAnalysis(Base):
+    __tablename__ = 'account_analysis'
+    id = Column(Integer, primary_key=True)
+    account_id = Column(String, ForeignKey('monitored_accounts.account_id'), nullable=False)
+    top_tweets = Column(JSON, nullable=True)  # Store top tweets data
+    metrics = Column(JSON, nullable=True)  # Engagement rates, growth trends etc
+    quantitative_analysis = Column(JSON, nullable=True)  # Engagement rates, growth trends etc
+    qualitative_analysis = Column(String, nullable=True)  # Overall account analysis textc
+    created_at = Column(Integer, nullable=False)
+    updated_at = Column(Integer, nullable=False)
+
 class SubscriptionTier(Base):
     __tablename__ = 'subscription_tiers'
     tier_id = Column(String, primary_key=True)

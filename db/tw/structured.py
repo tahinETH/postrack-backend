@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 from db.migrations import get_async_session
 from db.tw.tweet_db import TweetDataRepository
 from db.users.user_db import UserDataRepository
@@ -610,3 +610,4 @@ class TweetStructuredRepository():
                 'growth_during_peak_engagement': growth_during_peak
             }
         }
+    

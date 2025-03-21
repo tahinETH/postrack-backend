@@ -3,7 +3,7 @@ import json
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.migrations import get_async_session
-from db.schemas import MonitoredAccount
+from db.schemas import MonitoredAccount, AccountAnalysis
 from datetime import datetime
 
 
@@ -68,6 +68,77 @@ class AccountRepository():
                 'account_details': json.loads(account.account_details) if account.account_details else None
             } for account in accounts]
 
+    async def save_account_analysis(
+        self, 
+        account_id: str,
+        top_tweets: Optional[Dict] = None,
+        metrics: Optional[Dict] = None,
+        quantitative_analysis: Optional[Dict] = None,
+        qualitative_analysis: Optional[str] = None
+    ):
+        current_timestamp = int(datetime.now().timestamp())
+        async with get_async_session() as session:
+            # Get existing analysis if it exists
+            result = await session.execute(
+                select(AccountAnalysis)
+                .filter(AccountAnalysis.account_id == account_id)
+                .order_by(AccountAnalysis.created_at.desc())
+            )
+            existing = result.scalars().first()
+
+            if existing:
+                # Update only provided fields
+                if top_tweets is not None:
+                    existing.top_tweets = top_tweets
+                if metrics is not None:
+                    existing.metrics = metrics 
+                if quantitative_analysis is not None:
+                    existing.quantitative_analysis = quantitative_analysis
+                if qualitative_analysis is not None:
+                    existing.qualitative_analysis = qualitative_analysis
+                existing.updated_at = current_timestamp
+            else:
+                # Create new analysis
+                new_analysis = AccountAnalysis(
+                    account_id=account_id,
+                    top_tweets=top_tweets,
+                    metrics=metrics,
+                    quantitative_analysis=quantitative_analysis, 
+                    qualitative_analysis=qualitative_analysis,
+                    created_at=current_timestamp,
+                    updated_at=current_timestamp
+                )
+                session.add(new_analysis)
+
+            await session.commit()
+
+    async def get_account_analysis(self, account_id: str) -> Optional[Dict[str, Any]]:
+        async with get_async_session() as session:
+            result = await session.execute(
+                select(AccountAnalysis)
+                .filter(AccountAnalysis.account_id == account_id)
+                .order_by(AccountAnalysis.created_at.desc())
+            )
+            analysis = result.scalars().first()
+            
+            if analysis:
+                # Get account details
+                account = await self.get_account_by_id(account_id)
+                
+                return {
+                    'id': analysis.id,
+                    'account_id': analysis.account_id,
+                    'top_tweets': analysis.top_tweets,
+                    'metrics': analysis.metrics,
+                    'quantitative_analysis': analysis.quantitative_analysis,
+                    'qualitative_analysis': analysis.qualitative_analysis,
+                    'created_at': analysis.created_at,
+                    'updated_at': analysis.updated_at,
+                    'account_details': account.get('account_details') if account else None
+                }
+            return None
+    
+
     async def stop_all_accounts(self):
         async with get_async_session() as session:
             result = await session.execute(select(MonitoredAccount))
@@ -88,6 +159,24 @@ class AccountRepository():
         async with get_async_session() as session:
             result = await session.execute(
                 select(MonitoredAccount).filter(MonitoredAccount.account_id == account_id)
+            )
+            account = result.scalars().first()
+            
+            if account:
+                return {
+                    'account_id': account.account_id,
+                    'screen_name': account.screen_name, 
+                    'is_active': account.is_active,
+                    'last_check': account.last_check,
+                    'created_at': account.created_at,
+                    'account_details': json.loads(account.account_details) if account.account_details else None
+                }
+            return None
+        
+    async def get_account_by_screen_name(self, screen_name: str) -> Optional[Dict[str, Any]]:
+        async with get_async_session() as session:
+            result = await session.execute(
+                select(MonitoredAccount).filter(MonitoredAccount.screen_name == screen_name)
             )
             account = result.scalars().first()
             

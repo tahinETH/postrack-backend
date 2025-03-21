@@ -1,7 +1,7 @@
 
 import logging
 import os
-from fastapi import FastAPI, HTTPException, Query, Depends, Header, Path as FastAPIPath
+from fastapi import FastAPI, HTTPException, Query, Depends, Header, Path as FastAPIPath, BackgroundTasks
 import asyncio
 from typing import Optional
 import uvicorn
@@ -129,7 +129,30 @@ async def monitoring_tweet(
         logger.error(f"Error in tweet monitoring action at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/account/analyze/{account_id}")
+async def get_account_analysis(account_id: str):
+    """Get account analysis"""
+    try:
+        result = await service.get_account_analysis(account_id)
+        return result
+    except Exception as e:
+        logger.error(f"Error getting account analysis at {int(time.time())}: {str(e)}")
 
+
+
+@app.post("/account/analyze/{account_id}")
+async def analyze_account(
+    account_id: str,
+    new_fetch: bool = Query(default=True),
+    background_tasks: BackgroundTasks = BackgroundTasks()
+):
+    """Analyze an account"""
+    try:
+        background_tasks.add_task(service.analyze_account, account_id, new_fetch=new_fetch)
+        return {"status": "success", "message": "Account analysis started"}
+    except Exception as e:
+        logger.error(f"Error analyzing account {account_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/tweet/analyze/{tweet_id}")
