@@ -118,3 +118,25 @@ class APICall(Base):
     comment_api_calls = Column(Integer)
     total_api_calls = Column(Integer)
 
+class Refinement(Base):
+    __tablename__ = 'refinements'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    account_id = Column(String, ForeignKey("monitored_accounts.account_id"), nullable=True)
+    tweet_draft = Column(String, nullable=False)
+    additional_commands = Column(String, nullable=True)
+    prompt = Column(String, nullable=False)
+    result = Column(String, nullable=False)
+    created_at = Column(Integer, nullable=False)
+
+class Inspiration(Base):
+    __tablename__ = 'inspirations'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    account_id = Column(String, ForeignKey("monitored_accounts.account_id"), nullable=True)
+    tweet_id = Column(String, nullable=False)
+    is_thread = Column(Boolean, default=False)
+    prompt = Column(String, nullable=False)
+    result = Column(String, nullable=False)
+    created_at = Column(Integer, nullable=False)
+

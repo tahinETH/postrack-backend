@@ -9,6 +9,7 @@ from db.tw.structured import TweetStructuredRepository
 from db.tw.account_db import AccountRepository
 from analysis.ai import AIAnalyzer
 from analysis.account import AccountAnalyzer
+from analysis.workshop import Workshop
 from monitor import TweetMonitor
 from datetime import datetime
 from config import config
@@ -51,7 +52,7 @@ class Service:
         self.accounts = AccountRepository()
         self.ai_analyzer = AIAnalyzer(self.analysis)
         self.account_analyzer = AccountAnalyzer(self.analysis, SOCIAL_DATA_API_KEY)
-
+        self.content_workshop = Workshop()
     async def _get_user_limits(self, user_id: str) -> Tuple[int, int]:
         """Get user's max allowed accounts and tweets based on their tier"""
         user = await self.user_repository.get_user(user_id)
@@ -300,6 +301,39 @@ class Service:
             logger.error(f"Error {action_type} all tweet monitoring: {str(e)}")
             raise
 
+
+
+
+
+    async def get_content_inspiration(self, tweet_id: str, account_id: str, is_thread: bool, user_id: str, additional_commands: str) -> str:
+        """Get content inspiration ideas for a tweet"""
+        try:
+            inspiration = await self.content_workshop.workshop_inspiration(tweet_id, account_id, is_thread, user_id, additional_commands)
+            return inspiration
+        except Exception as e:
+            logger.error(f"Error getting content inspiration for tweet {tweet_id}: {str(e)}")
+            raise
+
+    async def get_tweet_refinements(self, user_id: str, tweet_text: str, account_id: str, additional_commands: str) -> str:
+        """Get refinement suggestions for a tweet"""
+        try:
+            refinements = await self.content_workshop.workshop_refine(user_id, tweet_text, account_id, additional_commands)
+            return refinements
+        except Exception as e:
+            logger.error(f"Error getting tweet refinements service: {str(e)}")
+            raise
+
+    async def get_visualization_ideas(self, tweet_text: str) -> str:
+        """Get visualization ideas for a tweet"""
+        try:
+            ideas = await self.content_workshop.workshop_visualization(tweet_text)
+            return ideas
+        except Exception as e:
+            logger.error(f"Error getting visualization ideas: {str(e)}")
+            raise
+
+
+
     ## PERIODIC CHECKS ##
     async def check_single_tweet(self, timestamp: int):
         """Single run of tweet check and update"""
@@ -317,6 +351,7 @@ class Service:
         except Exception as e:
             logger.error(f"Error in account check at {timestamp}: {str(e)}")
 
+
     async def handle_periodic_checks(self):
         """Periodic task to check and update tweets and accounts"""
         while True:
@@ -332,3 +367,4 @@ class Service:
             except Exception as e:
                 logger.error(f"Error checking accounts at {int(time.time())}: {str(e)}")
             await asyncio.sleep(60)
+   

@@ -30,8 +30,46 @@ class TwitterAPIClient:
         except Exception as e:
             logger.error(f"Error getting user details: {str(e)}")
             return None
+        
 
-    async def api_get_user_top_tweets(self, screen_name: str, limit: int = 100) -> Optional[Dict[str, Any]]:
+    async def api_get_list_tweets(self, list_id: str, limit: int = 100) -> Optional[Dict[str, Any]]:
+        try:
+            all_tweets = []
+            next_cursor = None
+            async with aiohttp.ClientSession() as session:
+                while True:
+                    url = f'https://api.socialdata.tools/twitter/list/{list_id}/tweets'
+                    params = {}
+                    if next_cursor:
+                        params['cursor'] = next_cursor
+                        
+                    async with session.get(url, headers=self.get_headers(), params=params) as response:
+                        data = await response.json()
+                        
+                    if data.get('status') == 'error' and data.get('message') == 'Insufficient balance':
+                        logger.error("Insufficient balance when getting list tweets")
+                        return None
+                    
+                    if 'tweets' in data:
+                        all_tweets.extend(data['tweets'])
+                        
+                        # Break if we've reached the desired limit
+                        if len(all_tweets) >= limit:
+                            all_tweets = all_tweets[:limit]
+                            break
+                    
+                    next_cursor = data.get('next_cursor')
+                    if not next_cursor:
+                        break
+                   
+            return all_tweets
+        except Exception as e:
+            logger.error(f"Error getting list tweets: {str(e)}")
+            return None
+        
+
+
+    async def api_get_user_top_tweets(self, screen_name: str, limit: int = 50, replies: bool = False) -> Optional[Dict[str, Any]]:
         try:
             all_tweets = []
             next_cursor = None
@@ -39,7 +77,7 @@ class TwitterAPIClient:
                 while True:
                     url = f'https://api.socialdata.tools/twitter/search'
                     params = {
-                        'query': f'from:{screen_name}',
+                        'query': f'from:{screen_name} {"-filter:replies" if not replies else "filter:replies"}',
                         'type': 'Top'
                     }
                     if next_cursor:
@@ -63,7 +101,7 @@ class TwitterAPIClient:
                     next_cursor = data.get('next_cursor')
                     if not next_cursor:
                         break
-                   
+            
             return all_tweets
         except Exception as e:
             logger.error(f"Error getting user's top tweets: {str(e)}")
@@ -78,9 +116,39 @@ class TwitterAPIClient:
                     if data.get('status') == 'error' and data.get('message') == 'Insufficient balance':
                         logger.error("Insufficient balance when getting tweet details")
                         return None
+                    
                     return data
         except Exception as e:
             logger.error(f"Error getting tweet details: {str(e)}")
+            return None
+        
+    async def api_get_thread_tweets(self, thread_id: str) -> Optional[Dict[str, Any]]:
+        try:
+            all_tweets = []
+            next_cursor = None
+            async with aiohttp.ClientSession() as session:
+                while True:
+                    url = f'https://api.socialdata.tools/twitter/thread/{thread_id}'
+                    params = {'cursor': next_cursor} if next_cursor else {}
+                    
+                    async with session.get(url, headers=self.get_headers(), params=params) as response:
+                        data = await response.json()
+                        
+                    if data.get('status') == 'error' and data.get('message') == 'Insufficient balance':
+                        logger.error("Insufficient balance when getting thread tweets")
+                        return None
+                    
+                    if 'tweets' in data:
+                        all_tweets.extend(data['tweets'])
+                    
+                    next_cursor = data.get('next_cursor')
+                    if not next_cursor:
+                        break
+            
+            
+            return all_tweets
+        except Exception as e:
+            logger.error(f"Error getting thread tweets: {str(e)}")
             return None
      
     async def api_get_tweet_comments(self, tweet_id: str, to_user: Optional[str] = None, since_timestamp: Optional[str] = None) -> Optional[Dict[str, Any]]:
@@ -207,38 +275,4 @@ class TwitterAPIClient:
             return None
 
 
-    async def api_get_top_tweets(self, username: str) -> Optional[list]:
-        try:
-            all_tweets = []
-            next_cursor = None
-            
-            query = f'from:{username}'
-          
-           
-                
-            async with aiohttp.ClientSession() as session:
-                while True:
-                    url = f'https://api.socialdata.tools/twitter/search'
-                    params = {'query': query,
-                              'type': 'top'}
-                    if next_cursor:
-                        params['cursor'] = next_cursor
-                        
-                    async with session.get(url, headers=self.get_headers(), params=params) as response:
-                        data = await response.json()
-                        
-                    if data.get('status') == 'error' and data.get('message') == 'Insufficient balance':
-                        logger.error("Insufficient balance when getting top tweets")
-                        return None
-                    
-                    if 'tweets' in data:
-                        all_tweets.extend(data['tweets'])
-                    
-                    next_cursor = data.get('next_cursor')
-                    if not next_cursor:
-                        break
-                    
-            return all_tweets
-        except Exception as e:
-            logger.error(f"Error getting user tweets: {str(e)}")
-            return None    
+   

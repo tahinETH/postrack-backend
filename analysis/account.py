@@ -18,7 +18,10 @@ class AccountAnalyzer:
 
     async def _fetch_account_tweets(self, screen_name: str) -> List[Dict[str, Any]]:
         """Fetch the top tweets for an account"""
-        tweets = await self.api_client.api_get_user_top_tweets(screen_name, limit=5)
+        reply_tweets = await self.api_client.api_get_user_top_tweets(screen_name, limit=50, replies=True)
+        non_reply_tweets = await self.api_client.api_get_user_top_tweets(screen_name, limit=50, replies=False)
+        tweets = reply_tweets + non_reply_tweets
+        print(len(tweets))
         return tweets
     
     async def get_account_analysis(self, account_id: str) -> Dict[str, Any]:

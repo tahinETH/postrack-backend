@@ -186,12 +186,10 @@ class TweetMonitor:
         try:
             self.logger.info(f"Starting monitoring run for tweet {tweet_id}")
             monitoring_run = MonitoringRun(tweet_id, run_timestamp)
-            self.logger.info(f"Fetching existing tweet details for {tweet_id}")
             latest_tweet_details = await self.tweet_data.get_latest_tweet_details(tweet_id)
             if tweet:
                 details = tweet
                 screen_name = tweet['user']['screen_name']
-                self.logger.info(f"Using provided tweet details for {tweet_id}")
                 monitoring_run.api_calls['tweet_details_calls'] += 1
             else:
                 self.logger.info(f"Fetching tweet details from API for {tweet_id}")
@@ -199,13 +197,12 @@ class TweetMonitor:
                 monitoring_run.api_calls['tweet_details_calls'] += 1
             if details:
                 try:
-                    self.logger.info(f"Processing user data for tweet {tweet_id}")
                     user_data = details.get('user', {})
                     account_id = user_data.get('id_str')
                     screen_name = user_data.get('screen_name')
 
                     if user_data:
-                        self.logger.info(f"Upserting account {screen_name} for tweet {tweet_id}")
+                    
                         await self.accounts.upsert_account(account_id, screen_name, user_data, is_active=False, update_existing=True)
 
                     if account_id and screen_name:
@@ -233,11 +230,9 @@ class TweetMonitor:
                 return monitoring_run
 
             try:
-                self.logger.info(f"Getting latest monitoring run for {tweet_id}")
                 latest_run = await self.tweet_data.get_latest_monitoring_run(tweet_id)
                 
                 since_timestamp = str(latest_run[0]) if latest_run else None
-                self.logger.info(f"Using since_timestamp {since_timestamp} for tweet {tweet_id}")
 
                 # Check if tweet details exist and compare engagement metrics
                 comments_needs_update = True
@@ -245,12 +240,11 @@ class TweetMonitor:
                 quotes_needs_update = True
                 
                 if latest_tweet_details:
-                    self.logger.info(f"Comparing engagement metrics for tweet {tweet_id}")
                     try:
                         quotes_needs_update = latest_tweet_details.get('quote_count') != details.get('quote_count')
                         comments_needs_update = latest_tweet_details.get('reply_count') != details.get('reply_count')
                         retweets_needs_update = latest_tweet_details.get('retweet_count') != details.get('retweet_count')
-                        self.logger.info(f"Tweet {tweet_id} needs updates - comments: {comments_needs_update}, retweets: {retweets_needs_update}")
+                        
                     except Exception as e:
                         self.logger.error(f"Error comparing tweet engagement for {tweet_id}: {str(e)}")
             except Exception as e:
@@ -258,12 +252,12 @@ class TweetMonitor:
 
             try:
                 if comments_needs_update:
-                    self.logger.info(f"Fetching comments for tweet {tweet_id}")
+                    
                     comments = await self._fetch_tweet_comments(tweet_id, screen_name, since_timestamp)
                     if comments:
                         monitoring_run.api_calls['comment_api_calls'] += len(comments) + 1
                         try:
-                            self.logger.info(f"Getting tweet history for comments comparison for {tweet_id}")
+                            
                             tweet_history = await self.tweet_analysis.get_raw_tweet_history(tweet_id)
                             existing_comments = {
                                 comment['data']['id_str'] 

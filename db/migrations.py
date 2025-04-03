@@ -48,7 +48,9 @@ def migrations():
         """CREATE INDEX IF NOT EXISTS idx_ai_analysis ON ai_analysis (tweet_id, created_at)""",
         """CREATE INDEX IF NOT EXISTS idx_users ON users (id, email)""",
         """CREATE INDEX IF NOT EXISTS idx_user_tracked_items ON user_tracked_items (user_id, tracked_type, tracked_id)""",
-        """CREATE INDEX IF NOT EXISTS idx_account_analysis ON account_analysis (account_id, created_at)"""
+        """CREATE INDEX IF NOT EXISTS idx_account_analysis ON account_analysis (account_id, created_at)""",
+        """CREATE INDEX IF NOT EXISTS idx_refinements ON refinements (user_id, created_at)""",
+        """CREATE INDEX IF NOT EXISTS idx_inspirations ON inspirations (user_id, created_at)"""
     ]
 
 async def connect_and_migrate(db_url: str):
