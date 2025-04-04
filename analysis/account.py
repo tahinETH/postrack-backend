@@ -27,6 +27,7 @@ class AccountAnalyzer:
     async def get_account_analysis(self, account_id: str, user_id: str) -> Dict[str, Any]:
         """Get account analysis"""
         existing_analysis = await self.accounts.get_account_analysis(account_id, user_id)
+        
         return existing_analysis
         
 

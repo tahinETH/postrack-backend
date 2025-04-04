@@ -115,11 +115,12 @@ class AccountRepository():
             await session.commit()
 
     async def get_account_analysis(self, account_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+        
         async with get_async_session() as session:
             result = await session.execute(
                 select(AccountAnalysis)
                 .filter(
-                    AccountAnalysis.account_id == account_id,
+                        AccountAnalysis.account_id == account_id,
                     AccountAnalysis.user_id == user_id
                 )
                 .order_by(AccountAnalysis.created_at.desc())
@@ -127,7 +128,7 @@ class AccountRepository():
             analysis = result.scalars().first()
             
             if analysis:
-                # Get account details
+                
                 account = await self.get_account_by_id(account_id)
                 
                 return {
@@ -150,7 +151,7 @@ class AccountRepository():
             analysis = result.scalars().first()
             
             if not analysis:
-                raise ValueError(f"Account analysis with id {id} not found")
+                raise ValueError(f"Account analysis with id {account_id} not found")
                 
             await session.delete(analysis)
             await session.commit()
@@ -158,7 +159,7 @@ class AccountRepository():
             return {
                 "success": True,
                 "id": id,
-                "message": f"Account analysis with id {id} deleted successfully"
+                "message": f"Account analysis with id {account_id} deleted successfully"
             }
 
     async def stop_all_accounts(self):

@@ -116,7 +116,6 @@ async def monitoring_account(
 
 @app.get("/account/analyze/{account_id}", tags=["Account"])
 async def get_account_analysis(account_id: str, user_id: str = Depends(auth_middleware)):
-    print(f"Getting account analysis for {account_id} and {user_id}")
     try:
         result = await service.get_account_analysis(account_id, user_id)
         return result
@@ -146,7 +145,7 @@ async def delete_account_analysis(account_id:str, user_id: str = Depends(auth_mi
     """Delete account analysis"""
     try:
         result = await service.delete_account_analysis(user_id, account_id)
-        return {"status": "success", "message": f"Account analysis for {id} deleted successfully"}
+        return {"status": "success", "message": f"Account analysis for {account_id} deleted successfully"}
     except Exception as e:
         logger.error(f"Error deleting account analysis at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
