@@ -70,6 +70,7 @@ class AccountRepository():
 
     async def save_account_analysis(
         self, 
+        user_id: str,
         account_id: str,
         top_tweets: Optional[Dict] = None,
         metrics: Optional[Dict] = None,
@@ -100,6 +101,7 @@ class AccountRepository():
             else:
                 # Create new analysis
                 new_analysis = AccountAnalysis(
+                    user_id=user_id,
                     account_id=account_id,
                     top_tweets=top_tweets,
                     metrics=metrics,
@@ -112,11 +114,14 @@ class AccountRepository():
 
             await session.commit()
 
-    async def get_account_analysis(self, account_id: str) -> Optional[Dict[str, Any]]:
+    async def get_account_analysis(self, account_id: str, user_id: str) -> Optional[Dict[str, Any]]:
         async with get_async_session() as session:
             result = await session.execute(
                 select(AccountAnalysis)
-                .filter(AccountAnalysis.account_id == account_id)
+                .filter(
+                    AccountAnalysis.account_id == account_id,
+                    AccountAnalysis.user_id == user_id
+                )
                 .order_by(AccountAnalysis.created_at.desc())
             )
             analysis = result.scalars().first()
@@ -137,7 +142,24 @@ class AccountRepository():
                     'account_details': account.get('account_details') if account else None
                 }
             return None
-    
+    async def delete_account_analysis(self, user_id: str, account_id: str) -> Dict[str, Any]:
+        async with get_async_session() as session:
+            result = await session.execute(
+                select(AccountAnalysis).filter(AccountAnalysis.user_id == user_id, AccountAnalysis.account_id == account_id)
+            )
+            analysis = result.scalars().first()
+            
+            if not analysis:
+                raise ValueError(f"Account analysis with id {id} not found")
+                
+            await session.delete(analysis)
+            await session.commit()
+            
+            return {
+                "success": True,
+                "id": id,
+                "message": f"Account analysis with id {id} deleted successfully"
+            }
 
     async def stop_all_accounts(self):
         async with get_async_session() as session:

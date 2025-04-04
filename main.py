@@ -68,12 +68,12 @@ class AccountInput(BaseModel):
 
 class RefinementInput(BaseModel):
     tweet_text: str
-    account_id: str
+    account_id: str = None
     additional_commands: str
 
 class InspirationInput(BaseModel):
     tweet_id: str
-    account_id: str
+    account_id: str = None
     is_thread: bool
     additional_commands: str
 
@@ -92,7 +92,7 @@ async def get_user(user_id: str = Depends(auth_middleware)):
         logger.error(f"Error getting user details at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Account endpoints
+
 @app.post("/account/monitor/{account_identifier}", tags=["Account"])
 async def monitoring_account(
     account_identifier: str, 
@@ -115,29 +115,43 @@ async def monitoring_account(
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/account/analyze/{account_id}", tags=["Account"])
-async def get_account_analysis(account_id: str):
-    """Get account analysis"""
+async def get_account_analysis(account_id: str, user_id: str = Depends(auth_middleware)):
+    print(f"Getting account analysis for {account_id} and {user_id}")
     try:
-        result = await service.get_account_analysis(account_id)
+        result = await service.get_account_analysis(account_id, user_id)
         return result
     except Exception as e:
         logger.error(f"Error getting account analysis at {int(time.time())}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/account/analyze/{account_id}", tags=["Account"])
+
+
+@app.post("/account/analyze/{screen_name}", tags=["Account"])
 async def analyze_account(
-    account_id: str,
+    screen_name: str,
     new_fetch: bool = Query(default=True),
+    user_id: str = Depends(auth_middleware),
     background_tasks: BackgroundTasks = BackgroundTasks()
 ):
     """Analyze an account"""
     try:
-        background_tasks.add_task(service.analyze_account, account_id, new_fetch=new_fetch)
+        background_tasks.add_task(service.analyze_account, screen_name, new_fetch=new_fetch, user_id=user_id)
         return {"status": "success", "message": "Account analysis started"}
     except Exception as e:
-        logger.error(f"Error analyzing account {account_id}: {str(e)}")
+        logger.error(f"Error analyzing account {screen_name}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Tweet endpoints
+@app.delete("/account/analyze/{account_id}", tags=["Account"])
+async def delete_account_analysis(account_id:str, user_id: str = Depends(auth_middleware)):
+    """Delete account analysis"""
+    try:
+        result = await service.delete_account_analysis(user_id, account_id)
+        return {"status": "success", "message": f"Account analysis for {id} deleted successfully"}
+    except Exception as e:
+        logger.error(f"Error deleting account analysis at {int(time.time())}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/tweets", tags=["Tweet"])
 async def get_monitored_tweets(user_id: str = Depends(auth_middleware)):
     """Get all monitored tweets"""
@@ -148,6 +162,7 @@ async def get_monitored_tweets(user_id: str = Depends(auth_middleware)):
     except Exception as e:
         logger.error(f"Error getting monitored tweets at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/tweet/monitor/{tweet_id}", tags=["Tweet"])
 async def monitoring_tweet(
@@ -170,6 +185,7 @@ async def monitoring_tweet(
         logger.error(f"Error in tweet monitoring action at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/tweet/analyze/{tweet_id}", tags=["Tweet"])
 async def analyze_tweet(tweet_id: str, user_id: str = Depends(auth_middleware)):
     """Analyze a tweet"""
@@ -179,6 +195,7 @@ async def analyze_tweet(tweet_id: str, user_id: str = Depends(auth_middleware)):
     except Exception as e:
         logger.error(f"Error analyzing tweet {tweet_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/tweet/feed", tags=["Tweet"])
 async def get_tweet_feed(
@@ -211,6 +228,7 @@ async def get_tweet_feed(
         logger.error(f"Error getting tweet feed at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail="Error retrieving tweet feed")
 
+
 @app.get("/tweet/{tweet_id}/history", tags=["Tweet"])
 async def get_tweet_history(
     tweet_id: str, 
@@ -226,6 +244,7 @@ async def get_tweet_history(
     except Exception as e:
         logger.error(f"Error getting tweet history at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/workshop/inspiration", tags=["Workshop"])
 async def get_tweet_inspiration(
@@ -245,8 +264,6 @@ async def refine_tweet(
     input_data: RefinementInput,
     user_id: str = Depends(auth_middleware)
 ):
-    
-    """Get refinement suggestions for a tweet draft"""
     try:
         refinements = await service.get_tweet_refinements(user_id, input_data.tweet_text, input_data.account_id, input_data.additional_commands)
         return {"status": "success", "refinements": refinements}
@@ -265,43 +282,6 @@ async def get_visualization_ideas(
     except Exception as e:
         logger.error(f"Error getting visualization ideas at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
-""" @app.post("/admin/account/monitor/all-accounts", tags=["Admin"])
-async def manage_all_accounts(action: str = Query(..., regex="^(start|stop)$"), admin_secret: str = Header(None)):
-    if not admin_secret or admin_secret != ADMIN_SECRET:
-        raise HTTPException(status_code=401, detail="Invalid admin secret")
-    try:
-        success = await service.handle_all_accounts(action)
-        if success:
-            return {"status": "success", "message": f"{action.title()}ed monitoring all accounts"}
-        raise HTTPException(status_code=500, detail=f"Failed to {action} monitoring all accounts")
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error {action}ing all account monitoring at {int(time.time())}: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-     """
-
-"""     
-@app.post("/admin/tweets/{action}", tags=["Admin"])
-async def handle_all_tweets(
-    action: str = FastAPIPath(..., regex="^(start|stop)$"),
-    admin_secret: str = Header(None)
-):
-    if not admin_secret or admin_secret != ADMIN_SECRET:
-        raise HTTPException(status_code=401, detail="Invalid admin secret")
-    try:
-        success = await service.handle_all_tweets(action)
-        if success:
-            return {"status": "success", "message": f"Successfully {action}ed tweets"}
-        raise HTTPException(status_code=500, detail=f"Failed to {action} tweets")
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error handling all tweets at {int(time.time())}: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e)) """
-
-# Background tasks
 
 @app.on_event("startup")
 async def startup_event():

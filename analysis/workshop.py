@@ -78,7 +78,7 @@ class Workshop:
             if not tweet_text:
                 return "Error: Could not retrieve tweet"
             try:
-                analysis = await self.accounts.get_account_analysis(account_id)
+                analysis = await self.accounts.get_account_analysis(account_id, user_id)
                 raw_tweets = analysis.get('top_tweets', [])
                 example_posts = await self.clean_tweets(raw_tweets, limit=20)
             except Exception as e:
@@ -116,8 +116,7 @@ class Workshop:
             if not tweet_text:
                 return "Error: Could not retrieve tweet"
 
-            analysis = await self.accounts.get_account_analysis(account_id)
-            
+            analysis = await self.accounts.get_account_analysis(account_id, user_id)
             
             raw_tweets = analysis.get('top_tweets', [])
             example_posts = await self.clean_tweets(raw_tweets, limit=20)

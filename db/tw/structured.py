@@ -38,6 +38,21 @@ class TweetStructuredRepository():
         tracked_items = await self.user_data.get_tracked_items(user_id)
         tracked_accounts = []
 
+        if tracked_items.get('analysis'):
+            for account_id in tracked_items['analysis']:
+                account = await self.accounts.get_account_by_id(account_id)
+                if account:
+                    tracked_accounts.append({
+                        'account_id': account['account_id'],
+                        'screen_name': account['screen_name'],
+                        'is_active': account['is_active'],
+                        'last_check': account['last_check'],
+                        'created_at': account['created_at'],
+                        'account_details': account['account_details'],
+                        'tracking_type': 'analysis'
+                    })
+
+        
         if tracked_items.get('accounts'):
             for account_id in tracked_items['accounts']:
                 account = await self.accounts.get_account_by_id(account_id)
@@ -48,7 +63,8 @@ class TweetStructuredRepository():
                         'is_active': account['is_active'],
                         'last_check': account['last_check'],
                         'created_at': account['created_at'],
-                        'account_details': account['account_details']
+                        'account_details': account['account_details'],
+                        'tracking_type': 'account'
                     })
 
         feed_data = []

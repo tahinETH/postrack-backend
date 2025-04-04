@@ -18,16 +18,17 @@ class AccountAnalyzer:
 
     async def _fetch_account_tweets(self, screen_name: str) -> List[Dict[str, Any]]:
         """Fetch the top tweets for an account"""
-        reply_tweets = await self.api_client.api_get_user_top_tweets(screen_name, limit=50, replies=True)
-        non_reply_tweets = await self.api_client.api_get_user_top_tweets(screen_name, limit=50, replies=False)
+        reply_tweets = await self.api_client.api_get_account_by_id_top_tweets(screen_name, limit=50, replies=True)
+        non_reply_tweets = await self.api_client.api_get_account_by_id_top_tweets(screen_name, limit=50, replies=False)
         tweets = reply_tweets + non_reply_tweets
-        print(len(tweets))
+        
         return tweets
     
-    async def get_account_analysis(self, account_id: str) -> Dict[str, Any]:
+    async def get_account_analysis(self, account_id: str, user_id: str) -> Dict[str, Any]:
         """Get account analysis"""
-        existing_analysis = await self.accounts.get_account_analysis(account_id)
+        existing_analysis = await self.accounts.get_account_analysis(account_id, user_id)
         return existing_analysis
+        
 
     async def clean_account_top_tweets(self, tweets: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         
@@ -219,11 +220,21 @@ class AccountAnalyzer:
     
 
 
-    async def analyze_account(self, account_id: str, new_fetch: bool = False) -> Dict[str, Any]:
+    async def analyze_account(self, account_id: str, new_fetch: bool = False, account_data: Dict[str, Any] = None, user_id: str = None) -> Dict[str, Any]:
         try:
             account = await self.accounts.get_account_by_id(account_id)
+            if not account:
+                account = {
+                    'account_details': account_data,
+                    'screen_name': account_data['screen_name'],
+                    'account_id': account_data['id_str']
+                }
+
+                await self.accounts.upsert_account(account_id, account['screen_name'], account['account_details'], update_existing=True, is_active=False)
+                
+
             screen_name = account.get('screen_name')
-            existing_analysis = await self.accounts.get_account_analysis(account_id)
+            existing_analysis = await self.accounts.get_account_analysis(account_id, user_id)
             account_data = account['account_details']
 
             if new_fetch or not existing_analysis:
@@ -265,6 +276,7 @@ class AccountAnalyzer:
             
             try:
                 await self.accounts.save_account_analysis(
+                    user_id,
                     account_id,
                     cleaned_tweets,
                     metrics,

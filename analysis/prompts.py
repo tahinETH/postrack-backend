@@ -73,7 +73,7 @@ def prepare_llm_prompt(insights: Dict[str, Any] | None, metrics: Dict[str, Any] 
         </analysis>
         
         
-        
+        Use bullet points.
 
 
         """
@@ -97,28 +97,30 @@ def prepare_llm_prompt(insights: Dict[str, Any] | None, metrics: Dict[str, Any] 
         Present your analysis in the following format:
         <analysis>
         <section name="content themes">
-        [Your through analysis of the tweets]
+        [Your through analysis of the tweets, bullet pointed]
         </section>
         <section name="most successful tweets">
-        [Your through analysis of the tweets]
+        [Your through analysis of the tweets, bullet pointed]
         </section>
         <section name="authenticity & voice">
-        [Your through analysis of the tweets]
+        [Your through analysis of the tweets, bullet pointed]
         </section>
         <section name="content format">
-        [Your through analysis of the tweets]
+        [Your through analysis of the tweets, bullet pointed]
         </section>
         <section name="growth strategy">
-        [Your through analysis of the tweets]
+        [Your through analysis of the tweets, bullet pointed]
         </section>
         <section name="community engagement">
-        [Your through analysis of the tweets]
+        [Your through analysis of the tweets, bullet pointed]
         </section>
         <section name="success formula">
-        [Your through analysis of the tweets]
+        [Your through analysis of the tweets, bullet pointed]
         </section>
 
         </analysis>
+
+        Use bullet points.
         
         """
     
@@ -142,6 +144,10 @@ def prepare_content_inspiration_prompt(example_posts:  Dict[str, Any], tweet: st
         <discussion_source>
         {tweet}
         </discussion_source>
+
+        <additional_commands_from_user>
+        {additional_commands}
+        </additional_commands_from_user>
 
         dicussion_source contains a tweet or a thread. i want you to help me come up with ideas to respond to or expand upon the content shared under discussion_source. Please generate a list of potential conversation points, topics, orthogonal or parallel ideas and frameworks that i can explore in response to the content shared. i want you to provide your topic ideas in TWO different sections: 
 
@@ -172,12 +178,16 @@ def prepare_content_inspiration_prompt(example_posts:  Dict[str, Any], tweet: st
         ...
         </independent_ideas>
 
+        <additional_instructions>
+        Output based on the additional instructions.
+        </additional_instructions>
+
         for independent ideas, i want you to be very creative, providing also esoteric and outlier ideas. 
         do not provide posts to share. give me areas i can explore. always enclose your response in tags.
         
-        <additional_commands_from_user>
-        {additional_commands}
-        </additional_commands_from_user>
+       
+
+        
 
         """
         )
@@ -201,6 +211,11 @@ First, carefully review these example posts to understand the desired style and 
 <example_posts>
 {json.dumps(example_posts)}
 </example_posts>
+
+<additional_instructions>
+{additional_instructions}
+</additional_instructions>
+
 
 Now, here's the tweet draft you need to improve:
 
@@ -253,9 +268,12 @@ Language Improvements:
 ...
 </refined_tweets>
 
-{additional_instructions}
+<additional_instructions>
+Output based on the additional instructions.
+</additional_instructions>
 
-just give me content with tags and nothing more. 
+
+always prioritize the additional instructions above all else. just give me content with tags and nothing more. 
 """
 
 

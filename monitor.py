@@ -10,6 +10,7 @@ from db.tw.account_db import AccountRepository
 from db.api.api_db import APICallLogRepository
 from api_client import TwitterAPIClient
 from analysis.ai import AIAnalyzer
+from analysis.account import AccountAnalyzer
 import json
 logging.basicConfig(
     level=logging.INFO,
@@ -49,6 +50,7 @@ class TweetMonitor:
         self.tweet_data = TweetDataRepository()
         self.tweet_analysis = TweetStructuredRepository()
         self.accounts = AccountRepository()
+        self.account_analyzer = AccountAnalyzer(analysis_repo=self.tweet_analysis, api_key=api_key)
         self.api_logger = APICallLogRepository()
         self.api_client = TwitterAPIClient(api_key)
         self.ai_analyze = AIAnalyzer(self.tweet_analysis)
@@ -412,10 +414,10 @@ class TweetMonitor:
 
 
 
-    async def monitor_account(self, screen_name: str, max_followers: int, background_tasks: BackgroundTasks = BackgroundTasks()):
+    async def monitor_account(self, screen_name: str, max_followers: int, user_id: str, background_tasks: BackgroundTasks = BackgroundTasks()):
         """Start monitoring an account"""
         try:
-            user_details = await self.api_client.api_get_user(screen_name)
+            user_details = await self.api_client.api_get_account_by_id(screen_name)
             if user_details:
                 account_id = user_details['id_str']
                 if user_details['followers_count'] > max_followers:
@@ -425,7 +427,7 @@ class TweetMonitor:
                 await self.accounts.upsert_account(account_id, screen_name, user_details,update_existing=True, is_active=True)
                 
                 try:
-                    background_tasks.add_task(self.account_analyzer.analyze_account, account_id, new_fetch=True)
+                    background_tasks.add_task(self.account_analyzer.analyze_account, account_id, new_fetch=True, user_id=user_id)
                 except Exception as e:
                     self.logger.error(f"Error starting account analysis for {screen_name}: {str(e)}")
                 

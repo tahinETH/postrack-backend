@@ -10,6 +10,7 @@ from db.tw.account_db import AccountRepository
 from analysis.ai import AIAnalyzer
 from analysis.account import AccountAnalyzer
 from analysis.workshop import Workshop
+from api_client import TwitterAPIClient
 from monitor import TweetMonitor
 from datetime import datetime
 from config import config
@@ -27,17 +28,17 @@ SOCIAL_DATA_API_KEY = config.SOCIAL_DATA_API_KEY
 
 
 class SubscriptionTier:
-    def __init__(self, tier_id: str, max_accounts: int, max_tweets: int, max_followers: int):
+    def __init__(self, tier_id: str, max_accounts: int, max_tweets: int, max_analysis: int, max_followers: int):
         self.tier_id = tier_id
         self.max_accounts = max_accounts
         self.max_tweets = max_tweets
+        self.max_analysis = max_analysis
         self.max_followers = max_followers
 
 class SubscriptionTiers:
-    FREE = SubscriptionTier('tier0', 0, 1, 1000)
-    PREMIUM = SubscriptionTier('tier1', 1, 3, 5000) 
-    PRO = SubscriptionTier('tier2', 1, 3, 50000)
-    ADMIN = SubscriptionTier('admin', 1000, 1000, 1000000000)
+    FREE = SubscriptionTier('tier0', 0, 1, 5, 5000)
+    PREMIUM = SubscriptionTier('tier1', 0, 1, 5, 50000) 
+    ADMIN = SubscriptionTier('admin', 1000, 1000, 20, 1000000000)
 
     @classmethod 
     def get_tier(cls, tier_id: str) -> Optional[SubscriptionTier]:
@@ -52,7 +53,9 @@ class Service:
         self.accounts = AccountRepository()
         self.ai_analyzer = AIAnalyzer(self.analysis)
         self.account_analyzer = AccountAnalyzer(self.analysis, SOCIAL_DATA_API_KEY)
+        self.api_client = TwitterAPIClient(SOCIAL_DATA_API_KEY)
         self.content_workshop = Workshop()
+
     async def _get_user_limits(self, user_id: str) -> Tuple[int, int]:
         """Get user's max allowed accounts and tweets based on their tier"""
         user = await self.user_repository.get_user(user_id)
@@ -62,7 +65,7 @@ class Service:
             
         tier = SubscriptionTiers.get_tier(user['current_tier'])
         
-        return tier.max_accounts, tier.max_tweets, tier.max_followers
+        return tier.max_accounts, tier.max_tweets, tier.max_analysis, tier.max_followers
 
     async def get_user(self, user_id: str) -> Dict:
         """Get user details"""
@@ -74,7 +77,7 @@ class Service:
     async def _can_track_account(self, user_id: str) -> bool:
         """Check if user can track another account based on their tier limits"""
         try:
-            max_accounts, _, max_followers = await self._get_user_limits(user_id)
+            max_accounts, _, _, max_followers = await self._get_user_limits(user_id)
             tracked_items = await self.user_repository.get_tracked_items(user_id)
             current_accounts = len(tracked_items['accounts'])
 
@@ -84,10 +87,21 @@ class Service:
             logger.error(f"Error checking account tracking limit for user {user_id}: {str(e)}")
             raise
 
+    async def _can_track_analysis(self, user_id: str) -> bool:
+        """Check if user can track another analysis based on their tier limits"""
+        try:
+            _, _, max_analysis, _ = await self._get_user_limits(user_id)
+            tracked_items = await self.user_repository.get_tracked_items(user_id)
+            current_analysis = len(tracked_items['analysis'])
+            return current_analysis < max_analysis
+        except Exception as e:
+            logger.error(f"Error checking analysis tracking limit for user {user_id}: {str(e)}")
+            raise
+            
     async def _can_track_tweet(self, user_id: str) -> bool:
         """Check if user can track another tweet based on their tier limits"""
         try:
-            _, max_tweets, max_followers = await self._get_user_limits(user_id)
+            _, max_tweets, _, max_followers = await self._get_user_limits(user_id)
             tracked_items = await self.user_repository.get_tracked_items(user_id)
             current_tweets = len(tracked_items['tweets'])
             
@@ -104,8 +118,7 @@ class Service:
                 can_track_account, max_followers = await self._can_track_account(user_id)
                 if not can_track_account:
                     raise ValueError("Account tracking limit reached for user's tier")
-
-                account_id = await self.monitor.monitor_account(account_identifier, max_followers)
+                account_id = await self.monitor.monitor_account(screen_name=account_identifier, max_followers= max_followers, user_id=user_id)
                 
                 if account_id:  
                     await self.user_repository.add_tracked_item(user_id, "account", account_id, account_identifier)
@@ -188,19 +201,41 @@ class Service:
             logger.error(f"Error getting monitored tweets: {str(e)}")
             raise
 
-    async def get_account_analysis(self, account_id: str) -> Dict:
+    async def get_account_analysis(self, account_id: str, user_id: str) -> Dict:
         """Get account analysis"""
         try:
-            result = await self.account_analyzer.get_account_analysis(account_id)
+            result = await self.account_analyzer.get_account_analysis(account_id, user_id)
             return result
         except Exception as e:
             logger.error(f"Error getting account analysis: {str(e)}")
             raise
-
-    async def analyze_account(self, account_id: str, new_fetch: bool = False) -> Dict:
-        """Get AI analysis for an account"""
+    async def delete_account_analysis(self,user_id:str, account_id:str) -> Dict:
+        """Delete account analysis"""
         try:
-            result = await self.account_analyzer.analyze_account(account_id, new_fetch)
+            result = await self.accounts.delete_account_analysis(user_id, account_id)
+            # Remove tracked item for the user
+            await self.user_repository.remove_tracked_item(user_id, "analysis", account_id)
+            return result
+        except Exception as e:
+            logger.error(f"Error deleting account analysis: {str(e)}")
+            raise
+
+    async def analyze_account(self, screen_name: str, new_fetch: bool = False, user_id: str = None) -> Dict:
+        if not await self._can_track_analysis(user_id):
+            raise ValueError("Analysis tracking limit reached for user's tier")
+        try:
+            account = await self.api_client.api_get_account_by_screen_name(screen_name)
+        except:
+            raise ValueError(f"Account {screen_name} not found")
+        account_id = account['id_str']
+
+        try:
+            await self.user_repository.add_tracked_item(user_id, "analysis", account_id, screen_name)
+        except:
+            raise ValueError(f"Account {screen_name} already tracked")
+        
+        try:
+            result = await self.account_analyzer.analyze_account(account_id, new_fetch, account_data=account, user_id=user_id)
             logger.info(f"Generated AI analysis for account {account_id}")
             return result
         except Exception as e:

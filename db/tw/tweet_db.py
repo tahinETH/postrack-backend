@@ -78,6 +78,7 @@ class TweetDataRepository():
                             'tracking_type': 'individual',
                             'tracked_id': item.tracked_id
                         })
+                
 
             return tweets
 

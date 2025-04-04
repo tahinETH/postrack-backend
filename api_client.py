@@ -17,7 +17,21 @@ class TwitterAPIClient:
             'Accept': 'application/json'
         }
         
-    async def api_get_user(self, screen_name: str) -> Optional[Dict[str, Any]]:
+    async def api_get_account_by_id(self, account_id: str) -> Optional[Dict[str, Any]]:
+        try:
+            url = f'https://api.socialdata.tools/twitter/user/{account_id}'
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=self.get_headers()) as response:
+                    data = await response.json()
+                    if data.get('status') == 'error' and data.get('message') == 'Insufficient balance':
+                        logger.error("Insufficient balance when getting user details")
+                        return None
+                    return data
+        except Exception as e:
+            logger.error(f"Error getting user details: {str(e)}")
+            return None
+    
+    async def api_get_account_by_screen_name(self, screen_name: str) -> Optional[Dict[str, Any]]:
         try:
             url = f'https://api.socialdata.tools/twitter/user/{screen_name}'
             async with aiohttp.ClientSession() as session:
@@ -30,8 +44,6 @@ class TwitterAPIClient:
         except Exception as e:
             logger.error(f"Error getting user details: {str(e)}")
             return None
-        
-
     async def api_get_list_tweets(self, list_id: str, limit: int = 100) -> Optional[Dict[str, Any]]:
         try:
             all_tweets = []
@@ -69,7 +81,7 @@ class TwitterAPIClient:
         
 
 
-    async def api_get_user_top_tweets(self, screen_name: str, limit: int = 50, replies: bool = False) -> Optional[Dict[str, Any]]:
+    async def api_get_account_by_id_top_tweets(self, screen_name: str, limit: int = 50, replies: bool = False) -> Optional[Dict[str, Any]]:
         try:
             all_tweets = []
             next_cursor = None

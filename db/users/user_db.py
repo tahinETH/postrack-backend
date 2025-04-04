@@ -101,10 +101,8 @@ class UserDataRepository():
             raise
 
     async def add_tracked_item(self, user_id: str, tracked_type: str, tracked_id: str, tracked_account_name: Optional[str] = None) -> bool:
-        """Add a tracked item (tweet or account) for a user"""
         try:
             async with get_async_session() as session:
-                # Check if item already exists
                 result = await session.execute(
                     select(UserTrackedItem).filter(
                         UserTrackedItem.user_id == user_id,
@@ -163,18 +161,20 @@ class UserDataRepository():
                 result = await session.execute(
                     select(UserTrackedItem).filter(
                         UserTrackedItem.user_id == user_id,
-                        UserTrackedItem.tracked_type.in_(['tweet', 'account'])
+                        UserTrackedItem.tracked_type.in_(['tweet', 'account', 'analysis'])
                     )
                 )
                 tracked_items = result.scalars().all()
                 if not tracked_items:
-                    return {'tweets': [], 'accounts': []}
-                items = {'tweets': [], 'accounts': []}
+                    return {'tweets': [], 'accounts': [], 'analysis': []}
+                items = {'tweets': [], 'accounts': [], 'analysis': []}
                 for item in tracked_items:
                     if item.tracked_type == 'tweet':
                         items['tweets'].append(item.tracked_id)
                     elif item.tracked_type == 'account':
                         items['accounts'].append(item.tracked_id)
+                    elif item.tracked_type == 'analysis':
+                        items['analysis'].append(item.tracked_id)
                         
                 return items
                 

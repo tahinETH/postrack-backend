@@ -60,6 +60,7 @@ class AIAnalysis(Base):
 class AccountAnalysis(Base):
     __tablename__ = 'account_analysis'
     id = Column(Integer, primary_key=True)
+    user_id = Column(String, ForeignKey('users.id'), nullable=False)
     account_id = Column(String, ForeignKey('monitored_accounts.account_id'), nullable=False)
     top_tweets = Column(JSON, nullable=True)  # Store top tweets data
     metrics = Column(JSON, nullable=True)  # Engagement rates, growth trends etc
