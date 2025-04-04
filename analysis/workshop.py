@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import anthropic
 from typing import Dict, Any, Optional, List
 from db.tw.structured import TweetStructuredRepository
 from config import config
