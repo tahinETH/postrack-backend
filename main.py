@@ -1,6 +1,6 @@
 import logging
 import os
-from fastapi import FastAPI, HTTPException, Query, Depends, Header, Path as FastAPIPath, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Query, Depends, Header, Path as FastAPIPath
 import asyncio
 from typing import Optional
 import uvicorn
@@ -130,11 +130,11 @@ async def analyze_account(
     screen_name: str,
     new_fetch: bool = Query(default=True),
     user_id: str = Depends(auth_middleware),
-    background_tasks: BackgroundTasks = BackgroundTasks()
+    
 ):
     """Analyze an account"""
     try:
-        background_tasks.add_task(service.analyze_account, screen_name, new_fetch=new_fetch, user_id=user_id)
+        asyncio.create_task(service.analyze_account, screen_name, new_fetch=new_fetch, user_id=user_id)
         return {"status": "success", "message": "Account analysis started"}
     except Exception as e:
         logger.error(f"Error analyzing account {screen_name}: {str(e)}")
@@ -295,7 +295,8 @@ async def startup_event():
         
         # Start periodic checks
         # logger.info(f"Starting tweet monitoring background task at {int(time.time())}")
-        # asyncio.create_task(service.handle_periodic_checks())
+        asyncio.create_task(service.handle_periodic_checks())
+
     except Exception as e:
         logger.error(f"Error during startup: {str(e)}")
         raise

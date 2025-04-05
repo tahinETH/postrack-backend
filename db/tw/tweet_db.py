@@ -294,7 +294,20 @@ class TweetDataRepository():
                 'last_check': tweet.last_check,
                 'is_active': tweet.is_active
             } for tweet in tweets]
-    
+    async def get_monitored_tweets_from_accounts(self, account_ids: List[str]) -> List[Dict[str, Any]]:
+        async with get_async_session() as session:
+            result = await session.execute(
+                select(MonitoredTweet).where(MonitoredTweet.account_id.in_(account_ids))
+            )
+            tweets = result.scalars().all()
+            return [{
+                'tweet_id': tweet.tweet_id,
+                'user_screen_name': tweet.user_screen_name,
+                'account_id': tweet.account_id,
+                'created_at': tweet.created_at,
+                'last_check': tweet.last_check,
+                'is_active': tweet.is_active
+            } for tweet in tweets]
     async def save_ai_analysis(self, tweet_id: str, analysis: str, input_data: Dict[str, Any]):
         timestamp = int(datetime.now().timestamp())
         

@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List, Tuple
-from fastapi import BackgroundTasks
 from pathlib import Path
 import asyncio
 from db.tw.tweet_db import TweetDataRepository
@@ -373,10 +372,10 @@ class TweetMonitor:
             except Exception as e:
                 self.logger.error(f"Error processing quotes for {tweet_id}: {str(e)}")
 
-            try:
+            """ try:
                 await self.ai_analyze.generate_ai_analysis_tweet(tweet_id, with_ai=False)
             except Exception as e:
-                self.logger.error(f"Error analyzing tweet {tweet_id}: {str(e)}")
+                self.logger.error(f"Error analyzing tweet {tweet_id}: {str(e)}") """
 
             return monitoring_run
 
@@ -391,8 +390,10 @@ class TweetMonitor:
     async def check_and_update_tweets(self):
         "monitors existing tweets and updates if needed"
         try:
-            tweets = await self.tweet_data.get_monitored_tweets()
-            
+            accounts = await self.accounts.get_monitored_accounts()
+            active_accounts = [account['account_id'] for account in accounts if account['is_active']]
+            tweets = await self.tweet_data.get_monitored_tweets_from_accounts(active_accounts)
+            print(f"Tweets: {tweets}")
             update_tasks = []
             run_timestamp = int(datetime.now().timestamp())
             for tweet in tweets:
@@ -414,7 +415,7 @@ class TweetMonitor:
 
 
 
-    async def monitor_account(self, screen_name: str, max_followers: int, user_id: str, background_tasks: BackgroundTasks = BackgroundTasks()):
+    async def monitor_account(self, screen_name: str, max_followers: int, user_id: str):
         """Start monitoring an account"""
         try:
             user_details = await self.api_client.api_get_account_by_id(screen_name)
@@ -427,7 +428,7 @@ class TweetMonitor:
                 await self.accounts.upsert_account(account_id, screen_name, user_details,update_existing=True, is_active=True)
                 
                 try:
-                    background_tasks.add_task(self.account_analyzer.analyze_account, account_id, new_fetch=True, user_id=user_id)
+                    asyncio.create_task(self.account_analyzer.analyze_account, account_id, new_fetch=True, user_id=user_id)
                 except Exception as e:
                     self.logger.error(f"Error starting account analysis for {screen_name}: {str(e)}")
                 
