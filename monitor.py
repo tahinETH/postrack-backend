@@ -428,7 +428,7 @@ class TweetMonitor:
                 await self.accounts.upsert_account(account_id, screen_name, user_details,update_existing=True, is_active=True)
                 
                 try:
-                    asyncio.create_task(self.account_analyzer.analyze_account, account_id, new_fetch=True, user_id=user_id)
+                    asyncio.create_task(self.account_analyzer.analyze_account(account_id, new_fetch=True, user_id=user_id))
                 except Exception as e:
                     self.logger.error(f"Error starting account analysis for {screen_name}: {str(e)}")
                 

@@ -227,6 +227,13 @@ i want the tweet to look and sound like the example posts, adapting the tone, st
 
 present it in html tags in the following format:
 
+Refined Tweet:
+<refined_tweets>
+1) 1st Refined Tweet
+2) 2nd Refined Tweet
+3) 3rd Refined Tweet
+</refined_tweets>
+
 Language Improvements: 
 <language_improvements>
 1) 1st Potential Improvement Option
@@ -262,11 +269,7 @@ Language Improvements:
 ...
 </improved_tweet_versions>
 
-<refined_tweets>
-1) 1st Refined Tweet
-2) 2nd Refined Tweet
-...
-</refined_tweets>
+
 
 <additional_instructions>
 Output based on the additional instructions.
@@ -303,3 +306,26 @@ Organize your response into two sections:
 
 Only include visuals that are likely to increase engagement or improve comprehension. Avoid generic or unrelated visuals.
 """
+
+def prepare_content_inspiration_prompt(input: str, example_posts: Dict[str, Any] = None) -> str:
+   
+   example_posts_section = ""
+   if example_posts:
+       example_posts_section = f"""
+<example_posts>
+{json.dumps(example_posts, indent=2)}
+</example_posts>
+"""
+   
+   return(f"""
+<unstructured_input>
+{input}
+</unstructured_input>
+{example_posts_section}
+
+based on what i did this week under unstructured_input, i want you to give me topics i can post about. give me 10 standalone topic ideas and 10 thread ideas.
+
+
+Do not give me tweets. I want topic ideas. Be very specific. We are inspired by this quote: "The bigger the issue, the smaller you write. Remember that. You don't write about the horrors of war. No. You write about a kid's burnt socks lying on the road. You pick the smallest manageable part of the big thing, and you work off the resonance"
+          """
+   )

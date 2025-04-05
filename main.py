@@ -134,7 +134,7 @@ async def analyze_account(
 ):
     """Analyze an account"""
     try:
-        asyncio.create_task(service.analyze_account, screen_name, new_fetch=new_fetch, user_id=user_id)
+        asyncio.create_task(service.analyze_account(screen_name, new_fetch=new_fetch, user_id=user_id))
         return {"status": "success", "message": "Account analysis started"}
     except Exception as e:
         logger.error(f"Error analyzing account {screen_name}: {str(e)}")
