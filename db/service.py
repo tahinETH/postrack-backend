@@ -36,9 +36,10 @@ class SubscriptionTier:
         self.max_followers = max_followers
 
 class SubscriptionTiers:
-    FREE = SubscriptionTier('tier0', 0, 1, 5, 5000)
-    PREMIUM = SubscriptionTier('tier1', 0, 1, 5, 50000) 
-    ADMIN = SubscriptionTier('admin', 1000, 1000, 20, 1000000000)
+    #max_accounts, max_tweets, max_analysis, max_followers
+    FREE = SubscriptionTier('tier0', 1, 0, 5, 5000)
+    PREMIUM = SubscriptionTier('tier1', 1, 0, 5, 50000) 
+    ADMIN = SubscriptionTier('admin', 1000, 1000, 1000, 1000000000)
 
     @classmethod 
     def get_tier(cls, tier_id: str) -> Optional[SubscriptionTier]:
