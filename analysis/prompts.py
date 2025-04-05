@@ -307,7 +307,7 @@ Organize your response into two sections:
 Only include visuals that are likely to increase engagement or improve comprehension. Avoid generic or unrelated visuals.
 """
 
-def prepare_content_inspiration_prompt(input: str, example_posts: Dict[str, Any] = None) -> str:
+def prepare_new_content_inspiration_prompt(input: str, example_posts: Dict[str, Any] = None) -> str:
    
    example_posts_section = ""
    if example_posts:

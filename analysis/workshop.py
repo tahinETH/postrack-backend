@@ -84,7 +84,7 @@ class Workshop:
                 logger.error(f"Error getting example posts: {str(e)}")
                 example_posts = {}
             
-            prompt = prepare_content_inspiration_prompt(example_posts, [tweet_text], additional_commands)
+            prompt = prepare_content_inspiration_prompt(example_posts, tweet_text, additional_commands)
             response = completion(
                 model="chatgpt-4o-latest",
                 max_tokens=2000,
