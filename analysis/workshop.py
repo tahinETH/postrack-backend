@@ -6,6 +6,7 @@ from db.tw.structured import TweetStructuredRepository
 from config import config
 from analysis.prompts import (
     prepare_content_inspiration_prompt,
+    prepare_tweet_example_generator_prompt,
     prepare_tweet_refinement_prompt,
     prepare_visualization_prompt
 )
@@ -71,7 +72,6 @@ class Workshop:
             return [tweet.get('full_text', '') for tweet in cleaned_tweets]
 
     async def workshop_inspiration(self, tweet_id: str, account_id: str, is_thread: bool, user_id: str, additional_commands: str) -> str:
-        
         try:
             tweet_text = await self._get_tweet_text(tweet_id, is_thread)
             if not tweet_text:
@@ -91,24 +91,46 @@ class Workshop:
                 messages=[{
                     "role": "user", 
                     "content": prompt
-                }]
+                }],
+                response_format={"type": "json_object"}
             )
-            result = response.choices[0].message.content
-            
+            content_inspiration = json.loads(response.choices[0].message.content)
+
+            tweet_example_generator_prompt = prepare_tweet_example_generator_prompt(json.dumps(content_inspiration), example_posts, tweet_text)
+            response = completion(
+                model="chatgpt-4o-latest",
+                max_tokens=2000,
+                messages=[{
+                    "role": "user", 
+                    "content": tweet_example_generator_prompt
+                }],
+                response_format={"type": "json_object"}
+            ) 
+            tweet_examples = json.loads(response.choices[0].message.content)
+
+            # Merge tweet examples into content inspiration
+            for idea_type in ['dependent_ideas', 'independent_ideas']:
+                for idea in content_inspiration[idea_type]:
+                    idea_id = str(idea['id'])
+                    if idea_type in tweet_examples and idea_id in tweet_examples[idea_type][0]:
+                        idea['tweet'] = tweet_examples[idea_type][0][idea_id]
+
+            merged_result = json.dumps(content_inspiration)
+
             # Save the inspiration
             await self.workshop_repo.save_inspiration(
                 user_id=user_id,
                 tweet_id=tweet_id,
                 prompt=prompt,
-                result=result,
+                result=merged_result,
                 account_id=account_id,
                 is_thread=is_thread
             )
             
-            return result
+            return str(merged_result)
         except Exception as e:
             logger.error(f"Error getting content inspiration: {str(e)}")
-            return "Error generating content inspiration"
+            return str("Error generating content inspiration")
 
     async def workshop_refine(self, user_id: str, tweet_text: str, account_id: str, additional_commands: str) -> str:
         try:

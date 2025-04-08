@@ -92,7 +92,6 @@ async def get_user(user_id: str = Depends(auth_middleware)):
         logger.error(f"Error getting user details at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.post("/account/monitor/{account_identifier}", tags=["Account"])
 async def monitoring_account(
     account_identifier: str, 
@@ -123,8 +122,6 @@ async def get_account_analysis(account_id: str, user_id: str = Depends(auth_midd
         logger.error(f"Error getting account analysis at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
-
 @app.post("/account/analyze/{screen_name}", tags=["Account"])
 async def analyze_account(
     screen_name: str,
@@ -136,6 +133,10 @@ async def analyze_account(
     try:
         asyncio.create_task(service.analyze_account(screen_name, new_fetch=new_fetch, user_id=user_id))
         return {"status": "success", "message": "Account analysis started"}
+    except ValueError as e:
+        if str(e) == "Analysis tracking limit reached for user's tier":
+            raise HTTPException(status_code=403, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Error analyzing account {screen_name}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -149,7 +150,6 @@ async def delete_account_analysis(account_id:str, user_id: str = Depends(auth_mi
     except Exception as e:
         logger.error(f"Error deleting account analysis at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.get("/tweets", tags=["Tweet"])
 async def get_monitored_tweets(user_id: str = Depends(auth_middleware)):
@@ -281,6 +281,58 @@ async def get_visualization_ideas(
     except Exception as e:
         logger.error(f"Error getting visualization ideas at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/admin/account/analyze/{account_id}", tags=["Admin"])
+async def admin_get_account_analysis(account_id: str, admin_secret: str = Header(None)):
+    try:
+        if admin_secret != ADMIN_SECRET:
+            raise HTTPException(status_code=403, detail="Invalid admin secret")
+        user_id = "admin"
+        result = await service.get_account_analysis(account_id, user_id)
+        
+        return result
+    except Exception as e:
+        logger.error(f"Error getting account analysis at {int(time.time())}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/admin/account/analyze/{screen_name}", tags=["Admin"])
+async def admin_analyze_account(
+    screen_name: str,
+    new_fetch: bool = Query(default=True),
+    admin_secret: str = Header(None)
+):
+    """Analyze an account"""
+    try:
+        if admin_secret != ADMIN_SECRET:
+            raise HTTPException(status_code=403, detail="Invalid admin secret")
+        user_id = "admin"
+        asyncio.create_task(service.analyze_account(screen_name, new_fetch=new_fetch, user_id=user_id))
+        return {"status": "success", "message": "Account analysis started"}
+    except ValueError as e:
+        if str(e) == "Analysis tracking limit reached for user's tier":
+            raise HTTPException(status_code=403, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error analyzing account {screen_name}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/admin/account/analyze/{account_id}", tags=["Admin"])
+async def admin_delete_account_analysis(account_id: str, admin_secret: str = Header(None)):
+    """Delete account analysis"""
+    try:
+        if admin_secret != ADMIN_SECRET:
+            raise HTTPException(status_code=403, detail="Invalid admin secret")
+        user_id = "admin"
+        result = await service.delete_account_analysis(user_id, account_id)
+        return {"status": "success", "message": f"Account analysis for {account_id} deleted successfully"}
+    except Exception as e:
+        logger.error(f"Error deleting account analysis at {int(time.time())}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+
 
 @app.on_event("startup")
 async def startup_event():

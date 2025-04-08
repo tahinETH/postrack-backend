@@ -228,8 +228,8 @@ class Service:
             account = await self.api_client.api_get_account_by_screen_name(screen_name)
         except:
             raise ValueError(f"Account {screen_name} not found")
+        
         account_id = account['id_str']
-
         try:
             await self.user_repository.add_tracked_item(user_id, "analysis", account_id, screen_name)
         except:

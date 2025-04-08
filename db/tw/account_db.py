@@ -115,12 +115,13 @@ class AccountRepository():
             await session.commit()
 
     async def get_account_analysis(self, account_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+
         
         async with get_async_session() as session:
             result = await session.execute(
                 select(AccountAnalysis)
                 .filter(
-                        AccountAnalysis.account_id == account_id,
+                    AccountAnalysis.account_id == account_id,
                     AccountAnalysis.user_id == user_id
                 )
                 .order_by(AccountAnalysis.created_at.desc())
@@ -128,7 +129,6 @@ class AccountRepository():
             analysis = result.scalars().first()
             
             if analysis:
-                
                 account = await self.get_account_by_id(account_id)
                 
                 return {

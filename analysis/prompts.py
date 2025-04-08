@@ -127,71 +127,113 @@ def prepare_llm_prompt(insights: Dict[str, Any] | None, metrics: Dict[str, Any] 
 
 
 
+def prepare_content_inspiration_prompt(example_posts: Dict[str, Any], tweet: str, additional_commands: str) -> str:
+    return f"""
+    You are an AI assistant helping a social media content creator generate ideas for new posts. Your task is to suggest topics and points to explore based on their previous content and a provided resource.
 
-def prepare_content_inspiration_prompt(example_posts:  Dict[str, Any], tweet: str, additional_commands: str) -> str:
-     
-     
-     
+    <example_posts>
+    {json.dumps(example_posts)}
+    </example_posts>
 
-     return(
-        f"""
-         You are an AI assistant helping a social media content creator generate ideas for new posts. Your task is to suggest topics and points to explore based on their previous content and a provided resource.
+    <discussion_source>
+    {tweet}
+    </discussion_source>
 
-        <example_posts>
-        {json.dumps(example_posts)}
-        </example_posts>
+    <additional_commands_from_user>
+    {additional_commands}
+    </additional_commands_from_user>
 
-        <discussion_source>
-        {tweet}
-        </discussion_source>
+    The discussion_source contains a tweet or thread. Generate ideas to respond to or expand upon the content shared. Provide potential conversation points, topics, orthogonal/parallel ideas and frameworks to explore.
 
-        <additional_commands_from_user>
-        {additional_commands}
-        </additional_commands_from_user>
+    Return your response in the following JSON format:
 
-        dicussion_source contains a tweet or a thread. i want you to help me come up with ideas to respond to or expand upon the content shared under discussion_source. Please generate a list of potential conversation points, topics, orthogonal or parallel ideas and frameworks that i can explore in response to the content shared. i want you to provide your topic ideas in TWO different sections: 
+    {{
+        "dependent_ideas": [
+            {{
+                "id": 1,
+                "idea": "First idea drawn from example posts - be specific",
+                "rationale": "Why this connects to the discussion source"
+            }},
+            {{
+                "id": 2, 
+                "idea": "Second idea drawn from example posts - be specific",
+                "rationale": "Why this connects to the discussion source"
+            }},
+            {{
+                "id": 3,
+                "idea": "Third idea drawn from example posts - be specific", 
+                "rationale": "Why this connects to the discussion source"
+            }}
+        ],
+        "independent_ideas": [
+            {{
+                "id": 1,
+                "idea": "First creative/esoteric idea - be specific",
+                "rationale": "Why this connects to the discussion source"
+            }},
+            {{
+                "id": 2,
+                "idea": "Second creative/esoteric idea - be specific",
+                "rationale": "Why this connects to the discussion source"
+            }},
+            {{
+                "id": 3,
+                "idea": "Third creative/esoteric idea - be specific",
+                "rationale": "Why this connects to the discussion source"
+            }}
+        ],
+        "additional_instructions_output": "Output based on any additional instructions provided"
+    }}
 
-        5 ideas that you get from example_posts, following the format below: 
+    For independent ideas, be very creative and include esoteric/outlier ideas. Do not provide actual posts to share - only areas to explore.
+    """
+def prepare_tweet_example_generator_prompt(inspiration: str, example_posts: Dict[str, Any], discussion_source: str) -> str:
+    return f"""
+    You are an AI assistant tasked with generating example tweets based on a discussion source. Your goal is to generate engaging tweets that match the style and tone of the example posts while exploring the provided topic ideas.
 
-        <dependent_ideas>
-        1) A way to engage with the discussion source
+    First, carefully review these example posts to understand the desired style and tone:
 
-        Example: An example of a reply or quote tweet that does this
+    <example_posts>
+    {json.dumps(example_posts)}
+    </example_posts>
 
-        1) A way to engage with the discussion source
-        
-        Example: An example of a reply or quote tweet that does this
-        ...
-        </dependent_ideas>
+    <discussion_source>
+    {discussion_source}
+    </discussion_source>
 
-        
-        5 ideas that you think are good fit even though they are not discussed in the example_posts, following the format below: 
-        
-        <independent_ideas>
-        1) A way to engage with the discussion source
+    <topic_ideas>
+    {inspiration}
+    </topic_ideas>
 
-        Example: An example of a reply or quote tweet that does this
-        
-        1) A way to engage with the discussion source
-        
-        Example: An example of a reply or quote tweet that does this
-        ...
-        </independent_ideas>
+    Topic ideas have been generated to explore how to engage with the discussion source with a reply or quote tweet.
+    Generate example tweets for each topic idea in the topic_ideas section. Follow the style and tone of the example posts.
 
-        <additional_instructions>
-        Output based on the additional instructions.
-        </additional_instructions>
+    Return your response in the following JSON format:
 
-        for independent ideas, i want you to be very creative, providing also esoteric and outlier ideas. 
-        do not provide posts to share. give me areas i can explore. always enclose your response in tags.
-        
-       
+    {{
+        "dependent_ideas": [
+            {{
+                "1": "First tweet generated based on the first dependent idea",
+                "2": "Second tweet generated based on the second dependent idea", 
+                "3": "Third tweet generated based on the third dependent idea"
+            }},
+        "independent_ideas": [
+            {{
+                "1": "First tweet generated based on the first independent idea",
+                "2": "Second tweet generated based on the second independent idea",
+                "3": "Third tweet generated based on the third independent idea"
+            }}
+    }}
 
-        
+    For each tweet:
+    - Keep it within Twitter's character limit
+    - Match the voice and style of the example posts
+    - Focus on one clear topic or idea
+    - Use engaging hooks and strong closings
+    - Include appropriate formatting (line breaks, emojis, etc.) when relevant
 
-        """
-        )
-
+    Do not include generic placeholder tweets. Each tweet should be specific and ready to post.
+    """
 
 def prepare_tweet_refinement_prompt(tweet: str, example_posts: Dict[str, Any], additional_commands: str) -> str:
     additional_instructions = ""
@@ -229,9 +271,13 @@ present it in html tags in the following format:
 
 Refined Tweet:
 <refined_tweets>
+
 1) 1st Refined Tweet
+
 2) 2nd Refined Tweet
+
 3) 3rd Refined Tweet
+
 </refined_tweets>
 
 Language Improvements: 

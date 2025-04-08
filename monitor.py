@@ -393,7 +393,6 @@ class TweetMonitor:
             accounts = await self.accounts.get_monitored_accounts()
             active_accounts = [account['account_id'] for account in accounts if account['is_active']]
             tweets = await self.tweet_data.get_monitored_tweets_from_accounts(active_accounts)
-            print(f"Tweets: {tweets}")
             update_tasks = []
             run_timestamp = int(datetime.now().timestamp())
             for tweet in tweets:
