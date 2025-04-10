@@ -79,6 +79,11 @@ class InspirationInput(BaseModel):
 
 class VisualizationInput(BaseModel):
     tweet_text: str
+
+class StandaloneInput(BaseModel):
+    input_text: str
+    account_id: str = None
+    additional_commands: str
     
 @app.get("/user", tags=["User"])
 async def get_user(user_id: str = Depends(auth_middleware)):
@@ -244,6 +249,18 @@ async def get_tweet_history(
         logger.error(f"Error getting tweet history at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/workshop/standalone", tags=["Workshop"])
+async def get_standalone_tweet_ideas(
+    input_data: StandaloneInput,
+    user_id: str = Depends(auth_middleware)
+):
+    try:
+        ideas = await service.get_standalone_tweet_ideas(user_id, input_data.input_text, input_data.account_id, input_data.additional_commands)
+        return {"status": "success", "ideas": ideas}
+    except Exception as e:
+        logger.error(f"Error getting standalone tweet ideas at {int(time.time())}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
 
 @app.post("/workshop/inspiration", tags=["Workshop"])
 async def get_tweet_inspiration(
@@ -281,6 +298,8 @@ async def get_visualization_ideas(
     except Exception as e:
         logger.error(f"Error getting visualization ideas at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+
 
 
 @app.get("/admin/account/analyze/{account_id}", tags=["Admin"])

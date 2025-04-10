@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Any, Tuple
 from db.migrations import get_async_session
 from db.tw.tweet_db import TweetDataRepository
@@ -25,6 +25,72 @@ class TweetStructuredRepository():
             'favorite_count': tweet_details.get('favorite_count', 0),
             'views_count': tweet_details.get('views_count', 0),
             'bookmark_count': tweet_details.get('bookmark_count', 0)
+        }
+    
+    async def get_streak_data(self, feed_data: List[Dict]) -> Dict[str, Any]:
+        """Get streak data for a user's tweets"""
+        # Get all monitored tweets for the user
+        
+        if not feed_data:
+            return {
+                "current_streak": 0,
+                "longest_streak": 0,
+                "total_posts": 0,
+                "average_posts_per_day": 0,
+                "contribution_map": {}
+            }
+
+        # Create contribution map
+        contribution_map = {}
+        for item in feed_data:
+            if 'created_at' in item:
+                # Parse ISO format date string (2025-03-18T12:28:44.000000Z)
+                created_date = datetime.strptime(item['created_at'].split('T')[0], '%Y-%m-%d')
+                tweet_date = created_date.strftime('%Y-%m-%d')
+                contribution_map[tweet_date] = contribution_map.get(tweet_date, 0) + 1
+
+        # Calculate current streak
+        current_streak = 0
+        today = datetime.now()
+        today = today.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        for i in range(365):
+            date_str = today.strftime('%Y-%m-%d')
+            if date_str in contribution_map:
+                current_streak += 1
+                today = today - timedelta(days=1)
+            else:
+                break
+        # Calculate longest streak
+        longest_streak = 0
+        current_longest = 0
+        dates = sorted(contribution_map.keys())
+
+        for i in range(len(dates)):
+            current_date = datetime.strptime(dates[i], '%Y-%m-%d')
+            prev_date = datetime.strptime(dates[i-1], '%Y-%m-%d') if i > 0 else None
+
+            if prev_date and (current_date - prev_date).days == 1:
+                current_longest += 1
+            else:
+                current_longest = 1
+
+            longest_streak = max(longest_streak, current_longest)
+
+        # Calculate average posts per day (last 30 days)
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        posts_last_30_days = sum(
+            count for date, count in contribution_map.items()
+            if datetime.strptime(date, '%Y-%m-%d') >= thirty_days_ago
+        )
+        average_posts = round(posts_last_30_days / 30, 1)
+
+        return {
+            "current_streak": current_streak,
+            "longest_streak": longest_streak,
+            "total_posts": len(feed_data),
+            "average_posts_per_day": average_posts,
+            "contribution_map": contribution_map
         }
 
     async def get_user_feed(self, user_id: str, skip: int = 0, limit: int = 20, type: str = "time", sort: str = "desc") -> Dict[str, Any]:
@@ -128,10 +194,14 @@ class TweetStructuredRepository():
         # Apply pagination AFTER sorting
         paginated_feed = sorted_feed[skip:skip + limit] if sorted_feed else []
 
+        # Get streak data using feed_data (all feed items, not just paginated ones)
+        streak_data = await self.get_streak_data(feed_data)
+
         return {
             'total_count': total_count,
             'tweets': paginated_feed,
-            'tracked_accounts': tracked_accounts
+            'tracked_accounts': tracked_accounts,
+            'streak_data': streak_data
         }
 
 

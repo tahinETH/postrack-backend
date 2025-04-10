@@ -4,7 +4,7 @@ import os
 from typing import Dict, Any, Optional, List
 from db.tw.structured import TweetStructuredRepository
 from config import config
-from analysis.prompts import prepare_llm_prompt
+from analysis.prompts.prompts_analysis import prepare_tweet_ai_analysis_prompt, prepare_account_ai_analysis_quantitative_prompt, prepare_account_ai_analysis_qualitative_prompt
 logger = logging.getLogger(__name__)
 
 from litellm import completion
@@ -24,7 +24,7 @@ class AIAnalyzer:
                 return {}
 
             # Prepare prompt for llm
-            prompt = prepare_llm_prompt(self, insights, type="tweet", metrics=None, account_data=None)
+            prompt = prepare_tweet_ai_analysis_prompt(insights, metrics=None, account_data=None)
             
             # Get llm's analysis
             llm_response = "_empty_"
@@ -47,14 +47,14 @@ class AIAnalyzer:
 
     async def generate_ai_analysis_metrics(self, metrics: Dict[str, Any], account_data: Dict[str, Any]) -> Dict[str, Any]:
         """Analyze an account based on its tweets"""
-        prompt = prepare_llm_prompt(insights=None, metrics=metrics, account_data=account_data, type="metrics")
+        prompt = prepare_account_ai_analysis_quantitative_prompt(metrics=metrics, account_data=account_data)
         llm_response = await self._get_llm_analysis(prompt)
         return llm_response
     
     async def generate_ai_analysis_qualitative(self, insights: Dict[str, Any], account_data: Dict[str, Any]) -> Dict[str, Any]:
         """Analyze an account based on its tweets"""
         cleaned_tweets = self._prepare_tweets_for_prompt(insights)
-        prompt = prepare_llm_prompt(insights=cleaned_tweets, metrics=None,account_data=account_data, type="qualitative")
+        prompt = prepare_account_ai_analysis_qualitative_prompt(insights=cleaned_tweets, account_data=account_data)
         llm_response = await self._get_llm_analysis(prompt)
         return llm_response
        

@@ -4,11 +4,12 @@ import os
 from typing import Dict, Any, Optional, List
 from db.tw.structured import TweetStructuredRepository
 from config import config
-from analysis.prompts import (
+from analysis.prompts.prompts_workshop import (
     prepare_content_inspiration_prompt,
     prepare_tweet_example_generator_prompt,
     prepare_tweet_refinement_prompt,
-    prepare_visualization_prompt
+    prepare_visualization_prompt,
+    prepare_standalone_tweet_prompt
 )
 from api_client import TwitterAPIClient
 from analysis.account import AccountAnalyzer
@@ -96,7 +97,7 @@ class Workshop:
             )
             content_inspiration = json.loads(response.choices[0].message.content)
 
-            tweet_example_generator_prompt = prepare_tweet_example_generator_prompt(json.dumps(content_inspiration), example_posts, tweet_text)
+            tweet_example_generator_prompt = prepare_tweet_example_generator_prompt(json.dumps(content_inspiration), example_posts, tweet_text, additional_commands)
             response = completion(
                 model="chatgpt-4o-latest",
                 max_tokens=2000,
@@ -183,3 +184,40 @@ class Workshop:
         except Exception as e:
             logger.error(f"Error generating visualization ideas: {str(e)}")
             return "Error generating visualization ideas"
+
+    async def workshop_standalone_tweet(self, user_id: str, input_text: str, account_id: str, additional_commands: str) -> Dict[str, Any]:
+        try:
+            if not input_text:
+                return "Error: Could not retrieve input text"
+
+            analysis = await self.accounts.get_account_analysis(account_id, user_id)
+            
+            raw_tweets = analysis.get('top_tweets', [])
+            example_posts = await self.clean_tweets(raw_tweets, limit=20)
+            prompt = prepare_standalone_tweet_prompt(input_text, example_posts, additional_commands)
+            
+            response = completion(
+                model="chatgpt-4o-latest", 
+                max_tokens=2000,
+                messages=[{
+                    "role": "user",
+                    "content": prompt
+                }],
+                response_format={"type": "json_object"}
+            )
+            result = json.loads(response.choices[0].message.content)
+            
+            """  # Save the standalone tweet ideas
+            await self.workshop_repo.save_standalone_tweet(
+                user_id=user_id,
+                input_text=input_text,
+                result=result,
+                prompt=prompt,
+                account_id=account_id,
+                additional_commands=additional_commands
+            ) """
+            
+            return result
+        except Exception as e:
+            logger.error(f"Error generating standalone tweet ideas: {str(e)}")
+            return "Error generating standalone tweet ideas"

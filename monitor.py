@@ -203,8 +203,7 @@ class TweetMonitor:
                     screen_name = user_data.get('screen_name')
 
                     if user_data:
-                    
-                        await self.accounts.upsert_account(account_id, screen_name, user_data, is_active=False, update_existing=True)
+                        await self.accounts.upsert_account(account_id, screen_name, user_data, is_active=True, update_existing=True)
 
                     if account_id and screen_name:
                         self.logger.info(f"Adding account info to monitored tweet {tweet_id}")
