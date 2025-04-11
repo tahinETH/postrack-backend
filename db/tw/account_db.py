@@ -82,8 +82,10 @@ class AccountRepository():
             # Get existing analysis if it exists
             result = await session.execute(
                 select(AccountAnalysis)
-                .filter(AccountAnalysis.account_id == account_id)
-                .order_by(AccountAnalysis.created_at.desc())
+                .filter(
+                    AccountAnalysis.account_id == account_id,
+                    AccountAnalysis.user_id == user_id
+                )
             )
             existing = result.scalars().first()
 
@@ -115,8 +117,6 @@ class AccountRepository():
             await session.commit()
 
     async def get_account_analysis(self, account_id: str, user_id: str) -> Optional[Dict[str, Any]]:
-
-        
         async with get_async_session() as session:
             result = await session.execute(
                 select(AccountAnalysis)

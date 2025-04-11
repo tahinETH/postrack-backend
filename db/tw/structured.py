@@ -42,6 +42,7 @@ class TweetStructuredRepository():
 
         # Create contribution map
         contribution_map = {}
+        
         for item in feed_data:
             if 'created_at' in item:
                 # Parse ISO format date string (2025-03-18T12:28:44.000000Z)
@@ -49,7 +50,6 @@ class TweetStructuredRepository():
                 tweet_date = created_date.strftime('%Y-%m-%d')
                 contribution_map[tweet_date] = contribution_map.get(tweet_date, 0) + 1
 
-        # Calculate current streak
         current_streak = 0
         today = datetime.now()
         today = today.replace(hour=0, minute=0, second=0, microsecond=0)

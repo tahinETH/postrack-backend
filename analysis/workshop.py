@@ -144,7 +144,7 @@ class Workshop:
             example_posts = await self.clean_tweets(raw_tweets, limit=20)
             prompt = prepare_tweet_refinement_prompt(tweet_text, example_posts, additional_commands)
             response = completion(
-                model="chatgpt-4o-latest", 
+                model="claude-3-5-sonnet-20241022", 
                 max_tokens=2000,
                 messages=[{
                     "role": "user",

@@ -19,8 +19,8 @@ def prepare_content_inspiration_prompt(example_posts: Dict[str, Any], tweet: str
     {additional_commands}
     </additional_commands_from_user>
 
-    The tweet_to_reply_to contains a twee   t or thread.
-    Generate ideas to respond to or expand upon the content shared. 
+    The tweet_to_reply_to contains a tweet or thread.
+    Generate tweet ideas to respond to, ask a question to, or expand upon the content shared. 
     Provide potential conversation points, topics, orthogonal/parallel ideas and frameworks to explore.
 
     Return your response in the following JSON format:
@@ -29,17 +29,17 @@ def prepare_content_inspiration_prompt(example_posts: Dict[str, Any], tweet: str
         "dependent_ideas": [
             {{
                 "id": 1,
-                "idea": "First reply or quote tweet idea to tweet_to_reply_to drawn from example posts - be specific",
+                "idea": "First reply or quote tweet idea (ask a question, expand upon the content, or respond to the tweet_to_reply_to) drawn from example posts - be specific",
                 "rationale": "Why this connects to the tweet_to_reply_to"
             }},
             {{
                 "id": 2, 
-                "idea": "Second reply or quote tweet idea to tweet_to_reply_to drawn from example posts - be specific",
+                "idea": "Second reply or quote tweet idea (ask a question, expand upon the content, or respond to the tweet_to_reply_to) drawn from example posts - be specific",
                 "rationale": "Why this connects to the tweet_to_reply_to"
             }},
             {{
                 "id": 3,
-                "idea": "Third reply or quote tweet idea to tweet_to_reply_to drawn from example posts - be specific", 
+                "idea": "Third reply or quote tweet idea (ask a question, expand upon the content, or respond to the tweet_to_reply_to) drawn from example posts - be specific", 
                 "rationale": "Why this connects to the tweet_to_reply_to"
             }}
         ],
@@ -63,7 +63,7 @@ def prepare_content_inspiration_prompt(example_posts: Dict[str, Any], tweet: str
         "additional_instructions_output": "Output based on any additional instructions provided"
     }}
 
-    For independent ideas, be very creative and include esoteric/outlier ideas. Do not provide actual posts to share - only areas to explore.
+    For independent ideas, be very creative and include esoteric/outlier ideas. Do not provide actual posts to share - only areas to explore. Do not use em dashes or ellipses.
     """
 
 
@@ -120,7 +120,7 @@ def prepare_tweet_example_generator_prompt(inspiration: str, example_posts: Dict
     - Use engaging hooks and strong closings
     - Include appropriate formatting (line breaks, emojis, etc.) when relevant
 
-    Do not include generic placeholder tweets. Each tweet should be specific and ready to post.
+    Do not include generic placeholder tweets. Each tweet should be specific and ready to post. Do not use em dashes or ellipses.
     """
 
 
@@ -130,93 +130,68 @@ def prepare_tweet_example_generator_prompt(inspiration: str, example_posts: Dict
 
 
 def prepare_tweet_refinement_prompt(tweet: str, example_posts: Dict[str, Any], additional_commands: str) -> str:
+    
     additional_instructions = ""
     if additional_commands:
         additional_instructions = f"""
-Additional instructions for improvement:
-<additional_commands>
-{additional_commands}
-</additional_commands>
+        Additional instructions for improvement:
+        <additional_commands>
+        {additional_commands}
+        </additional_commands>
             """
 
     return f"""
-You are an AI assistant tasked with improving a tweet draft. Your goal is to enhance the tweet's language, suggest alternative wordings, and propose relevant technical terms, while keeping the style consistent with the provided example posts.
+You are an AI assistant tasked with improving a tweet draft using the Tree of Thoughts methodology. This approach involves exploring multiple reasoning paths, evaluating different possibilities, and systematically searching for the optimal solution.
 
-First, carefully review these example posts to understand the desired style and tone:
+STEP 1: ANALYSIS
+First, analyze both the example posts and draft tweet. Generate 5 different short analyses focusing on:
+1) Style elements (sentence structure, word choice, tone)
+2) Technical aspects (terminology, concept complexity)
+3) Engagement factors (hooks, calls to action, memorability)
 
+For each analysis, explicitly identify what works well and what could be improved. 
+
+STEP 2: BRAINSTORM IMPROVEMENTS
+Based on your analyses, generate 5 distinct improvement strategies:
+1) Conservative refinement (maintain most structure, enhance key terms)
+2) Moderate restructuring (reorganize for better flow while preserving core message)
+3) Creative reimagining (maintain core message but with fresh approach)
+
+For each strategy, evaluate its potential effectiveness given the example posts' style.
+
+STEP 3: GENERATE REFINED VERSIONS
+Create 5 refined tweets following each improvement strategy. For each refined tweet:
+1) Explain your thought process
+2) Evaluate its strengths and weaknesses
+3) Assign a confidence score (1-10)
+
+
+
+Example posts:
 <example_posts>
-{json.dumps(example_posts)}
+{example_posts}
 </example_posts>
 
-<additional_instructions>
-{additional_instructions}
-</additional_instructions>
+Additional instructions (prioritize these above all else):
+<additional_commands>
+{additional_commands}
+</additional_commands>
 
-
-Now, here's the tweet draft you need to improve:
-
+Original tweet draft:
 <tweet_draft>
 {tweet}
 </tweet_draft>
 
-i want the tweet to look and sound like the example posts, adapting the tone, style, etc. give me improvements: language_improvements, alternative_wordings, cadence_improvements, technical_suggestions. 
-
-present it in html tags in the following format:
-
-Refined Tweet:
+Present your final output in this format.  Do not use em dashes or ellipses:
 <refined_tweets>
-
-1) 1st Refined Tweet
-
-2) 2nd Refined Tweet
-
-3) 3rd Refined Tweet
-
+1) [First refined tweet]
+2) [Second refined tweet]
+3) [Third refined tweet]
+4) [Fourth refined tweet]
+5) [Fifth refined tweet]
 </refined_tweets>
 
-Language Improvements: 
-<language_improvements>
-1) 1st Potential Improvement Option
-2) 2nd Potential Improvement Option
-3) 3rd Potential Improvement Option
-...
-</language_improvements>
 
-<alternative_wordings>
-1) 1st Potential Improvement Option
-2) 2nd Potential Improvement Option
-3) 3rd Potential Improvement Option
-...
-</alternative_wordings>
-
-<cadence_improvements>
-1) 1st Potential Improvement Option
-2) 2nd Potential Improvement Option
-3) 3rd Potential Improvement Option
-...
-</cadence_improvements>
-
-<technical_suggestions>
-1) 1st Potential Improvement Option
-2) 2nd Potential Improvement Option
-3) 3rd Potential Improvement Option
-...
-</technical_suggestions>
-
-<improved_tweet_versions>
-1) 1st Improved Tweet Version
-2) 2nd Improved Tweet Version
-...
-</improved_tweet_versions>
-
-
-
-<additional_instructions>
-Output based on the additional instructions.
-</additional_instructions>
-
-
-always prioritize the additional instructions above all else. just give me content with tags and nothing more. 
 """
 
 
@@ -262,31 +237,24 @@ def prepare_standalone_tweet_prompt(input: str, example_posts: Dict[str, Any] = 
 You are a creative AI assistant tasked with generating tweet ideas based on given input. Your goal is to create engaging, specific, and resonant tweet topics that capture small, manageable parts of bigger issues or themes.
           
 
-First, carefully read and analyze the following input:
+First, carefully read and analyze the following input from the user. This is the most important part:
           
-<unstructured_input>
+<user_input>
 {input}
-</unstructured_input>
+</user_input>
 
 
 {example_posts_section}
 
-Additionally, take into account these specific commands:
-<additional_commands>
-{additional_commands}
-</additional_commands>
-
-
 Your task is to create:
-1. Three standalone topic ideas with example tweets
-2. Three thread ideas with brief elaborations
+1. Three standalone topic ideas with example tweets for each idea.
+2. Three thread ideas with brief elaborations for each idea.
 
 When generating these ideas:
 - Take the instructions and focus on specific content themes i can explore from the example_posts
-- Ensure each idea is distinct and captures a unique aspect of the input
+- Prioritize the user input above all else.
 - First two ideas should be largely based on the example_posts, the third idea should be more creative and unique
-- For standalone ideas, create concise, impactful tweets that can stand alone
-- For thread ideas, provide a central concept that can be expanded into multiple tweets
+- Do not use em dashes or ellipses.
 
 Present your response in the following JSON format:
 

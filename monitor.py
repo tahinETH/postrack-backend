@@ -81,6 +81,9 @@ class TweetMonitor:
         last_check = tweet['last_check']
         hours_old = tweet_age / 3600
         
+        # If over 24 hours old, stop checking
+        if hours_old > 24:
+            return False
 
         # Over 3 hours old - check once per hour
         if hours_old > 3:

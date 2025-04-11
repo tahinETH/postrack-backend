@@ -50,7 +50,7 @@ def prepare_account_ai_analysis_quantitative_prompt(metrics: Dict[str, Any] | No
             {json.dumps(metrics)}
             </metrics>
 
-            Run the following analyses on metrics: optimal length, media usage, quote analysis, favorite and retweet analysis, mention analysis, symbols analysis, urls analysis
+            Run the following analyses on metrics: optimal length, media usage, quote analysis, favorite and retweet analysis, mention analysis, symbols analysis, urls analysis.
         
         Present your analysis in the following format:
         <analysis>
@@ -62,6 +62,9 @@ def prepare_account_ai_analysis_quantitative_prompt(metrics: Dict[str, Any] | No
             </section>
             <section name="quote analysis">
             [Your concise analytical, insightful, bullet pointed commentary on quote analysis]
+            </section>
+            <section name="temporal analysis">
+            [Your concise analytical, insightful, bullet pointed commentary on temporal analysis]
             </section>
             <section name="favorite and retweet analysis">
             [Your concise analytical, insightful, bullet pointed commentary on favorite and retweet analysis]
@@ -81,7 +84,7 @@ def prepare_account_ai_analysis_quantitative_prompt(metrics: Dict[str, Any] | No
             </analysis>
             
             
-            Use bullet points.
+            Use bullet points. 
 
 
             """

@@ -36,7 +36,7 @@ class AccountAnalyzer:
         cleaned_tweets = []
         for tweet in tweets:
             cleaned_tweet = {
-                'tweet_created_at': tweet.get('created_at'),
+                'tweet_created_at': tweet.get('tweet_created_at'),
                 'id': tweet.get('id'),
                 'id_str': tweet.get('id_str'), 
                 'full_text': tweet.get('full_text', ''),
@@ -50,6 +50,7 @@ class AccountAnalyzer:
                 'quoted_status_id_str': tweet.get('quoted_status_id_str'),
                 'retweeted_status': tweet.get('retweeted_status'),
                 'entities': tweet.get('entities'),
+                'source': tweet.get('source')
             }
             cleaned_tweets.append(cleaned_tweet)
         
@@ -61,7 +62,7 @@ class AccountAnalyzer:
         
         # Basic engagement metrics
         favorite_counts = [t.get('favorite_count', 0) for t in tweets]
-        retweet_counts = [t.get('retweet_count', 0) for t in tweets]
+        views_counts = [t.get('views_count', 0) for t in tweets]
         
         metrics['favorite_counts'] = {
             'min': min(favorite_counts) if favorite_counts else 0,
@@ -70,11 +71,11 @@ class AccountAnalyzer:
             'total': sum(favorite_counts) if favorite_counts else 0
         }
         
-        metrics['retweet_counts'] = {
-            'min': min(retweet_counts) if retweet_counts else 0,
-            'max': max(retweet_counts) if retweet_counts else 0,
-            'avg': sum(retweet_counts) / len(retweet_counts) if retweet_counts else 0,
-            'total': sum(retweet_counts) if retweet_counts else 0
+        metrics['views_counts'] = {
+            'min': min(views_counts) if views_counts else 0,
+            'max': max(views_counts) if views_counts else 0,
+            'avg': sum(views_counts) / len(views_counts) if views_counts else 0,
+            'total': sum(views_counts) if views_counts else 0
         }
         
         # Quote tweet analysis
@@ -86,13 +87,13 @@ class AccountAnalyzer:
                 'count': len(quote_tweets),
                 'percentage': len(quote_tweets) / len(tweets) * 100 if tweets else 0,
                 'avg_favorites': sum(t.get('favorite_count', 0) for t in quote_tweets) / len(quote_tweets) if quote_tweets else 0,
-                'avg_retweets': sum(t.get('retweet_count', 0) for t in quote_tweets) / len(quote_tweets) if quote_tweets else 0
+                'avg_views': sum(t.get('views_count', 0) for t in quote_tweets) / len(quote_tweets) if quote_tweets else 0
             },
             'non_quote_tweets': {
                 'count': len(non_quote_tweets), 
                 'percentage': len(non_quote_tweets) / len(tweets) * 100 if tweets else 0,
                 'avg_favorites': sum(t.get('favorite_count', 0) for t in non_quote_tweets) / len(non_quote_tweets) if non_quote_tweets else 0,
-                'avg_retweets': sum(t.get('retweet_count', 0) for t in non_quote_tweets) / len(non_quote_tweets) if non_quote_tweets else 0
+                'avg_views': sum(t.get('views_count', 0) for t in non_quote_tweets) / len(non_quote_tweets) if non_quote_tweets else 0
             }
         }
         
@@ -109,13 +110,13 @@ class AccountAnalyzer:
                 'count': len(media_tweets),
                 'percentage': len(media_tweets) / len(tweets) * 100 if tweets else 0,
                 'avg_favorites': sum(t.get('favorite_count', 0) for t in media_tweets) / len(media_tweets) if media_tweets else 0,
-                'avg_retweets': sum(t.get('retweet_count', 0) for t in media_tweets) / len(media_tweets) if media_tweets else 0
+                'avg_views': sum(t.get('views_count', 0) for t in media_tweets) / len(media_tweets) if media_tweets else 0
             },
             'without_media': {
                 'count': len(non_media_tweets),
                 'percentage': len(non_media_tweets) / len(tweets) * 100 if tweets else 0,
                 'avg_favorites': sum(t.get('favorite_count', 0) for t in non_media_tweets) / len(non_media_tweets) if non_media_tweets else 0,
-                'avg_retweets': sum(t.get('retweet_count', 0) for t in non_media_tweets) / len(non_media_tweets) if non_media_tweets else 0
+                'avg_views': sum(t.get('views_count', 0) for t in non_media_tweets) / len(non_media_tweets) if non_media_tweets else 0
             }
         }
 
@@ -132,13 +133,13 @@ class AccountAnalyzer:
                 'count': len(mention_tweets),
                 'percentage': len(mention_tweets) / len(tweets) * 100 if tweets else 0,
                 'avg_favorites': sum(t.get('favorite_count', 0) for t in mention_tweets) / len(mention_tweets) if mention_tweets else 0,
-                'avg_retweets': sum(t.get('retweet_count', 0) for t in mention_tweets) / len(mention_tweets) if mention_tweets else 0
+                'avg_views': sum(t.get('views_count', 0) for t in mention_tweets) / len(mention_tweets) if mention_tweets else 0
             },
             'without_mentions': {
                 'count': len(non_mention_tweets),
                 'percentage': len(non_mention_tweets) / len(tweets) * 100 if tweets else 0,
                 'avg_favorites': sum(t.get('favorite_count', 0) for t in non_mention_tweets) / len(non_mention_tweets) if non_mention_tweets else 0,
-                'avg_retweets': sum(t.get('retweet_count', 0) for t in non_mention_tweets) / len(non_mention_tweets) if non_mention_tweets else 0
+                'avg_views': sum(t.get('views_count', 0) for t in non_mention_tweets) / len(non_mention_tweets) if non_mention_tweets else 0
             }
         }
 
@@ -155,13 +156,13 @@ class AccountAnalyzer:
                 'count': len(symbol_tweets),
                 'percentage': len(symbol_tweets) / len(tweets) * 100 if tweets else 0,
                 'avg_favorites': sum(t.get('favorite_count', 0) for t in symbol_tweets) / len(symbol_tweets) if symbol_tweets else 0,
-                'avg_retweets': sum(t.get('retweet_count', 0) for t in symbol_tweets) / len(symbol_tweets) if symbol_tweets else 0
+                'avg_views': sum(t.get('views_count', 0) for t in symbol_tweets) / len(symbol_tweets) if symbol_tweets else 0
             },
             'without_symbols': {
                 'count': len(non_symbol_tweets),
                 'percentage': len(non_symbol_tweets) / len(tweets) * 100 if tweets else 0,
                 'avg_favorites': sum(t.get('favorite_count', 0) for t in non_symbol_tweets) / len(non_symbol_tweets) if non_symbol_tweets else 0,
-                'avg_retweets': sum(t.get('retweet_count', 0) for t in non_symbol_tweets) / len(non_symbol_tweets) if non_symbol_tweets else 0
+                'avg_views': sum(t.get('views_count', 0) for t in non_symbol_tweets) / len(non_symbol_tweets) if non_symbol_tweets else 0
             }
         }
 
@@ -178,13 +179,13 @@ class AccountAnalyzer:
                 'count': len(url_tweets),
                 'percentage': len(url_tweets) / len(tweets) * 100 if tweets else 0,
                 'avg_favorites': sum(t.get('favorite_count', 0) for t in url_tweets) / len(url_tweets) if url_tweets else 0,
-                'avg_retweets': sum(t.get('retweet_count', 0) for t in url_tweets) / len(url_tweets) if url_tweets else 0
+                'avg_views': sum(t.get('views_count', 0) for t in url_tweets) / len(url_tweets) if url_tweets else 0
             },
             'without_urls': {
                 'count': len(non_url_tweets),
                 'percentage': len(non_url_tweets) / len(tweets) * 100 if tweets else 0,
                 'avg_favorites': sum(t.get('favorite_count', 0) for t in non_url_tweets) / len(non_url_tweets) if non_url_tweets else 0,
-                'avg_retweets': sum(t.get('retweet_count', 0) for t in non_url_tweets) / len(non_url_tweets) if non_url_tweets else 0
+                'avg_views': sum(t.get('views_count', 0) for t in non_url_tweets) / len(non_url_tweets) if non_url_tweets else 0
             }
         }
 
@@ -197,15 +198,89 @@ class AccountAnalyzer:
         metrics['word_length'] = {
             'short': {  # 1-25 words
                 'count': len([t for t,c in word_counts if c <= 25]),
-                'avg_favorites': sum(t.get('favorite_count', 0) for t,c in word_counts if c <= 25) / len([t for t,c in word_counts if c <= 25]) if any(c <= 25 for _,c in word_counts) else 0
+                'avg_favorites': sum(t.get('favorite_count', 0) for t,c in word_counts if c <= 25) / len([t for t,c in word_counts if c <= 25]) if any(c <= 25 for _,c in word_counts) else 0,
+                'avg_views': sum(t.get('views_count', 0) for t,c in word_counts if c <= 25) / len([t for t,c in word_counts if c <= 25]) if any(c <= 25 for _,c in word_counts) else 0
             },
             'medium': {  # 26-50 words
                 'count': len([t for t,c in word_counts if 25 < c <= 50]),
-                'avg_favorites': sum(t.get('favorite_count', 0) for t,c in word_counts if 25 < c <= 50) / len([t for t,c in word_counts if 25 < c <= 50]) if any(25 < c <= 50 for _,c in word_counts) else 0
+                'avg_favorites': sum(t.get('favorite_count', 0) for t,c in word_counts if 25 < c <= 50) / len([t for t,c in word_counts if 25 < c <= 50]) if any(25 < c <= 50 for _,c in word_counts) else 0,
+                'avg_views': sum(t.get('views_count', 0) for t,c in word_counts if 25 < c <= 50) / len([t for t,c in word_counts if 25 < c <= 50]) if any(25 < c <= 50 for _,c in word_counts) else 0
             },
             'long': {  # 50+ words
                 'count': len([t for t,c in word_counts if c > 50]),
-                'avg_favorites': sum(t.get('favorite_count', 0) for t,c in word_counts if c > 50) / len([t for t,c in word_counts if c > 50]) if any(c > 50 for _,c in word_counts) else 0
+                'avg_favorites': sum(t.get('favorite_count', 0) for t,c in word_counts if c > 50) / len([t for t,c in word_counts if c > 50]) if any(c > 50 for _,c in word_counts) else 0,
+                'avg_views': sum(t.get('views_count', 0) for t,c in word_counts if c > 50) / len([t for t,c in word_counts if c > 50]) if any(c > 50 for _,c in word_counts) else 0
+            }
+        }
+
+        # Source analysis
+        iphone_tweets = [t for t in tweets if t.get('source', '').find('Twitter for iPhone') != -1]
+        web_tweets = [t for t in tweets if t.get('source', '').find('Twitter Web App') != -1]
+
+        metrics['source_analysis'] = {
+            'iphone': {
+                'count': len(iphone_tweets),
+                'percentage': len(iphone_tweets) / len(tweets) * 100 if tweets else 0,
+                'avg_favorites': sum(t.get('favorite_count', 0) for t in iphone_tweets) / len(iphone_tweets) if iphone_tweets else 0,
+                'avg_views': sum(t.get('views_count', 0) for t in iphone_tweets) / len(iphone_tweets) if iphone_tweets else 0
+            },
+            'web': {
+                'count': len(web_tweets),
+                'percentage': len(web_tweets) / len(tweets) * 100 if tweets else 0,
+                'avg_favorites': sum(t.get('favorite_count', 0) for t in web_tweets) / len(web_tweets) if web_tweets else 0,
+                'avg_views': sum(t.get('views_count', 0) for t in web_tweets) / len(web_tweets) if web_tweets else 0
+            },
+        }
+
+        # Time of day analysis
+        from datetime import datetime
+        
+        def get_hour_bucket(tweet):
+            tweet_created_at = tweet.get('tweet_created_at')
+            if not tweet_created_at:
+                return 'unknown'  # Or handle missing timestamp however you prefer
+            
+            created_at = datetime.strptime(tweet_created_at, "%Y-%m-%dT%H:%M:%S.%fZ")
+            hour = created_at.hour
+            if 5 <= hour < 12:
+                return 'morning'
+            elif 12 <= hour < 17:
+                return 'afternoon'
+            elif 17 <= hour < 22:
+                return 'evening'
+            else:
+                return 'night'
+
+        morning_tweets = [t for t in tweets if get_hour_bucket(t) == 'morning']
+        afternoon_tweets = [t for t in tweets if get_hour_bucket(t) == 'afternoon']
+        evening_tweets = [t for t in tweets if get_hour_bucket(t) == 'evening']
+        night_tweets = [t for t in tweets if get_hour_bucket(t) == 'night']
+
+        metrics['time_analysis'] = {
+            'morning': {  # 5:00-11:59
+                'count': len(morning_tweets),
+                'percentage': len(morning_tweets) / len(tweets) * 100 if tweets else 0,
+                'avg_favorites': sum(t.get('favorite_count', 0) for t in morning_tweets) / len(morning_tweets) if morning_tweets else 0,
+                'avg_views': sum(t.get('views_count', 0) for t in morning_tweets) / len(morning_tweets) if morning_tweets else 0,
+                
+            },
+            'afternoon': {  # 12:00-16:59
+                'count': len(afternoon_tweets),
+                'percentage': len(afternoon_tweets) / len(tweets) * 100 if tweets else 0,
+                'avg_favorites': sum(t.get('favorite_count', 0) for t in afternoon_tweets) / len(afternoon_tweets) if afternoon_tweets else 0,
+                'avg_views': sum(t.get('views_count', 0) for t in afternoon_tweets) / len(afternoon_tweets) if afternoon_tweets else 0,
+            },
+            'evening': {  # 17:00-21:59
+                'count': len(evening_tweets),
+                'percentage': len(evening_tweets) / len(tweets) * 100 if tweets else 0,
+                'avg_favorites': sum(t.get('favorite_count', 0) for t in evening_tweets) / len(evening_tweets) if evening_tweets else 0,
+                'avg_views': sum(t.get('views_count', 0) for t in evening_tweets) / len(evening_tweets) if evening_tweets else 0,
+            },
+            'night': {  # 22:00-4:59
+                'count': len(night_tweets),
+                'percentage': len(night_tweets) / len(tweets) * 100 if tweets else 0,
+                'avg_favorites': sum(t.get('favorite_count', 0) for t in night_tweets) / len(night_tweets) if night_tweets else 0,
+                'avg_views': sum(t.get('views_count', 0) for t in night_tweets) / len(night_tweets) if night_tweets else 0,
             }
         }
 

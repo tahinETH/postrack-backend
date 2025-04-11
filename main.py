@@ -122,6 +122,7 @@ async def monitoring_account(
 async def get_account_analysis(account_id: str, user_id: str = Depends(auth_middleware)):
     try:
         result = await service.get_account_analysis(account_id, user_id)
+        
         return result
     except Exception as e:
         logger.error(f"Error getting account analysis at {int(time.time())}: {str(e)}")
