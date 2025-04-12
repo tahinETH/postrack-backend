@@ -75,7 +75,8 @@ class AccountRepository():
         top_tweets: Optional[Dict] = None,
         metrics: Optional[Dict] = None,
         quantitative_analysis: Optional[Dict] = None,
-        qualitative_analysis: Optional[str] = None
+        qualitative_analysis: Optional[str] = None,
+        style_analysis: Optional[Dict] = None
     ):
         current_timestamp = int(datetime.now().timestamp())
         async with get_async_session() as session:
@@ -99,6 +100,8 @@ class AccountRepository():
                     existing.quantitative_analysis = quantitative_analysis
                 if qualitative_analysis is not None:
                     existing.qualitative_analysis = qualitative_analysis
+                if style_analysis is not None:
+                    existing.style_analysis = style_analysis
                 existing.updated_at = current_timestamp
             else:
                 # Create new analysis
@@ -109,6 +112,7 @@ class AccountRepository():
                     metrics=metrics,
                     quantitative_analysis=quantitative_analysis, 
                     qualitative_analysis=qualitative_analysis,
+                    style_analysis=style_analysis,
                     created_at=current_timestamp,
                     updated_at=current_timestamp
                 )
@@ -138,6 +142,7 @@ class AccountRepository():
                     'metrics': analysis.metrics,
                     'quantitative_analysis': analysis.quantitative_analysis,
                     'qualitative_analysis': analysis.qualitative_analysis,
+                    'style_analysis': analysis.style_analysis,
                     'created_at': analysis.created_at,
                     'updated_at': analysis.updated_at,
                     'account_details': account.get('account_details') if account else None

@@ -141,16 +141,18 @@ class Workshop:
             analysis = await self.accounts.get_account_analysis(account_id, user_id)
             
             raw_tweets = analysis.get('top_tweets', [])
-            example_posts = await self.clean_tweets(raw_tweets, limit=20)
-            prompt = prepare_tweet_refinement_prompt(tweet_text, example_posts, additional_commands)
+            #example_posts = await self.clean_tweets(raw_tweets, limit=20)
+            style_analysis = analysis.get('style_analysis', {})
+            prompt = prepare_tweet_refinement_prompt(tweet_text, style_analysis, additional_commands)
             response = completion(
-                model="claude-3-5-sonnet-20241022", 
+                model="chatgpt-4o-latest", 
                 max_tokens=2000,
                 messages=[{
                     "role": "user",
                     "content": prompt
-                }]
+                }],
             )
+            print(response.choices[0].message.content)
             result = response.choices[0].message.content
             
             # Save the refinement
@@ -172,7 +174,7 @@ class Workshop:
         try:
             prompt = prepare_visualization_prompt(tweet_text)
             response = completion(
-                model="chatgpt-4o-latest",
+                model="gemini/gemini-2.5-pro-preview-03-25",
                 max_tokens=2000,
                 messages=[{
                     "role": "user",
@@ -198,7 +200,7 @@ class Workshop:
             
             response = completion(
                 model="chatgpt-4o-latest", 
-                max_tokens=2000,
+                max_tokens=6000,
                 messages=[{
                     "role": "user",
                     "content": prompt
@@ -206,16 +208,7 @@ class Workshop:
                 response_format={"type": "json_object"}
             )
             result = json.loads(response.choices[0].message.content)
-            
-            """  # Save the standalone tweet ideas
-            await self.workshop_repo.save_standalone_tweet(
-                user_id=user_id,
-                input_text=input_text,
-                result=result,
-                prompt=prompt,
-                account_id=account_id,
-                additional_commands=additional_commands
-            ) """
+
             
             return result
         except Exception as e:

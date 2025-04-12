@@ -129,7 +129,7 @@ def prepare_tweet_example_generator_prompt(inspiration: str, example_posts: Dict
 
 
 
-def prepare_tweet_refinement_prompt(tweet: str, example_posts: Dict[str, Any], additional_commands: str) -> str:
+def prepare_tweet_refinement_prompt(tweet: str, style_analysis: Dict[str, Any], additional_commands: str) -> str:
     
     additional_instructions = ""
     if additional_commands:
@@ -141,48 +141,25 @@ def prepare_tweet_refinement_prompt(tweet: str, example_posts: Dict[str, Any], a
             """
 
     return f"""
-You are an AI assistant tasked with improving a tweet draft using the Tree of Thoughts methodology. This approach involves exploring multiple reasoning paths, evaluating different possibilities, and systematically searching for the optimal solution.
+You are an AI assistant tasked with improving a tweet draft looking capturing and transferring the soul of the writing.
 
-STEP 1: ANALYSIS
-First, analyze both the example posts and draft tweet. Generate 5 different short analyses focusing on:
-1) Style elements (sentence structure, word choice, tone)
-2) Technical aspects (terminology, concept complexity)
-3) Engagement factors (hooks, calls to action, memorability)
+<account_soul_info>
+{style_analysis}
+</account_soul_info>
 
-For each analysis, explicitly identify what works well and what could be improved. 
-
-STEP 2: BRAINSTORM IMPROVEMENTS
-Based on your analyses, generate 5 distinct improvement strategies:
-1) Conservative refinement (maintain most structure, enhance key terms)
-2) Moderate restructuring (reorganize for better flow while preserving core message)
-3) Creative reimagining (maintain core message but with fresh approach)
-
-For each strategy, evaluate its potential effectiveness given the example posts' style.
-
-STEP 3: GENERATE REFINED VERSIONS
-Create 5 refined tweets following each improvement strategy. For each refined tweet:
-1) Explain your thought process
-2) Evaluate its strengths and weaknesses
-3) Assign a confidence score (1-10)
-
-
-
-Example posts:
-<example_posts>
-{example_posts}
-</example_posts>
-
-Additional instructions (prioritize these above all else):
-<additional_commands>
-{additional_commands}
-</additional_commands>
 
 Original tweet draft:
 <tweet_draft>
 {tweet}
 </tweet_draft>
 
-Present your final output in this format.  Do not use em dashes or ellipses:
+Additional instructions (prioritize these above all else):
+<additional_commands>
+{additional_commands}
+</additional_commands>
+
+Present your final output in this format. For each tweet, you have a character limit of 1000 characters. I want you to transfer the soul of the writing to the tweet:
+
 <refined_tweets>
 1) [First refined tweet]
 2) [Second refined tweet]
@@ -234,27 +211,27 @@ def prepare_standalone_tweet_prompt(input: str, example_posts: Dict[str, Any] = 
    
    return(f"""
           
-You are a creative AI assistant tasked with generating tweet ideas based on given input. Your goal is to create engaging, specific, and resonant tweet topics that capture small, manageable parts of bigger issues or themes.
-          
+You are a creative AI assistant tasked with generating tweet ideas based on given input. 
 
-First, carefully read and analyze the following input from the user. This is the most important part:
+
+
+{example_posts_section}                    
+
+Now, carefully read and analyze the following input from the user. This is the most important part:
           
 <user_input>
 {input}
 </user_input>
 
 
-{example_posts_section}
+
 
 Your task is to create:
 1. Three standalone topic ideas with example tweets for each idea.
 2. Three thread ideas with brief elaborations for each idea.
 
-When generating these ideas:
-- Take the instructions and focus on specific content themes i can explore from the example_posts
-- Prioritize the user input above all else.
-- First two ideas should be largely based on the example_posts, the third idea should be more creative and unique
-- Do not use em dashes or ellipses.
+When generating these ideas prioritize the user input above all else. 
+
 
 Present your response in the following JSON format:
 
@@ -292,3 +269,5 @@ Present your response in the following JSON format:
 }}
           """
    )
+
+

@@ -35,6 +35,7 @@ class AccountAnalyzer:
         
         cleaned_tweets = []
         for tweet in tweets:
+            
             cleaned_tweet = {
                 'tweet_created_at': tweet.get('tweet_created_at'),
                 'id': tweet.get('id'),
@@ -44,7 +45,7 @@ class AccountAnalyzer:
                 'retweet_count': tweet.get('retweet_count', 0),
                 'reply_count': tweet.get('reply_count', 0),
                 'quote_count': tweet.get('quote_count', 0),
-                'views_count': tweet.get('views_count', 0),
+                'views_count': 0 if tweet.get('views_count') is None else tweet.get('views_count'),
                 'bookmark_count': tweet.get('bookmark_count', 0),
                 'is_quote_status': tweet.get('is_quote_status', False),
                 'quoted_status_id_str': tweet.get('quoted_status_id_str'),
@@ -294,6 +295,9 @@ class AccountAnalyzer:
         qualitative_analysis = await self.ai.generate_ai_analysis_qualitative(metrics, account_data)
         return qualitative_analysis
     
+    async def run_soul_extractor(self, example_posts: Dict[str, Any]) -> Dict[str, Any]:
+        soul_extractor = await self.ai.generate_ai_analysis_soul_extractor(example_posts)
+        return soul_extractor
 
 
     async def analyze_account(self, account_id: str, new_fetch: bool = False, account_data: Dict[str, Any] = None, user_id: str = None) -> Dict[str, Any]:
@@ -312,7 +316,7 @@ class AccountAnalyzer:
             screen_name = account.get('screen_name')
             existing_analysis = await self.accounts.get_account_analysis(account_id, user_id)
             account_data = account['account_details']
-
+            
             if new_fetch or not existing_analysis:
                 try:
                     tweets = await self._fetch_account_tweets(screen_name)
@@ -326,8 +330,9 @@ class AccountAnalyzer:
                 except Exception as e:
                     logger.error(f"Error cleaning tweets and getting account info: {str(e)}")
                     raise
-            
+                
                 try:
+                    
                     metrics = await self.run_metrics_analysis(cleaned_tweets)
                 except Exception as e:
                     logger.error(f"Error running quantitative analysis: {str(e)}")
@@ -336,6 +341,7 @@ class AccountAnalyzer:
                 metrics = existing_analysis.get('metrics')
                 qualitative_analysis = existing_analysis.get('qualitative_analysis')
                 cleaned_tweets = existing_analysis.get('top_tweets')
+
             
             try:
                 quantitative_analysis = await self.run_quantitative_analysis(metrics, account_data)
@@ -349,7 +355,13 @@ class AccountAnalyzer:
             except Exception as e:
                 logger.error(f"Error running qualitative analysis: {str(e)}")
                 raise
-            
+
+            try:
+                style_analysis = await self.run_soul_extractor(cleaned_tweets)
+            except Exception as e:
+                logger.error(f"Error running soul extractor: {str(e)}")
+                raise
+
             try:
                 await self.accounts.save_account_analysis(
                     user_id,
@@ -357,7 +369,8 @@ class AccountAnalyzer:
                     cleaned_tweets,
                     metrics,
                     quantitative_analysis,
-                    qualitative_analysis
+                    qualitative_analysis,
+                    style_analysis
                 )
             except Exception as e:
                 logger.error(f"Error saving account analysis: {str(e)}")

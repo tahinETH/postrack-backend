@@ -4,7 +4,12 @@ import os
 from typing import Dict, Any, Optional, List
 from db.tw.structured import TweetStructuredRepository
 from config import config
-from analysis.prompts.prompts_analysis import prepare_tweet_ai_analysis_prompt, prepare_account_ai_analysis_quantitative_prompt, prepare_account_ai_analysis_qualitative_prompt
+from analysis.prompts.prompts_analysis import (
+    prepare_tweet_ai_analysis_prompt, 
+    prepare_account_ai_analysis_quantitative_prompt, 
+    prepare_account_ai_analysis_qualitative_prompt, 
+    prepare_account_soul_extractor_prompt
+    )
 logger = logging.getLogger(__name__)
 
 from litellm import completion
@@ -58,7 +63,11 @@ class AIAnalyzer:
         llm_response = await self._get_llm_analysis(prompt)
         return llm_response
        
-       
+    async def generate_ai_analysis_soul_extractor(self, example_posts: Dict[str, Any]) -> str:
+        prompt = prepare_account_soul_extractor_prompt(example_posts)
+        llm_response = await self._get_llm_analysis_json(prompt)
+        return llm_response
+    
     def _prepare_tweets_for_prompt(self, insights: Dict[str, Any]) -> str:
         cleaned_tweets = []
         for tweet in insights:
@@ -82,11 +91,29 @@ class AIAnalyzer:
         try:
             response = completion(
                 model="chatgpt-4o-latest",
-                max_tokens=800,
+                max_tokens=2000,
                 messages=[{
                     "role": "user",
                     "content": prompt
                 }]
+            )
+            
+            return response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"Error getting llm analysis: {str(e)}")
+            return "Error getting AI analysis"
+            
+    async def _get_llm_analysis_json(self, prompt: str) -> str:
+        """Get analysis from llm"""
+        try:
+            response = completion(
+                model="gemini/gemini-2.5-pro-preview-03-25",
+                max_tokens=4000,
+                messages=[{
+                    "role": "user",
+                    "content": prompt
+                }],
+                response_format={"type": "json_object"}
             )
             
             return response.choices[0].message.content

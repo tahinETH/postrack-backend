@@ -66,6 +66,7 @@ class AccountAnalysis(Base):
     metrics = Column(JSON, nullable=True)  # Engagement rates, growth trends etc
     quantitative_analysis = Column(JSON, nullable=True)  # Engagement rates, growth trends etc
     qualitative_analysis = Column(String, nullable=True)  # Overall account analysis textc
+    style_analysis = Column(JSON, nullable=True)  # Style analysis
     created_at = Column(Integer, nullable=False)
     updated_at = Column(Integer, nullable=False)
 

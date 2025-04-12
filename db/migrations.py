@@ -50,7 +50,18 @@ def migrations():
         """CREATE INDEX IF NOT EXISTS idx_user_tracked_items ON user_tracked_items (user_id, tracked_type, tracked_id)""",
         """CREATE INDEX IF NOT EXISTS idx_account_analysis ON account_analysis (account_id, created_at)""",
         """CREATE INDEX IF NOT EXISTS idx_refinements ON refinements (user_id, created_at)""",
-        """CREATE INDEX IF NOT EXISTS idx_inspirations ON inspirations (user_id, created_at)"""
+        """CREATE INDEX IF NOT EXISTS idx_inspirations ON inspirations (user_id, created_at)""",
+        
+        # Add style_analysis column to account_analysis table if it doesn't exist
+        """DO $$ 
+        BEGIN 
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name='account_analysis' AND column_name='style_analysis'
+            ) THEN
+                ALTER TABLE account_analysis ADD COLUMN style_analysis JSONB;
+            END IF;
+        END $$;"""
     ]
 
 async def connect_and_migrate(db_url: str):
