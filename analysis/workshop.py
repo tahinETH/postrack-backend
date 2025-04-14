@@ -187,7 +187,7 @@ class Workshop:
             logger.error(f"Error generating visualization ideas: {str(e)}")
             return "Error generating visualization ideas"
 
-    async def workshop_standalone_tweet(self, user_id: str, input_text: str, account_id: str, additional_commands: str) -> Dict[str, Any]:
+    async def workshop_standalone_tweet(self, user_id: str, input_text: str, account_id: str, additional_commands: str, is_thread: bool) -> Dict[str, Any]:
         try:
             if not input_text:
                 return "Error: Could not retrieve input text"
@@ -196,7 +196,7 @@ class Workshop:
             
             raw_tweets = analysis.get('top_tweets', [])
             example_posts = await self.clean_tweets(raw_tweets, limit=20)
-            prompt = prepare_standalone_tweet_prompt(input_text, example_posts, additional_commands)
+            prompt = prepare_standalone_tweet_prompt(input_text, example_posts, additional_commands, is_thread)
             
             response = completion(
                 model="chatgpt-4o-latest", 

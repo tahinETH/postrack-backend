@@ -84,6 +84,7 @@ class StandaloneInput(BaseModel):
     input_text: str
     account_id: str = None
     additional_commands: str
+    is_thread: bool
     
 @app.get("/user", tags=["User"])
 async def get_user(user_id: str = Depends(auth_middleware)):
@@ -256,7 +257,7 @@ async def get_standalone_tweet_ideas(
     user_id: str = Depends(auth_middleware)
 ):
     try:
-        ideas = await service.get_standalone_tweet_ideas(user_id, input_data.input_text, input_data.account_id, input_data.additional_commands)
+        ideas = await service.get_standalone_tweet_ideas(user_id, input_data.input_text, input_data.account_id, input_data.additional_commands, input_data.is_thread)
         return {"status": "success", "ideas": ideas}
     except Exception as e:
         logger.error(f"Error getting standalone tweet ideas at {int(time.time())}: {str(e)}")

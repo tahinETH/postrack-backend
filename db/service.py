@@ -368,10 +368,10 @@ class Service:
             logger.error(f"Error getting visualization ideas: {str(e)}")
             raise
 
-    async def get_standalone_tweet_ideas(self, user_id: str, input_text: str, account_id: str, additional_commands: str) ->  Dict[str, Any]:
+    async def get_standalone_tweet_ideas(self, user_id: str, input_text: str, account_id: str, additional_commands: str, is_thread: bool) ->  Dict[str, Any]:
         """Get standalone tweet ideas for a tweet"""
         try:
-            ideas = await self.content_workshop.workshop_standalone_tweet(user_id, input_text, account_id, additional_commands)
+            ideas = await self.content_workshop.workshop_standalone_tweet(user_id, input_text, account_id, additional_commands, is_thread)
             return ideas
         except Exception as e:  
             logger.error(f"Error getting standalone tweet ideas: {str(e)}")

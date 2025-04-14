@@ -199,7 +199,7 @@ Organize your response into two sections:
 Only include visuals that are likely to increase engagement or improve comprehension. Avoid generic or unrelated visuals.
 """
 
-def prepare_standalone_tweet_prompt(input: str, example_posts: Dict[str, Any] = None, additional_commands: str = None) -> str:
+def prepare_standalone_tweet_prompt(input: str, example_posts: Dict[str, Any] = None, additional_commands: str = None, is_thread: bool = False) -> str:
    
    example_posts_section = ""
    if example_posts:
@@ -207,6 +207,63 @@ def prepare_standalone_tweet_prompt(input: str, example_posts: Dict[str, Any] = 
 <example_posts>
 {json.dumps(example_posts, indent=2)}
 </example_posts>
+"""
+   
+   if is_thread:
+       task_description = """
+Your task is to create 5 thread ideas with brief elaborations for each idea.
+"""
+       response_format = """
+"thread_ideas": [
+    {
+        "idea": "First thread idea - be specific",
+        "elaboration": "Elaboration on the first thread idea"
+    },
+    {
+        "idea": "Second thread idea - be specific",
+        "elaboration": "Elaboration on the second thread idea"
+    },
+    {
+        "idea": "Third thread idea - be specific",
+        "elaboration": "Elaboration on the third thread idea"
+    },
+    {
+        "idea": "Fourth thread idea - be specific",
+        "elaboration": "Elaboration on the fourth thread idea"
+    },
+    {
+        "idea": "Fifth thread idea - be specific",
+        "elaboration": "Elaboration on the fifth thread idea"
+    }
+]
+"""
+   else:
+       task_description = """
+Your task is to create 5 standalone topic ideas with example tweets for each idea.
+"""
+       response_format = """
+"standalone_ideas": [
+    {
+        "idea": "First standalone idea - be specific",
+        "post": "Example tweet for the first standalone idea"
+    },
+    {
+        "idea": "Second standalone idea - be specific",
+        "post": "Example tweet for the second standalone idea"
+    },
+    {
+        "idea": "Third standalone idea - be specific",
+        "post": "Example tweet for the third standalone idea"
+    },
+    {
+        "idea": "Fourth standalone idea - be specific",
+        "post": "Example tweet for the fourth standalone idea"
+    },
+    {
+        "idea": "Fifth standalone idea - be specific",
+        "post": "Example tweet for the fifth standalone idea"
+    }
+]
 """
    
    return(f"""
@@ -223,12 +280,7 @@ Now, carefully read and analyze the following input from the user. This is the m
 {input}
 </user_input>
 
-
-
-
-Your task is to create:
-1. Three standalone topic ideas with example tweets for each idea.
-2. Three thread ideas with brief elaborations for each idea.
+{task_description}
 
 When generating these ideas prioritize the user input above all else. 
 
@@ -238,36 +290,8 @@ Present your response in the following JSON format:
 
 
 {{
-    "standalone_ideas": [
-        {{
-            "idea": "First standalone idea - be specific",
-            "post": "Example tweet for the first standalone idea "
-        }},
-        {{
-            "idea": "Second standalone idea - be specific",
-            "post": "Example tweet for the second standalone idea"
-        }},
-        {{
-            "idea": "Third standalone idea - be specific",
-            "post": "Example tweet for the third standalone idea"
-        }}
-    ],
-    "thread_ideas": [
-        {{
-            "idea": "First thread idea - be specific",
-            "elaboration": "Elaboration on the first thread idea"
-        }},
-        {{
-            "idea": "Second thread idea - be specific",
-            "elaboration": "Elaboration on the second thread idea"
-        }},
-        {{
-            "idea": "Third thread idea - be specific",
-            "elaboration": "Elaboration on the third thread idea"
-        }}
-    ]
+    {response_format}
 }}
           """
    )
-
 
