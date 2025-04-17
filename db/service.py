@@ -37,8 +37,8 @@ class SubscriptionTier:
 
 class SubscriptionTiers:
     #max_accounts, max_tweets, max_analysis, max_followers
-    FREE = SubscriptionTier('tier0', 1, 0, 5, 5000)
-    PREMIUM = SubscriptionTier('tier1', 1, 0, 5, 50000) 
+    FREE = SubscriptionTier('tier0', 0, 0, 3, 5000)
+    PREMIUM = SubscriptionTier('tier1', 1, 0, 5, 10000) 
     ADMIN = SubscriptionTier('admin', 1000, 1000, 1000, 1000000000)
 
     @classmethod 
@@ -350,7 +350,7 @@ class Service:
             logger.error(f"Error getting content inspiration for tweet {tweet_id}: {str(e)}")
             raise
 
-    async def get_tweet_refinements(self, user_id: str, tweet_text: str, account_id: str, additional_commands: str) -> str:
+    async def get_tweet_refinements(self, user_id: str, tweet_text: str, account_id: str, additional_commands: str) -> Dict[str, Any]:
         """Get refinement suggestions for a tweet"""
         try:
             refinements = await self.content_workshop.workshop_refine(user_id, tweet_text, account_id, additional_commands)
@@ -359,7 +359,7 @@ class Service:
             logger.error(f"Error getting tweet refinements service: {str(e)}")
             raise
 
-    async def get_visualization_ideas(self, tweet_text: str) -> str:
+    async def get_visualization_ideas(self, tweet_text: str) -> Dict[str, Any]:
         """Get visualization ideas for a tweet"""
         try:
             ideas = await self.content_workshop.workshop_visualization(tweet_text)

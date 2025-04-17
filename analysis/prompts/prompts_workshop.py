@@ -118,7 +118,7 @@ def prepare_tweet_example_generator_prompt(inspiration: str, example_posts: Dict
     - Match the voice and style of the example posts
     - Focus on one clear topic or idea
     - Use engaging hooks and strong closings
-    - Include appropriate formatting (line breaks, emojis, etc.) when relevant
+    - Include appropriate formatting (line breaks, punctuation, etc.) when relevant
 
     Do not include generic placeholder tweets. Each tweet should be specific and ready to post. Do not use em dashes or ellipses.
     """
@@ -158,15 +158,27 @@ Additional instructions (prioritize these above all else):
 {additional_commands}
 </additional_commands>
 
-Present your final output in this format. For each tweet, you have a character limit of 1000 characters. I want you to transfer the soul of the writing to the tweet:
+Present your final output in the following JSON format. For each tweet, you have a character limit of 1000 characters. I want you to transfer the soul of the writing to the tweet:
 
-<refined_tweets>
-1) [First refined tweet]
-2) [Second refined tweet]
-3) [Third refined tweet]
-4) [Fourth refined tweet]
-5) [Fifth refined tweet]
-</refined_tweets>
+{{
+    "refined_posts": [
+        "{{refined_post: refined_post,
+        "rationale": "Why this connects to the tweet_to_reply_to"
+        }}",
+        "{{refined_post: refined_post,
+        "rationale": "Why this connects to the tweet_to_reply_to"
+        }}",
+        "{{refined_post: refined_post,
+        "rationale": "Why this connects to the tweet_to_reply_to"
+        }}",
+        "{{refined_post: refined_post,
+        "rationale": "Why this connects to the tweet_to_reply_to"
+        }}",
+        "{{refined_post: refined_post,
+        "rationale": "Why this connects to the tweet_to_reply_to"
+        }}"
+    ]
+}}
 
 
 """
@@ -183,18 +195,20 @@ Below is a tweet post idea. Your task is to suggest media that would either supp
 Suggest 3 media types or specific examples that could be created or sourced from existing material (e.g., video clips, infographics, historical images, screenshots, diagrams, memes, etc.). Include short notes on how each one connects to or enhances the tweet.
 Propose 2 ideas for AI-generated images that could be used. Include a short description of the idea and a text prompt that can be used to generate the image (using a tool like Midjourney, DALL·E, etc.). Make sure the generated media ties directly into the theme, tone, or message of the tweet.
 
-Organize your response into two sections:
+Organize your response into the following JSON format:
 
-<existing_media>
-[1st media type]
-[2nd media type]
-[3rd media type]
-</existing_media>
+{{
+    "existing_media": [
+        "1st media type",
+        "2nd media type",
+        "3rd media type"
+    ],
+    "ai_media": [
+        "1st AI-generated image",
+        "2nd AI-generated image"
+    ]
+}}
 
-<ai>
-[1st AI-generated image]
-[2nd AI-generated image]
-</ai>
 
 Only include visuals that are likely to increase engagement or improve comprehension. Avoid generic or unrelated visuals.
 """

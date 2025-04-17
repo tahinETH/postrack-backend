@@ -18,6 +18,8 @@ from litellm import completion
 
 logger = logging.getLogger(__name__)
 
+PRIMARY_MODEL = "openai/gpt-4.1"
+ADMIN_MODEL = "openai/o3"
 class Workshop:
     def __init__(self):
         
@@ -87,7 +89,7 @@ class Workshop:
             
             prompt = prepare_content_inspiration_prompt(example_posts, tweet_text, additional_commands)
             response = completion(
-                model="chatgpt-4o-latest",
+                model=PRIMARY_MODEL,
                 max_tokens=2000,
                 messages=[{
                     "role": "user", 
@@ -99,7 +101,7 @@ class Workshop:
 
             tweet_example_generator_prompt = prepare_tweet_example_generator_prompt(json.dumps(content_inspiration), example_posts, tweet_text, additional_commands)
             response = completion(
-                model="chatgpt-4o-latest",
+                model=ADMIN_MODEL if user_id =="user_2tcQfynAXow17zErfaDwYzyRc5l" else PRIMARY_MODEL,
                 max_tokens=2000,
                 messages=[{
                     "role": "user", 
@@ -133,7 +135,7 @@ class Workshop:
             logger.error(f"Error getting content inspiration: {str(e)}")
             return str("Error generating content inspiration")
 
-    async def workshop_refine(self, user_id: str, tweet_text: str, account_id: str, additional_commands: str) -> str:
+    async def workshop_refine(self, user_id: str, tweet_text: str, account_id: str, additional_commands: str) -> Dict[str, Any]:
         try:
             if not tweet_text:
                 return "Error: Could not retrieve tweet"
@@ -145,21 +147,21 @@ class Workshop:
             style_analysis = analysis.get('style_analysis', {})
             prompt = prepare_tweet_refinement_prompt(tweet_text, style_analysis, additional_commands)
             response = completion(
-                model="chatgpt-4o-latest", 
+                model=ADMIN_MODEL if user_id =="user_2tcQfynAXow17zErfaDwYzyRc5l" else PRIMARY_MODEL, 
                 max_tokens=2000,
                 messages=[{
                     "role": "user",
                     "content": prompt
                 }],
+                response_format={"type": "json_object"}
             )
-            print(response.choices[0].message.content)
-            result = response.choices[0].message.content
+            result = json.loads(response.choices[0].message.content)
             
             # Save the refinement
             await self.workshop_repo.save_refinement(
                 user_id=user_id,
                 tweet_draft=tweet_text,
-                result=result,
+                result=str(result),
                 prompt=prompt,
                 account_id=account_id,
                 additional_commands=additional_commands
@@ -170,18 +172,19 @@ class Workshop:
             logger.error(f"Error getting tweet refinements workshop: {str(e)}")
             return "Error refining tweet"
 
-    async def workshop_visualization(self, tweet_text: str) -> str:
+    async def workshop_visualization(self, tweet_text: str) -> Dict[str, Any]:
         try:
             prompt = prepare_visualization_prompt(tweet_text)
             response = completion(
-                model="gemini/gemini-2.5-pro-preview-03-25",
+                model=PRIMARY_MODEL,
                 max_tokens=2000,
                 messages=[{
                     "role": "user",
                     "content": prompt
-                }]
+                }],
+                response_format={"type": "json_object"}
             )
-            result = response.choices[0].message.content
+            result = json.loads(response.choices[0].message.content)
             return result
         except Exception as e:
             logger.error(f"Error generating visualization ideas: {str(e)}")
@@ -199,7 +202,7 @@ class Workshop:
             prompt = prepare_standalone_tweet_prompt(input_text, example_posts, additional_commands, is_thread)
             
             response = completion(
-                model="chatgpt-4o-latest", 
+                model=PRIMARY_MODEL if user_id =="user_2tcQfynAXow17zErfaDwYzyRc5l" else ADMIN_MODEL, 
                 max_tokens=6000,
                 messages=[{
                     "role": "user",

@@ -96,7 +96,6 @@ class TweetStructuredRepository():
     async def get_user_feed(self, user_id: str, skip: int = 0, limit: int = 20, type: str = "time", sort: str = "desc") -> Dict[str, Any]:
         """Get latest data for all monitored tweets for a user with pagination"""
         logger = logging.getLogger(__name__)
-
         # Get all monitored tweets for the user
         monitored_tweets = await self.tweet_data.get_tweets_for_user(user_id)
         total_count = len(monitored_tweets) if monitored_tweets else 0

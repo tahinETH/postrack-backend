@@ -233,6 +233,37 @@ async def get_tweet_feed(
     except Exception as e:
         logger.error(f"Error getting tweet feed at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail="Error retrieving tweet feed")
+    
+@app.get("/tweet/feed", tags=["Tweet"])
+async def get_tweet_feed_example(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    type: str = Query(default="time", regex="^(time|views)$"),
+    sort: str = Query(default="desc", regex="^(asc|desc)$"),
+    
+):
+    """Get a paginated feed of all monitored tweets with their latest data"""
+    try:
+        feed = await service.get_user_feed(
+            "mock_user",
+            skip=(page - 1) * page_size,
+            limit=page_size,
+            type=type,
+            sort=sort
+        )
+        
+        return {
+            "status": "success",
+            "page": page,
+            "page_size": page_size,
+            "total_count": feed["total_count"],
+            "has_next": page * page_size < feed["total_count"],
+            "has_previous": page > 1,
+            "feed": feed
+        }
+    except Exception as e:
+        logger.error(f"Error getting tweet feed at {int(time.time())}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error retrieving tweet feed")
 
 
 @app.get("/tweet/{tweet_id}/history", tags=["Tweet"])

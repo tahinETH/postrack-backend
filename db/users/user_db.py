@@ -314,3 +314,4 @@ class UserDataRepository():
         except Exception as e:
             logger.error(f"Error updating subscription for user {user_id}: {str(e)}")
             raise
+

@@ -1,5 +1,6 @@
 import json
 import logging
+import asyncio
 from typing import Dict, Any, List, Tuple
 from db.tw.structured import TweetStructuredRepository
 from db.tw.account_db import AccountRepository
@@ -59,6 +60,9 @@ class AccountAnalyzer:
 
         
     async def run_metrics_analysis(self, tweets: List[Dict[str, Any]]) -> Dict[str, Any]:
+        return await asyncio.to_thread(self._run_metrics_analysis, tweets)
+    
+    def _run_metrics_analysis(self, tweets: List[Dict[str, Any]]) -> Dict[str, Any]:
         metrics = {}
         
         # Basic engagement metrics

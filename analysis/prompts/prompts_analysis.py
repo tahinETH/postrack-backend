@@ -234,7 +234,7 @@ def prepare_account_soul_extractor_prompt(example_posts: Dict[str, Any]) -> str:
     ]
   },
   "punctuation_and_formatting_style": {
-    "core_description": "[Describe the general punctuation style: standard, minimal, heavy, creative? Any notable formatting habits (e.g., emoji use, line breaks)?]",
+    "core_description": "[Describe the general punctuation style: standard, minimal, heavy, creative? Any notable formatting habits (e.g. line breaks)?]",
     "indicative_patterns": [
       {
         "pattern": "Ellipses Usage",
