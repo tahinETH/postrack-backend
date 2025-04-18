@@ -17,10 +17,9 @@ class EnvConfig:
             self.STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY_PROD")
             self.STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY_PROD")
             self.STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET_PROD")
-            self.TIER1_PRODUCT_ID = os.getenv("TIER1_PRODUCT_ID_PROD")
-            self.TIER2_PRODUCT_ID = os.getenv("TIER2_PRODUCT_ID_PROD")
+            self.TIER1_PRICE_ID = os.getenv("TIER1_PRICE_ID_PROD")
             
-           
+            
         else:
             self.DB_PATH = os.getenv("DB_PATH_LOCAL")
             self.CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY_LOCAL")
@@ -28,8 +27,8 @@ class EnvConfig:
             self.STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY_LOCAL")
             self.STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY_LOCAL")
             self.STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET_LOCAL")
-            self.TIER1_PRODUCT_ID = os.getenv("TIER1_PRODUCT_ID_LOCAL")
-            self.TIER2_PRODUCT_ID = os.getenv("TIER2_PRODUCT_ID_LOCAL")
+            self.TIER1_PRICE_ID = os.getenv("TIER1_PRICE_ID_LOCAL")
+            
 
 # Create an instance of the config
 config = EnvConfig()

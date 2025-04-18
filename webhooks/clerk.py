@@ -19,12 +19,14 @@ class ClerkWebhook(BaseModel):
     data: dict
 
 def verify_webhook(request: Request, body: bytes):
+    logger.info("Verifying webhook signature")
     # Get required headers
     svix_id = request.headers.get("svix-id")
     svix_timestamp = request.headers.get("svix-timestamp") 
     svix_signature = request.headers.get("svix-signature")
 
     if not all([svix_id, svix_timestamp, svix_signature]):
+        logger.error("Missing required webhook headers")
         raise HTTPException(status_code=400, detail="Missing headers")
 
     headers = {
@@ -37,7 +39,9 @@ def verify_webhook(request: Request, body: bytes):
         wh = Webhook(config.CLERK_WEBHOOK_SECRET)
         # Verify will throw an error if invalid
         wh.verify(body.decode(), headers)
+        logger.info("Webhook signature verified successfully")
     except Exception as e:
+        logger.error(f"Invalid webhook signature: {str(e)}")
         raise HTTPException(status_code=401, detail="Invalid signature")
 
 router = APIRouter()
@@ -45,8 +49,8 @@ router = APIRouter()
 @router.post("/clerk-webhook")
 async def handle_webhook(request: Request, background_tasks: BackgroundTasks):
     try:
+        logger.info("Received webhook request")
         body = await request.body()
-        
         
         verify_webhook(request, body)
         
@@ -54,6 +58,9 @@ async def handle_webhook(request: Request, background_tasks: BackgroundTasks):
         payload = await request.json()
         event_type = payload.get("type")
         user_data = payload.get("data", {})
+        
+        logger.info(f"Processing webhook event type: {event_type}")
+        
         # Process in background if needed
         background_tasks.add_task(handle_event, event_type, user_data)
         
@@ -62,14 +69,16 @@ async def handle_webhook(request: Request, background_tasks: BackgroundTasks):
     except HTTPException as he:
         raise he
     except Exception as e:
+        logger.error(f"Error handling webhook: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 async def handle_event(event_type: str, user_data: dict):
+    logger.info(f"Handling {event_type} event")
     user_repo = UserDataRepository()
 
     try:
-        
         if event_type == "user.created":
+            logger.info("Processing user creation")
             # Extract user information
             user_id = user_data.get("id")
             email = user_data.get("email_addresses", [{}])[0].get("email_address")
@@ -82,6 +91,7 @@ async def handle_event(event_type: str, user_data: dict):
             
             # Create Stripe customer
             try:
+                logger.info(f"Creating Stripe customer for user {user_id}")
                 stripe_customer = stripe.Customer.create(
                     email=email,
                     name=name,
@@ -96,6 +106,7 @@ async def handle_event(event_type: str, user_data: dict):
                 logger.error(f"Failed to create Stripe customer for user {user_id}: {str(e)}")
                 # Continue with user creation even if Stripe customer creation fails
             
+            logger.info(f"Creating user record for {user_id}")
             await user_repo.create_user(
                 user_id=user_id,
                 email=email,
@@ -105,6 +116,7 @@ async def handle_event(event_type: str, user_data: dict):
             )
 
         elif event_type == "user.updated":
+            logger.info("Processing user update")
             user_id = user_data.get("id")
             updates = {}
             
@@ -122,10 +134,12 @@ async def handle_event(event_type: str, user_data: dict):
             }
             updates["fe_metadata"] = fe_metadata
 
+            logger.info(f"Updating user {user_id} with: {updates}")
             await user_repo.update_user(user_id, **updates)
 
         elif event_type == "user.deleted":
             user_id = user_data.get("id")
+            logger.info(f"Processing deletion for user {user_id}")
             await user_repo.delete_user(user_id)
             logger.info(f"Deleted user {user_id}")
 

@@ -4,6 +4,8 @@ from typing import Optional, Dict, Any, List
 from db.migrations import get_async_session
 from db.schemas import User, UserTrackedItem
 from sqlalchemy import select
+from config import config
+import stripe
 import logging
 
 logger = logging.getLogger(__name__)
@@ -48,10 +50,12 @@ class UserDataRepository():
                     'email': user.email,
                     'name': user.name,
                     'current_tier': user.current_tier,
+                    'stripe_customer_id': user.stripe_customer_id,
                     'current_period_start': user.current_period_start,
                     'current_period_end': user.current_period_end,
                     'fe_metadata': user.fe_metadata,
-                    'tracked_items': tracked_items
+                    'tracked_items': tracked_items,
+                    
                 }
             return None
 
@@ -313,5 +317,38 @@ class UserDataRepository():
             return await self.update_user(user_id, **updates)
         except Exception as e:
             logger.error(f"Error updating subscription for user {user_id}: {str(e)}")
+            raise
+
+    async def create_checkout_session(self, user_id: str) -> Dict[str, Any]:
+        """Create a Stripe checkout session for subscription"""
+        try:
+            async with get_async_session() as session:
+                result = await session.execute(
+                    select(User).filter(User.id == user_id)
+                )
+                user = result.scalars().first()
+                
+                if not user:
+                    raise ValueError(f"User {user_id} not found")
+
+                # Create Stripe checkout session
+                stripe_session = stripe.checkout.Session.create(
+                    success_url='https://app.postrack.ai',
+                    mode='subscription',
+                    line_items=[{
+                        'price': config.TIER1_PRICE_ID,
+                        'quantity': 1
+                    }],
+                    customer=user.stripe_customer_id
+                )
+
+                logger.info(f"Created checkout session for user {user_id}")
+                return {
+                    'session_id': stripe_session.id,
+                    'url': stripe_session.url
+                }
+
+        except Exception as e:
+            logger.error(f"Error creating checkout session for user {user_id}: {str(e)}")
             raise
 

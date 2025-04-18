@@ -25,8 +25,6 @@ SOCIAL_DATA_API_KEY = config.SOCIAL_DATA_API_KEY
 
 
 
-
-
 class SubscriptionTier:
     def __init__(self, tier_id: str, max_accounts: int, max_tweets: int, max_analysis: int, max_followers: int):
         self.tier_id = tier_id
@@ -37,8 +35,9 @@ class SubscriptionTier:
 
 class SubscriptionTiers:
     #max_accounts, max_tweets, max_analysis, max_followers
-    FREE = SubscriptionTier('tier0', 0, 0, 3, 5000)
-    PREMIUM = SubscriptionTier('tier1', 1, 0, 5, 10000) 
+    FREE = SubscriptionTier('tier0', 0, 0, 0, 1)
+    GOOD = SubscriptionTier('tier1', 1, 0, 10, 10000)
+    BETTER = SubscriptionTier('tier2', 1, 0, 200, 50000)
     ADMIN = SubscriptionTier('admin', 1000, 1000, 1000, 1000000000)
 
     @classmethod 
@@ -161,12 +160,9 @@ class Service:
                     #db
                    await self.monitor.tweet_data.add_monitored_tweet(tweet_id)
                     
-                
-                
+
                 monitoring_run = await self.monitor.monitor_tweet(tweet_id=tweet_id)
                 
-            
-
                 if monitoring_run.details_saved:
                     details, screen_name = await self.monitor._fetch_tweet_details(tweet_id)
                     
@@ -286,8 +282,6 @@ class Service:
             raise
 
 
-
-
         ### ADMIN FUNCTIONs ###
     async def handle_all_accounts(self, action: str) -> bool:
         """Handle starting or stopping monitoring of all accounts"""
@@ -377,7 +371,14 @@ class Service:
             logger.error(f"Error getting standalone tweet ideas: {str(e)}")
             raise
 
-
+    async def create_checkout_session(self, user_id: str) -> Dict[str, Any]:
+        """Create a checkout session for a user"""
+        try:
+            session = await self.user_repository.create_checkout_session(user_id)
+            return session
+        except Exception as e:
+            logger.error(f"Error creating checkout session: {str(e)}")
+            raise
     ## PERIODIC CHECKS ##
     async def check_single_tweet(self, timestamp: int):
         """Single run of tweet check and update"""

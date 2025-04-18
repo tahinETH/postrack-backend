@@ -90,7 +90,7 @@ class StandaloneInput(BaseModel):
 async def get_user(user_id: str = Depends(auth_middleware)):
     """Get user details"""
     try:
-        user = service.get_user(user_id)
+        user = await service.get_user(user_id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         return user
@@ -334,6 +334,15 @@ async def get_visualization_ideas(
     
 
 
+
+@app.post("/stripe/create-checkout-session", tags=["Stripe"])
+async def create_checkout_session(user_id: str = Depends(auth_middleware)):
+    try:
+        session = await service.create_checkout_session(user_id)
+        return {"status": "success", "session": session}
+    except Exception as e:
+        logger.error(f"Error creating checkout session at {int(time.time())}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/admin/account/analyze/{account_id}", tags=["Admin"])
 async def admin_get_account_analysis(account_id: str, admin_secret: str = Header(None)):

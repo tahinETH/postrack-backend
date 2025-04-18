@@ -8,7 +8,9 @@ from db.users.user_db import UserDataRepository
 logger = logging.getLogger(__name__)
 
 stripe.api_key = config.STRIPE_SECRET_KEY
-endpoint_secret = config.STRIPE_WEBHOOK_SECRET
+raw_secret_from_config = config.STRIPE_WEBHOOK_SECRET
+cleaned_secret = str(raw_secret_from_config).strip()
+endpoint_secret = cleaned_secret 
 
 
 router = APIRouter()
@@ -19,14 +21,14 @@ def verify_stripe_webhook(request: Request, body: bytes) -> Dict[str, Any]:
     stripe_signature = request.headers.get("stripe-signature")
 
     if not stripe_signature:
-        logger.error("Missing Stripe signature header")
+        logger.error("Mi<ssing Stripe signature header")
         raise HTTPException(status_code=400, detail="Missing Stripe signature header")
 
     try:
         event = stripe.Webhook.construct_event(
             payload=body,
             sig_header=stripe_signature, 
-            secret=endpoint_secret
+            secret=f"{endpoint_secret}"
         )
         return event
     except ValueError as e:
@@ -47,10 +49,8 @@ async def handle_webhook(request: Request, background_tasks: BackgroundTasks):
         
         event = verify_stripe_webhook(request, body)
         
-        # Add event ID to logs for tracking
         logger.info(f"Processing webhook event: {event.id}")
         
-        # Process event in background
         background_tasks.add_task(handle_event, event)
         
         return {"status": "success", "event_id": event.id}
@@ -149,13 +149,15 @@ async def handle_invoice_event(event_type: str, data: Dict[str, Any]):
             # Get user by stripe customer ID
             user = await user_db.get_user_by_stripe_customer(customer_id)
             if user:
-                # Update subscription details based on the invoice
+
                 subscription_data = {
-                    'tier': 'tier1',  # Determine tier from invoice line items
+                    'tier': 'tier1', 
                     'current_period_start': data.get('period_start'),
                     'current_period_end': data.get('period_end')
                 }
+
                 await user_db.update_user_subscription(user['id'], subscription_data)
+
         elif event_type == "invoice.payment_failed":
             logger.error(f"Invoice {invoice_id} payment failed for customer {customer_id}")
             user = await user_db.get_user_by_stripe_customer(customer_id)
