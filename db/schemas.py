@@ -121,7 +121,7 @@ class APICall(Base):
     total_api_calls = Column(Integer)
 
 class Refinement(Base):
-    __tablename__ = 'refinements'
+    __tablename__ = 'workshop_refinements'
     id = Column(Integer, primary_key=True)
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
     account_id = Column(String, ForeignKey("monitored_accounts.account_id"), nullable=True)
@@ -131,14 +131,35 @@ class Refinement(Base):
     result = Column(String, nullable=False)
     created_at = Column(Integer, nullable=False)
 
-class Inspiration(Base):
-    __tablename__ = 'inspirations'
+class GenerationIdeas(Base):
+    __tablename__ = 'workshop_generation'
     id = Column(Integer, primary_key=True)
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
     account_id = Column(String, ForeignKey("monitored_accounts.account_id"), nullable=True)
-    tweet_id = Column(String, nullable=False)
+    input = Column(String, nullable=False)
     is_thread = Column(Boolean, default=False)
     prompt = Column(String, nullable=False)
     result = Column(String, nullable=False)
     created_at = Column(Integer, nullable=False)
 
+
+class ReplyAndQuote(Base):
+    __tablename__ = 'workshop_reply'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    account_id = Column(String, ForeignKey("monitored_accounts.account_id"), nullable=True)
+    tweet_id = Column(String, nullable=False)
+    additional_commands = Column(String, nullable=True)
+    prompt = Column(String, nullable=False)
+    result = Column(String, nullable=False)
+    created_at = Column(Integer, nullable=False)
+
+
+class Visualization(Base):
+    __tablename__ = 'workshop_visualization'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    input = Column(String, nullable=False)
+    prompt = Column(String, nullable=False)
+    result = Column(String, nullable=False)
+    created_at = Column(Integer, nullable=False)

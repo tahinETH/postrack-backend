@@ -14,12 +14,12 @@ from analysis.prompts.prompts_workshop import (
 from api_client import TwitterAPIClient
 from analysis.account import AccountAnalyzer
 from db.workshop.workshop_db import WorkshopRepository
-from litellm import completion
+from litellm import acompletion
 
 logger = logging.getLogger(__name__)
 
 PRIMARY_MODEL = "openai/gpt-4.1"
-ADMIN_MODEL = "openai/o3"
+ADMIN_MODEL = "chatgpt-4o-latest"
 class Workshop:
     def __init__(self):
         
@@ -88,7 +88,7 @@ class Workshop:
                 example_posts = {}
             
             prompt = prepare_content_inspiration_prompt(example_posts, tweet_text, additional_commands)
-            response = completion(
+            response = await acompletion(
                 model=PRIMARY_MODEL,
                 max_tokens=2000,
                 messages=[{
@@ -100,7 +100,7 @@ class Workshop:
             content_inspiration = json.loads(response.choices[0].message.content)
 
             tweet_example_generator_prompt = prepare_tweet_example_generator_prompt(json.dumps(content_inspiration), example_posts, tweet_text, additional_commands)
-            response = completion(
+            response = await acompletion(
                 model=ADMIN_MODEL if user_id =="user_2tcQfynAXow17zErfaDwYzyRc5l" else PRIMARY_MODEL,
                 max_tokens=2000,
                 messages=[{
@@ -121,9 +121,9 @@ class Workshop:
             merged_result = json.dumps(content_inspiration)
 
             # Save the inspiration
-            await self.workshop_repo.save_inspiration(
+            await self.workshop_repo.save_generation(
                 user_id=user_id,
-                tweet_id=tweet_id,
+                input=tweet_text,
                 prompt=prompt,
                 result=merged_result,
                 account_id=account_id,
@@ -146,7 +146,7 @@ class Workshop:
             #example_posts = await self.clean_tweets(raw_tweets, limit=20)
             style_analysis = analysis.get('style_analysis', {})
             prompt = prepare_tweet_refinement_prompt(tweet_text, style_analysis, additional_commands)
-            response = completion(
+            response = await acompletion(
                 model=ADMIN_MODEL if user_id =="user_2tcQfynAXow17zErfaDwYzyRc5l" else PRIMARY_MODEL, 
                 max_tokens=2000,
                 messages=[{
@@ -172,10 +172,10 @@ class Workshop:
             logger.error(f"Error getting tweet refinements workshop: {str(e)}")
             return "Error refining tweet"
 
-    async def workshop_visualization(self, tweet_text: str) -> Dict[str, Any]:
+    async def workshop_visualization(self, user_id, tweet_text: str) -> Dict[str, Any]:
         try:
             prompt = prepare_visualization_prompt(tweet_text)
-            response = completion(
+            response = await acompletion(
                 model=PRIMARY_MODEL,
                 max_tokens=2000,
                 messages=[{
@@ -185,6 +185,15 @@ class Workshop:
                 response_format={"type": "json_object"}
             )
             result = json.loads(response.choices[0].message.content)
+            
+            # Save the visualization
+            await self.workshop_repo.save_visualization(
+                user_id=user_id,
+                input=tweet_text,
+                prompt=prompt,
+                result=str(result)
+            )
+            
             return result
         except Exception as e:
             logger.error(f"Error generating visualization ideas: {str(e)}")
@@ -201,9 +210,9 @@ class Workshop:
             example_posts = await self.clean_tweets(raw_tweets, limit=20)
             prompt = prepare_standalone_tweet_prompt(input_text, example_posts, additional_commands, is_thread)
             
-            response = completion(
+            response = await acompletion(
                 model=PRIMARY_MODEL if user_id =="user_2tcQfynAXow17zErfaDwYzyRc5l" else ADMIN_MODEL, 
-                max_tokens=6000,
+                max_tokens=3000,
                 messages=[{
                     "role": "user",
                     "content": prompt
@@ -212,6 +221,15 @@ class Workshop:
             )
             result = json.loads(response.choices[0].message.content)
 
+            # Save the generation
+            await self.workshop_repo.save_generation(
+                user_id=user_id,
+                input=input_text,
+                prompt=prompt,
+                result=str(result),
+                account_id=account_id,
+                is_thread=is_thread
+            )
             
             return result
         except Exception as e:

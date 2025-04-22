@@ -40,6 +40,12 @@ def migrations():
         # Create tables
         lambda conn: metadata.create_all(conn),
 
+        # Drop old tables
+        """DROP TABLE IF EXISTS reply_and_quote""",
+        """DROP TABLE IF EXISTS refinements""", 
+        """DROP TABLE IF EXISTS inspirations""",
+        """DROP TABLE IF EXISTS visualizations""",
+
         # Create indexes
         """CREATE INDEX IF NOT EXISTS idx_tweet_details ON tweet_details (tweet_id, captured_at)""",
         """CREATE INDEX IF NOT EXISTS idx_tweet_comments ON tweet_comments (tweet_id, captured_at)""",
@@ -49,8 +55,10 @@ def migrations():
         """CREATE INDEX IF NOT EXISTS idx_users ON users (id, email)""",
         """CREATE INDEX IF NOT EXISTS idx_user_tracked_items ON user_tracked_items (user_id, tracked_type, tracked_id)""",
         """CREATE INDEX IF NOT EXISTS idx_account_analysis ON account_analysis (account_id, created_at)""",
-        """CREATE INDEX IF NOT EXISTS idx_refinements ON refinements (user_id, created_at)""",
-        """CREATE INDEX IF NOT EXISTS idx_inspirations ON inspirations (user_id, created_at)""",
+        """CREATE INDEX IF NOT EXISTS idx_workshop_refinements ON workshop_refinements (user_id, created_at)""",
+        """CREATE INDEX IF NOT EXISTS idx_workshop_generation ON workshop_generation (user_id, created_at)""",
+        """CREATE INDEX IF NOT EXISTS idx_workshop_reply ON workshop_reply (user_id, created_at)""",
+        """CREATE INDEX IF NOT EXISTS idx_workshop_visualization ON workshop_visualization (user_id, created_at)""",
         
         # Add style_analysis column to account_analysis table if it doesn't exist
         """DO $$ 

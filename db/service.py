@@ -353,10 +353,10 @@ class Service:
             logger.error(f"Error getting tweet refinements service: {str(e)}")
             raise
 
-    async def get_visualization_ideas(self, tweet_text: str) -> Dict[str, Any]:
+    async def get_visualization_ideas(self, user_id: str, tweet_text: str) -> Dict[str, Any]:
         """Get visualization ideas for a tweet"""
         try:
-            ideas = await self.content_workshop.workshop_visualization(tweet_text)
+            ideas = await self.content_workshop.workshop_visualization(user_id, tweet_text)
             return ideas
         except Exception as e:
             logger.error(f"Error getting visualization ideas: {str(e)}")

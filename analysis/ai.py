@@ -12,7 +12,7 @@ from analysis.prompts.prompts_analysis import (
     )
 logger = logging.getLogger(__name__)
 
-from litellm import completion
+from litellm import acompletion
 
 
 class AIAnalyzer:
@@ -89,8 +89,8 @@ class AIAnalyzer:
     async def _get_llm_analysis(self, prompt: str) -> str:
         """Get analysis from llm"""
         try:
-            response = completion(
-                model="chatgpt-4o-latest",
+            response = await acompletion(
+                model="openai/gpt-4.1",
                 max_tokens=2000,
                 messages=[{
                     "role": "user",
@@ -106,8 +106,8 @@ class AIAnalyzer:
     async def _get_llm_analysis_json(self, prompt: str) -> str:
         """Get analysis from llm"""
         try:
-            response = completion(
-                model="gemini/gemini-2.5-pro-preview-03-25",
+            response = await acompletion(
+                model="openai/gpt-4.1",
                 max_tokens=4000,
                 messages=[{
                     "role": "user",
