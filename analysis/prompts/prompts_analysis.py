@@ -255,16 +255,11 @@ def prepare_account_soul_extractor_prompt(example_posts: Dict[str, Any]) -> str:
         "pattern": "Parentheses/Dashes",
         "description": "[Are parentheses or em-dashes used for asides, clarifications, or emphasis? Note frequency.]",
         "example_markers": "[Provide 1 example if used distinctively.]"
-      },
-      {
-        "pattern": "Emoji Usage",
-        "description": "[Note frequency, type, and placement of emojis.]",
-        "example_markers": "[Provide 1-2 typical examples if used.]"
       }
     ]
   },
   "key_style_takeaways_for_replication": [
-    "[List the 3-5 most crucial and distinctive stylistic elements to replicate for this specific account.]"
+    "[List the 3-5 most crucial and distinctive stylistic elements to replicate for this specific account: e.g. usage of lowercase letters, punctuoations, etc.]"
   ]
 }
 }

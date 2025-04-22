@@ -6,10 +6,11 @@ from db.tw.structured import TweetStructuredRepository
 from config import config
 from analysis.prompts.prompts_workshop import (
     prepare_content_inspiration_prompt,
-    prepare_tweet_example_generator_prompt,
+    prepare_reply_example_generator_prompt,
     prepare_tweet_refinement_prompt,
     prepare_visualization_prompt,
-    prepare_standalone_tweet_prompt
+    prepare_standalone_tweet_prompt,
+    prepare_tweet_or_thread_example_generator_prompt
 )
 from api_client import TwitterAPIClient
 from analysis.account import AccountAnalyzer
@@ -18,7 +19,7 @@ from litellm import acompletion
 
 logger = logging.getLogger(__name__)
 
-PRIMARY_MODEL = "openai/gpt-4.1"
+PRIMARY_MODEL = "chatgpt-4o-latest"
 ADMIN_MODEL = "chatgpt-4o-latest"
 class Workshop:
     def __init__(self):
@@ -99,7 +100,9 @@ class Workshop:
             )
             content_inspiration = json.loads(response.choices[0].message.content)
 
-            tweet_example_generator_prompt = prepare_tweet_example_generator_prompt(json.dumps(content_inspiration), example_posts, tweet_text, additional_commands)
+            style_analysis = analysis.get('style_analysis', {})
+
+            tweet_example_generator_prompt = prepare_reply_example_generator_prompt(json.dumps(content_inspiration), style_analysis, example_posts, tweet_text, additional_commands)
             response = await acompletion(
                 model=ADMIN_MODEL if user_id =="user_2tcQfynAXow17zErfaDwYzyRc5l" else PRIMARY_MODEL,
                 max_tokens=2000,
@@ -208,30 +211,56 @@ class Workshop:
             
             raw_tweets = analysis.get('top_tweets', [])
             example_posts = await self.clean_tweets(raw_tweets, limit=20)
-            prompt = prepare_standalone_tweet_prompt(input_text, example_posts, additional_commands, is_thread)
             
+            # First get content inspiration ideas
+            prompt = prepare_standalone_tweet_prompt(input_text, example_posts, additional_commands, is_thread)
             response = await acompletion(
-                model=PRIMARY_MODEL if user_id =="user_2tcQfynAXow17zErfaDwYzyRc5l" else ADMIN_MODEL, 
-                max_tokens=3000,
+                model=PRIMARY_MODEL,
+                max_tokens=2000,
                 messages=[{
                     "role": "user",
                     "content": prompt
                 }],
                 response_format={"type": "json_object"}
             )
-            result = json.loads(response.choices[0].message.content)
+            content_inspiration = json.loads(response.choices[0].message.content)
+
+            style_analysis = analysis.get('style_analysis', {})
+            
+
+            # Then generate tweet examples for each idea
+            tweet_example_generator_prompt = prepare_tweet_or_thread_example_generator_prompt(json.dumps(content_inspiration), style_analysis, example_posts, input_text, additional_commands, is_thread)
+            
+            response = await acompletion(
+                model=ADMIN_MODEL if user_id =="user_2tcQfynAXow17zErfaDwYzyRc5l" else PRIMARY_MODEL,
+                max_tokens=2000,
+                messages=[{
+                    "role": "user",
+                    "content": tweet_example_generator_prompt
+                }],
+                response_format={"type": "json_object"}
+            )
+            tweet_examples = json.loads(response.choices[0].message.content)
+           
+            for i, idea in enumerate(content_inspiration['standalone_ideas'], 1):
+                idea_id = str(i)
+                if idea_id in tweet_examples['standalone_ideas'][0]:
+                    idea['tweet'] = tweet_examples['standalone_ideas'][0][idea_id]
+
+            
+            merged_result = json.dumps(content_inspiration)
 
             # Save the generation
             await self.workshop_repo.save_generation(
                 user_id=user_id,
                 input=input_text,
                 prompt=prompt,
-                result=str(result),
+                result=merged_result,
                 account_id=account_id,
                 is_thread=is_thread
             )
             
-            return result
+            return content_inspiration
         except Exception as e:
             logger.error(f"Error generating standalone tweet ideas: {str(e)}")
             return "Error generating standalone tweet ideas"

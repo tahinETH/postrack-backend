@@ -70,64 +70,6 @@ def prepare_content_inspiration_prompt(example_posts: Dict[str, Any], tweet: str
 
 
 
-def prepare_tweet_example_generator_prompt(inspiration: str, example_posts: Dict[str, Any], discussion_source: str, additional_commands: str) -> str:
-    return f"""
-    You are an AI assistant tasked with generating example tweets based on a discussion source. Your goal is to generate engaging tweets that match the style and tone of the example posts while exploring the provided topic ideas.
-
-    First, carefully review these example posts to understand the desired style and tone:
-
-    <example_posts>
-    {json.dumps(example_posts)}
-    </example_posts>
-
-    <discussion_source>
-    {discussion_source}
-    </discussion_source>
-
-    <topic_ideas>
-    {inspiration}
-    </topic_ideas>
-
-
-    <additional_commands_from_user>
-    {additional_commands}
-    </additional_commands_from_user>
-
-    Topic ideas have been generated to explore how to engage with the discussion source with a reply or quote tweet.
-    Generate example tweets for each topic idea in the topic_ideas section. Follow the style and tone of the example posts.
-
-    Return your response in the following JSON format:
-
-    {{
-        "dependent_ideas": [
-            {{
-                "1": "First tweet generated based on the first dependent idea",
-                "2": "Second tweet generated based on the second dependent idea", 
-                "3": "Third tweet generated based on the third dependent idea"
-            }},
-        "independent_ideas": [
-            {{
-                "1": "First tweet generated based on the first independent idea",
-                "2": "Second tweet generated based on the second independent idea",
-                "3": "Third tweet generated based on the third independent idea"
-            }}
-    }}
-
-    For each tweet:
-    - Keep it within Twitter's character limit
-    - Match the voice and style of the example posts
-    - Focus on one clear topic or idea
-    - Use engaging hooks and strong closings
-    - Include appropriate formatting (line breaks, punctuation, etc.) when relevant
-
-    Do not include generic placeholder tweets. Each tweet should be specific and ready to post. Do not use em dashes or ellipses.
-    """
-
-
-
-
-
-
 
 def prepare_tweet_refinement_prompt(tweet: str, style_analysis: Dict[str, Any], additional_commands: str) -> str:
     
@@ -180,7 +122,7 @@ Present your final output in the following JSON format. For each tweet, you have
     ]
 }}
 
-
+Do not use emojis, do not use em dashes.
 """
 
 
@@ -216,19 +158,28 @@ Only include visuals that are likely to increase engagement or improve comprehen
 def prepare_standalone_tweet_prompt(input: str, example_posts: Dict[str, Any] = None, additional_commands: str = None, is_thread: bool = False) -> str:
    
    example_posts_section = ""
+   additional_commands_section = ""
+   if additional_commands:
+        additional_commands_section = f"""
+        <additional_commands>
+        {additional_commands}
+        </additional_commands>
+        """
    if example_posts:
        example_posts_section = f"""
-<example_posts>
-{json.dumps(example_posts, indent=2)}
-</example_posts>
-"""
+        <example_posts>
+        {json.dumps(example_posts, indent=2)}
+        </example_posts>
+        """
+    
+
    
    if is_thread:
        task_description = """
-Your task is to create 5 thread ideas with brief elaborations for each idea.
+Your task is to create 3 thread ideas with brief elaborations for each idea.
 """
        response_format = """
-"thread_ideas": [
+"standalone_ideas": [
     {
         "idea": "First thread idea - be specific",
         "elaboration": "Elaboration on the first thread idea"
@@ -240,42 +191,34 @@ Your task is to create 5 thread ideas with brief elaborations for each idea.
     {
         "idea": "Third thread idea - be specific",
         "elaboration": "Elaboration on the third thread idea"
-    },
-    {
-        "idea": "Fourth thread idea - be specific",
-        "elaboration": "Elaboration on the fourth thread idea"
-    },
-    {
-        "idea": "Fifth thread idea - be specific",
-        "elaboration": "Elaboration on the fifth thread idea"
     }
 ]
 """
    else:
        task_description = """
-Your task is to create 5 standalone topic ideas with example tweets for each idea.
+Your task is to create 5 standalone topic ideas. Do not use emojis, do not use em dashes.
 """
        response_format = """
 "standalone_ideas": [
     {
-        "idea": "First standalone idea - be specific",
-        "post": "Example tweet for the first standalone idea"
+        "idea": "First standalone idea - be specific. Do not give the post, give the topic idea",
+       
     },
     {
-        "idea": "Second standalone idea - be specific",
-        "post": "Example tweet for the second standalone idea"
+        "idea": "Second standalone idea - be specific. Do not give the post, give the topic idea",
+       
     },
     {
-        "idea": "Third standalone idea - be specific",
-        "post": "Example tweet for the third standalone idea"
+        "idea": "Third standalone idea - be specific. Do not give the post, give the topic idea",
+       
     },
     {
-        "idea": "Fourth standalone idea - be specific",
-        "post": "Example tweet for the fourth standalone idea"
+        "idea": "Fourth standalone idea - be specific. Do not give the post, give the topic idea",
+       
     },
     {
-        "idea": "Fifth standalone idea - be specific",
-        "post": "Example tweet for the fifth standalone idea"
+        "idea": "Fifth standalone idea - be specific. Do not give the post, give the topic idea",
+       
     }
 ]
 """
@@ -296,6 +239,8 @@ Now, carefully read and analyze the following input from the user. This is the m
 
 {task_description}
 
+{additional_commands_section}
+
 When generating these ideas prioritize the user input above all else. 
 
 
@@ -308,4 +253,139 @@ Present your response in the following JSON format:
 }}
           """
    )
+
+
+
+
+
+
+def prepare_reply_example_generator_prompt(inspiration: str, style_analysis: Dict[str, Any], example_posts: Dict[str, Any], discussion_source: str, additional_commands: str) -> str:
+    return f"""
+    You are an AI assistant tasked with generating example tweets based on a discussion source. Your goal is to generate engaging tweets that match the style and tone of the example posts while exploring the provided topic ideas.
+
+    First, carefully review these example posts to understand the desired style and tone:
+
+    <example_posts>
+    {json.dumps(example_posts)}
+    </example_posts>
+
+  
+
+
+    <additional_commands_from_user>
+    {additional_commands}
+    </additional_commands_from_user>
+
+    <account_soul_info>
+    {style_analysis}
+    </account_soul_info>
+
+      <discussion_source>
+    {discussion_source}
+    </discussion_source>
+
+    <topic_ideas>
+    {inspiration}
+    </topic_ideas>
+
+    Topic ideas have been generated to explore how to engage with the discussion source with a reply or quote tweet.
+    Generate example tweets for each topic idea in the topic_ideas section. Follow the style and tone of the example posts.
+
+    Return your response in the following JSON format:
+
+    {{
+        "dependent_ideas": [
+            {{
+                "1": "First tweet generated based on the first dependent idea",
+                "2": "Second tweet generated based on the second dependent idea", 
+                "3": "Third tweet generated based on the third dependent idea"
+            }},
+        "independent_ideas": [
+            {{
+                "1": "First tweet generated based on the first independent idea",
+                "2": "Second tweet generated based on the second independent idea",
+                "3": "Third tweet generated based on the third independent idea"
+            }}
+    }}
+
+    For each tweet:
+    - Keep it within Twitter's character limit
+    - Match the voice and style of the example posts
+    - Focus on one clear topic or idea
+    - Use engaging hooks and strong closings
+    - Include appropriate formatting (line breaks, punctuation, etc.) when relevant
+
+    Do not include generic placeholder tweets. Each tweet should be specific and ready to post. Do not use em dashes or ellipses.
+    """
+
+
+
+
+
+def prepare_tweet_or_thread_example_generator_prompt(inspiration: str, style_analysis: Dict[str, Any], example_posts: Dict[str, Any], discussion_source: str, additional_commands: str, is_thread: bool) -> str:
+    if is_thread:
+        response_format= """{{
+        "standalone_ideas": [
+            {{
+               "1": ["tweet 1", "tweet 2", "tweet 3", "tweet 4", "tweet 5"],
+               "2": ["tweet 1", "tweet 2", "tweet 3", "tweet 4", "tweet 5"],
+               "3": ["tweet 1", "tweet 2", "tweet 3", "tweet 4", "tweet 5"]
+            }},
+            
+        }}"""
+
+    else:
+        response_format= """{{
+        "standalone_ideas": [
+            {{
+                "1": "First post written based on all the information provided - be specific",
+                "2": "Second post written based on all the information provided - be specific",
+                "3": "Third post written based on all the information provided - be specific",
+                "4": "Fourth post written based on all the information provided - be specific",
+                "5": "Fifth post written based on all the information provided - be specific"
+            }}
+        }}
+        }}"""
+
+    return f"""
+    You are an AI assistant tasked with generating example tweets based on a discussion source. Your goal is to generate engaging tweets that match the style and tone of the example posts while exploring the provided topic ideas.
+
+    First, carefully review these example posts to understand the desired style and tone:
+
+    <example_posts>
+    {json.dumps(example_posts)}
+    </example_posts>
+
+    <discussion_source>
+    {discussion_source}
+    </discussion_source>
+
+    <topic_ideas>
+    {inspiration}
+    </topic_ideas>
+
+
+    <additional_commands_from_user>
+    {additional_commands}
+    </additional_commands_from_user>
+
+    <account_soul_info>
+    {style_analysis}
+    </account_soul_info>
+
+    Topic ideas have been generated to help you generate example tweets or threads.
+    Generate example tweets or threads for each topic idea in the topic_ideas section. Follow the style and tone from style_analysis.
+
+    Return your response in the following JSON format:
+
+    
+   {response_format}
+   
+    - Match the voice and style of the example posts
+    - Focus on one clear topic or idea
+    - Use engaging hooks and strong closings
+
+    Do not include generic placeholder tweets. Each tweet should be specific and ready to post. Do not use em dashes or ellipses.
+    """
+
 

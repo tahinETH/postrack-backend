@@ -60,7 +60,7 @@ async def analyze_account(
 ):
     """Analyze an account"""
     try:
-        asyncio.create_task(service.analyze_account(screen_name, new_fetch=new_fetch, user_id=user_id))
+        await service.analyze_account(screen_name, new_fetch=new_fetch, user_id=user_id)
         return {"status": "success", "message": "Account analysis started"}
     except ValueError as e:
         if str(e) == "Analysis tracking limit reached for user's tier":
