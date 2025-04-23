@@ -104,7 +104,7 @@ async def admin_analyze_account(
         if admin_secret != ADMIN_SECRET:
             raise HTTPException(status_code=403, detail="Invalid admin secret")
         user_id = "admin"
-        asyncio.create_task(service.analyze_account(screen_name, new_fetch=new_fetch, user_id=user_id))
+        await service.analyze_account(screen_name, new_fetch=new_fetch, user_id=user_id)
         return {"status": "success", "message": "Account analysis started"}
     except ValueError as e:
         if str(e) == "Analysis tracking limit reached for user's tier":

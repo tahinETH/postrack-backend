@@ -19,8 +19,8 @@ from litellm import acompletion
 
 logger = logging.getLogger(__name__)
 
-PRIMARY_MODEL = "chatgpt-4o-latest"
-ADMIN_MODEL = "chatgpt-4o-latest"
+PRIMARY_MODEL = "gpt-4.1"
+ADMIN_MODEL = "gpt-4.1"
 class Workshop:
     def __init__(self):
         
