@@ -35,7 +35,7 @@ class SubscriptionTier:
 
 class SubscriptionTiers:
     #max_accounts, max_tweets, max_analysis, max_followers
-    FREE = SubscriptionTier('tier0', 0, 0, 0, 1)
+    FREE = SubscriptionTier('tier0', 1, 0, 5, 5000)
     GOOD = SubscriptionTier('tier1', 1, 0, 10, 10000)
     BETTER = SubscriptionTier('tier2', 1, 0, 200, 50000)
     ADMIN = SubscriptionTier('admin', 1000, 1000, 1000, 1000000000)
@@ -60,10 +60,13 @@ class Service:
         """Get user's max allowed accounts and tweets based on their tier"""
         user = await self.user_repository.get_user(user_id)
         
+        
         if not user:
             raise ValueError(f"User {user_id} not found")
             
         tier = SubscriptionTiers.get_tier(user['current_tier'])
+        print(user['current_tier'])
+        print(tier.max_accounts, tier.max_tweets, tier.max_analysis, tier.max_followers)
         
         return tier.max_accounts, tier.max_tweets, tier.max_analysis, tier.max_followers
 
@@ -91,6 +94,7 @@ class Service:
         """Check if user can track another analysis based on their tier limits"""
         try:
             _, _, max_analysis, _ = await self._get_user_limits(user_id)
+            
             tracked_items = await self.user_repository.get_tracked_items(user_id)
             current_analysis = len(tracked_items['analysis'])
             return current_analysis < max_analysis
