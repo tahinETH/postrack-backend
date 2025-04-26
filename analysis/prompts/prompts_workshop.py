@@ -141,13 +141,13 @@ Organize your response into the following JSON format:
 
 {{
     "existing_media": [
-        "1st media type",
-        "2nd media type",
-        "3rd media type"
+        "1":{{"type":"1st media type", "description":"description of 1st media type"}},
+        "2":{{"type":"2nd media type", "description":"description of 2nd media type"}},
+        "3":{{"type":"3rd media type", "description":"description of 3rd media type"}}
     ],
     "ai_media": [
-        "1st AI-generated image",
-        "2nd AI-generated image"
+        "1":{{"idea":"1st AI-generated image", "prompt":"prompt for 1st AI-generated image"}},
+        "2":{{"idea":"2nd AI-generated image", "prompt":"prompt for 2nd AI-generated image"}}
     ]
 }}
 

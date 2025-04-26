@@ -19,8 +19,8 @@ from litellm import acompletion
 
 logger = logging.getLogger(__name__)
 
-PRIMARY_MODEL = "gpt-4.1"
-ADMIN_MODEL = "gpt-4.1"
+PRIMARY_MODEL = "chatgpt-4o-latest"
+ADMIN_MODEL = "chatgpt-4o-latest"
 class Workshop:
     def __init__(self):
         
@@ -188,6 +188,7 @@ class Workshop:
                 response_format={"type": "json_object"}
             )
             result = json.loads(response.choices[0].message.content)
+            
             
             # Save the visualization
             await self.workshop_repo.save_visualization(

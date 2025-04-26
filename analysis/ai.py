@@ -90,7 +90,7 @@ class AIAnalyzer:
         """Get analysis from llm"""
         try:
             response = await acompletion(
-                model="openai/gpt-4.1",
+                model="openai/chatgpt-4o-latest",
                 max_tokens=2000,
                 messages=[{
                     "role": "user",
@@ -107,7 +107,7 @@ class AIAnalyzer:
         """Get analysis from llm"""
         try:
             response = await acompletion(
-                model="openai/gpt-4.1",
+                model="openai/chatgpt-4o-latest",
                 max_tokens=4000,
                 messages=[{
                     "role": "user",
