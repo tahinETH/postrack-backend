@@ -322,8 +322,8 @@ def prepare_reply_example_generator_prompt(inspiration: str, style_analysis: Dic
 
 
 
-def prepare_tweet_or_thread_example_generator_prompt(inspiration: str, style_analysis: Dict[str, Any], example_posts: Dict[str, Any], discussion_source: str, additional_commands: str, is_thread: bool) -> str:
-    if is_thread:
+def prepare_tweet_or_thread_example_generator_prompt(inspiration: str, style_analysis: Dict[str, Any], example_posts: Dict[str, Any], discussion_source: str, additional_commands: str, contentType: str) -> str:
+    if contentType == "thread":
         response_format= """{{
         "standalone_ideas": [
             {{
@@ -333,7 +333,15 @@ def prepare_tweet_or_thread_example_generator_prompt(inspiration: str, style_ana
             }},
             
         }}"""
-
+    elif contentType=="long":
+        response_format= """{{
+        "standalone_ideas": [
+            {{
+                "1": "First long post (min 150 words) written based on all the information provided - be specific",
+                "2": "Second long post (min 150 words) written based on all the information provided - be specific",
+                "3": "Third long post (min 150 words) written based on all the information provided - be specific",
+            }}
+        }}"""
     else:
         response_format= """{{
         "standalone_ideas": [

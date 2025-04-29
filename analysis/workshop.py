@@ -203,7 +203,7 @@ class Workshop:
             logger.error(f"Error generating visualization ideas: {str(e)}")
             return "Error generating visualization ideas"
 
-    async def workshop_standalone_tweet(self, user_id: str, input_text: str, account_id: str, additional_commands: str, is_thread: bool) -> Dict[str, Any]:
+    async def workshop_standalone_tweet(self, user_id: str, input_text: str, account_id: str, additional_commands: str, contentType: str) -> Dict[str, Any]:
         try:
             if not input_text:
                 return "Error: Could not retrieve input text"
@@ -214,7 +214,7 @@ class Workshop:
             example_posts = await self.clean_tweets(raw_tweets, limit=20)
             
             # First get content inspiration ideas
-            prompt = prepare_standalone_tweet_prompt(input_text, example_posts, additional_commands, is_thread)
+            prompt = prepare_standalone_tweet_prompt(input_text, example_posts, additional_commands, contentType)
             response = await acompletion(
                 model=PRIMARY_MODEL,
                 max_tokens=2000,
@@ -230,7 +230,7 @@ class Workshop:
             
 
             # Then generate tweet examples for each idea
-            tweet_example_generator_prompt = prepare_tweet_or_thread_example_generator_prompt(json.dumps(content_inspiration), style_analysis, example_posts, input_text, additional_commands, is_thread)
+            tweet_example_generator_prompt = prepare_tweet_or_thread_example_generator_prompt(json.dumps(content_inspiration), style_analysis, example_posts, input_text, additional_commands, contentType)
             
             response = await acompletion(
                 model=ADMIN_MODEL if user_id =="user_2tcQfynAXow17zErfaDwYzyRc5l" else PRIMARY_MODEL,
@@ -258,7 +258,6 @@ class Workshop:
                 prompt=prompt,
                 result=merged_result,
                 account_id=account_id,
-                is_thread=is_thread
             )
             
             return content_inspiration
