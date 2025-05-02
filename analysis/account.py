@@ -1,4 +1,3 @@
-import json
 import logging
 import asyncio
 from typing import Dict, Any, List, Tuple
@@ -20,7 +19,7 @@ class AccountAnalyzer:
     async def _fetch_account_tweets(self, screen_name: str) -> List[Dict[str, Any]]:
         """Fetch the top tweets for an account"""
         reply_tweets = await self.api_client.api_get_account_by_id_top_tweets(screen_name, limit=50, replies=True)
-        non_reply_tweets = await self.api_client.api_get_account_by_id_top_tweets(screen_name, limit=100, replies=False)
+        non_reply_tweets = await self.api_client.api_get_account_by_id_top_tweets(screen_name, limit=50, replies=False)
         tweets = reply_tweets + non_reply_tweets
         
         return tweets
@@ -306,6 +305,7 @@ class AccountAnalyzer:
 
     async def analyze_account(self, account_id: str, new_fetch: bool = False, account_data: Dict[str, Any] = None, user_id: str = None) -> Dict[str, Any]:
         try:
+            # Initial account setup remains synchronous since we need this data
             account = await self.accounts.get_account_by_id(account_id)
             if not account:
                 account = {
@@ -313,77 +313,94 @@ class AccountAnalyzer:
                     'screen_name': account_data['screen_name'],
                     'account_id': account_data['id_str']
                 }
-
                 await self.accounts.upsert_account(account_id, account['screen_name'], account['account_details'], update_existing=True, is_active=False)
-                
 
             screen_name = account.get('screen_name')
             existing_analysis = await self.accounts.get_account_analysis(account_id, user_id)
             account_data = account['account_details']
-            
-            if new_fetch or not existing_analysis:
+
+            # If we don't need new analysis, return existing data immediately
+            if not new_fetch and existing_analysis:
+                return {
+                    "metrics": existing_analysis.get('metrics'),
+                    "quantitative_analysis": existing_analysis.get('quantitative_analysis'),
+                    "qualitative_analysis": existing_analysis.get('qualitative_analysis'),
+                    "style_analysis": existing_analysis.get('style_analysis')
+                }
+
+            # Create background task for the analysis
+            async def run_analysis():
                 try:
+                    # Initialize empty analysis record
+                    await self.accounts.save_account_analysis(
+                        user_id,
+                        account_id,
+                        status="in_progress"
+                    )
+
+                    # Fetch and clean tweets
                     tweets = await self._fetch_account_tweets(screen_name)
-                except Exception as e:
-                    logger.error(f"Error fetching account top tweets: {str(e)}")
-                    raise
-
-                try:
                     cleaned_tweets = await self.clean_account_top_tweets(tweets)
+                    print(cleaned_tweets)
                     
-                except Exception as e:
-                    logger.error(f"Error cleaning tweets and getting account info: {str(e)}")
-                    raise
-                
-                try:
-                    
+                    # Save cleaned tweets immediately
+                    await self.accounts.save_account_analysis(
+                        user_id,
+                        account_id,
+                        top_tweets=cleaned_tweets,
+                        status="processing"
+                    )
+
+                    # Run metrics analysis first
                     metrics = await self.run_metrics_analysis(cleaned_tweets)
+                    await self.accounts.save_account_analysis(
+                        user_id,
+                        account_id,
+                        metrics=metrics,
+                        status="processing"
+                    )
+
+                    # Run quantitative analysis after metrics
+                    quantitative_analysis = await self.run_quantitative_analysis(metrics, account_data)
+                    await self.accounts.save_account_analysis(
+                        user_id,
+                        account_id,
+                        quantitative_analysis=quantitative_analysis,
+                        status="processing"
+                    )
+
+                    # Run qualitative and style analysis in parallel
+                    qualitative_analysis, style_analysis = await asyncio.gather(
+                        self.run_qualitative_analysis(cleaned_tweets, account_data),
+                        self.run_soul_extractor(cleaned_tweets)
+                    )
+
+                    # Save final results
+                    await self.accounts.save_account_analysis(
+                        user_id,
+                        account_id,
+                        qualitative_analysis=qualitative_analysis,
+                        style_analysis=style_analysis,
+                        status="completed"
+                    )
+
                 except Exception as e:
-                    logger.error(f"Error running quantitative analysis: {str(e)}")
-                    raise
-            else:
-                metrics = existing_analysis.get('metrics')
-                qualitative_analysis = existing_analysis.get('qualitative_analysis')
-                cleaned_tweets = existing_analysis.get('top_tweets')
+                    logger.error(f"Background analysis failed for account {account_id}: {str(e)}")
+                    await self.accounts.save_account_analysis(
+                        user_id,
+                        account_id,
+                        status="failed",
+                        error=str(e)
+                    )
 
-            
-            try:
-                quantitative_analysis = await self.run_quantitative_analysis(metrics, account_data)
-            except Exception as e:
-                logger.error(f"Error running quantitative analysis: {str(e)}")
-                raise
-            
-            try:
-                
-                qualitative_analysis = await self.run_qualitative_analysis(cleaned_tweets, account_data)
-            except Exception as e:
-                logger.error(f"Error running qualitative analysis: {str(e)}")
-                raise
+            # Create the background task
+            asyncio.create_task(run_analysis(), name=f"analysis_{account_id}")
 
-            try:
-                style_analysis = await self.run_soul_extractor(cleaned_tweets)
-            except Exception as e:
-                logger.error(f"Error running soul extractor: {str(e)}")
-                raise
-
-            try:
-                await self.accounts.save_account_analysis(
-                    user_id,
-                    account_id,
-                    cleaned_tweets,
-                    metrics,
-                    quantitative_analysis,
-                    qualitative_analysis,
-                    style_analysis
-                )
-            except Exception as e:
-                logger.error(f"Error saving account analysis: {str(e)}")
-                raise
-
+            # Return immediately with a status indicating analysis is in progress
             return {
-                "metrics": metrics,
-                "quantitative_analysis": quantitative_analysis,
-                "qualitative_analysis": qualitative_analysis
+                "status": "in_progress",
+                "account_id": account_id,
+                "message": "Analysis has started and will be updated incrementally"
             }
 
         except Exception as e:

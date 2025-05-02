@@ -55,14 +55,13 @@ async def get_account_analysis(account_id: str, user_id: str = Depends(auth_midd
 @router.post("/analyze/{screen_name}")
 async def analyze_account(
     screen_name: str,
-    background_tasks: BackgroundTasks,
     new_fetch: bool = Query(default=True),
     user_id: str = Depends(auth_middleware),
 ):
     """Analyze an account"""
     try:
-        background_tasks.add_task(service.analyze_account, screen_name, new_fetch, user_id)
-        return {"status": "success", "message": "Account analysis started"}
+        response = await service.analyze_account(screen_name, new_fetch, user_id)
+        return response
     except ValueError as e:
         if str(e) == "Analysis tracking limit reached for user's tier":
             raise HTTPException(status_code=403, detail=str(e))
@@ -97,7 +96,6 @@ async def admin_get_account_analysis(account_id: str, admin_secret: str = Header
 @router.post("/admin/analyze/{screen_name}")
 async def admin_analyze_account(
     screen_name: str,
-    background_tasks: BackgroundTasks,
     new_fetch: bool = Query(default=True),
     admin_secret: str = Header(None)
 ):
@@ -106,8 +104,8 @@ async def admin_analyze_account(
         if admin_secret != ADMIN_SECRET:
             raise HTTPException(status_code=403, detail="Invalid admin secret")
         user_id = "admin"
-        background_tasks.add_task(service.analyze_account, screen_name, new_fetch, user_id)
-        return {"status": "success", "message": "Account analysis started"}
+        await service.analyze_account(screen_name, new_fetch, user_id)
+        return {"status": "success", "message": "Account analysis completed"}
     except ValueError as e:
         if str(e) == "Analysis tracking limit reached for user's tier":
             raise HTTPException(status_code=403, detail=str(e))

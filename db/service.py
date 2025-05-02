@@ -245,7 +245,6 @@ class Service:
         
         try:
             result = await self.account_analyzer.analyze_account(account_id, new_fetch, account_data=account, user_id=user_id)
-            logger.info(f"Generated AI analysis for account {account_id}")
             return result
         except Exception as e:
             logger.error(f"Error analyzing account {account_id}: {str(e)}")
@@ -257,7 +256,6 @@ class Service:
         """Get AI analysis for a tweet"""
         try:
             result = await self.ai_analyzer.generate_ai_analysis_tweet(tweet_id, with_ai)
-            logger.info(f"Generated AI analysis for tweet {tweet_id}")
             return result
         except Exception as e:
             logger.error(f"Error analyzing tweet {tweet_id}: {str(e)}")

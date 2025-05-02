@@ -72,6 +72,8 @@ class AccountRepository():
         self, 
         user_id: str,
         account_id: str,
+        status: str = None,
+        error: str = None,
         top_tweets: Optional[Dict] = None,
         metrics: Optional[Dict] = None,
         quantitative_analysis: Optional[Dict] = None,
@@ -80,7 +82,6 @@ class AccountRepository():
     ):
         current_timestamp = int(datetime.now().timestamp())
         async with get_async_session() as session:
-            # Get existing analysis if it exists
             result = await session.execute(
                 select(AccountAnalysis)
                 .filter(
@@ -92,6 +93,10 @@ class AccountRepository():
 
             if existing:
                 # Update only provided fields
+                if status is not None:
+                    existing.status = status
+                if error is not None:
+                    existing.error = error
                 if top_tweets is not None:
                     existing.top_tweets = top_tweets
                 if metrics is not None:
@@ -108,14 +113,16 @@ class AccountRepository():
                 new_analysis = AccountAnalysis(
                     user_id=user_id,
                     account_id=account_id,
-                    top_tweets=top_tweets,
-                    metrics=metrics,
-                    quantitative_analysis=quantitative_analysis, 
-                    qualitative_analysis=qualitative_analysis,
-                    style_analysis=style_analysis,
+                    status=status or 'in_progress',
+                    error=error if error != "" else None,
+                    top_tweets=top_tweets if top_tweets != {} else None,
+                    metrics=metrics if metrics != {} else None,
+                    quantitative_analysis=quantitative_analysis if quantitative_analysis != {} else None,
+                    qualitative_analysis=qualitative_analysis if qualitative_analysis != "" else None,
+                    style_analysis=style_analysis if style_analysis != {} else None,
                     created_at=current_timestamp,
                     updated_at=current_timestamp
-                )
+            )
                 session.add(new_analysis)
 
             await session.commit()

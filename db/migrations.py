@@ -69,7 +69,32 @@ def migrations():
             ) THEN
                 ALTER TABLE account_analysis ADD COLUMN style_analysis JSONB;
             END IF;
-        END $$;"""
+        END $$;""",
+
+        # Add status column if it doesn't exist
+        """DO $$ 
+        BEGIN 
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name='account_analysis' AND column_name='status'
+            ) THEN
+                ALTER TABLE account_analysis ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'completed';
+            END IF;
+        END $$;""",
+
+        # Add error column if it doesn't exist
+        """DO $$ 
+        BEGIN 
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name='account_analysis' AND column_name='error'
+            ) THEN
+                ALTER TABLE account_analysis ADD COLUMN error TEXT;
+            END IF;
+        END $$;""",
+
+        # Update existing rows to have a status if they don't
+        """UPDATE account_analysis SET status = 'completed' WHERE status IS NULL;"""
     ]
 
 async def connect_and_migrate(db_url: str):

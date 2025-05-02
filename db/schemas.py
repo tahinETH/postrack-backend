@@ -62,11 +62,13 @@ class AccountAnalysis(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(String, ForeignKey('users.id'), nullable=False)
     account_id = Column(String, ForeignKey('monitored_accounts.account_id'), nullable=False)
-    top_tweets = Column(JSON, nullable=True)  # Store top tweets data
-    metrics = Column(JSON, nullable=True)  # Engagement rates, growth trends etc
-    quantitative_analysis = Column(JSON, nullable=True)  # Engagement rates, growth trends etc
-    qualitative_analysis = Column(String, nullable=True)  # Overall account analysis textc
-    style_analysis = Column(JSON, nullable=True)  # Style analysis
+    status = Column(String, nullable=False)  # in_progress, processing, completed, failed
+    error = Column(String, nullable=True)  # For storing error messages if analysis fails
+    top_tweets = Column(JSON, nullable=True)
+    metrics = Column(JSON, nullable=True)
+    quantitative_analysis = Column(JSON, nullable=True)
+    qualitative_analysis = Column(String, nullable=True)
+    style_analysis = Column(JSON, nullable=True)
     created_at = Column(Integer, nullable=False)
     updated_at = Column(Integer, nullable=False)
 
