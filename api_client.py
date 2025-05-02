@@ -287,4 +287,56 @@ class TwitterAPIClient:
             return None
 
 
-   
+    async def api_get_community_top_tweets(self, community_id: str, limit: int = 100) -> Optional[list[Dict[str, Any]]]:
+        """Get top tweets from a Twitter community"""
+        try:
+            all_tweets = []
+            next_cursor = None
+            
+            async with aiohttp.ClientSession() as session:
+                while True:
+                    url = f'https://api.socialdata.tools/twitter/community/{community_id}/tweets'
+                    params = {
+                        'type': 'Top'
+                    }
+                    if next_cursor:
+                        params['cursor'] = next_cursor
+                        
+                    async with session.get(url, headers=self.get_headers(), params=params) as response:
+                        data = await response.json()
+                        
+                    if data.get('status') == 'error' and data.get('message') == 'Insufficient balance':
+                        logger.error("Insufficient balance when getting community top tweets")
+                        return None
+                    
+                    if 'tweets' in data:
+                        all_tweets.extend(data['tweets'])
+                        
+                        # Break if we've reached the desired limit
+                        if len(all_tweets) >= limit:
+                            all_tweets = all_tweets[:limit]
+                            break
+                    
+                    next_cursor = data.get('next_cursor')
+                    if not next_cursor:
+                        break
+            
+            return all_tweets
+        except Exception as e:
+            logger.error(f"Error getting community top tweets: {str(e)}")
+            return None
+
+    async def api_get_community(self, community_id: str) -> Optional[Dict[str, Any]]:
+        """Get community details"""
+        try:
+            url = f'https://api.socialdata.tools/twitter/community/{community_id}'
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=self.get_headers()) as response:
+                    data = await response.json()
+                    if data.get('status') == 'error' and data.get('message') == 'Insufficient balance':
+                        logger.error("Insufficient balance when getting community details")
+                        return None
+                    return data
+        except Exception as e:
+            logger.error(f"Error getting community details: {str(e)}")
+            return None

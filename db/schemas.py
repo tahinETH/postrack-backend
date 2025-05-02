@@ -163,3 +163,19 @@ class Visualization(Base):
     prompt = Column(String, nullable=False)
     result = Column(String, nullable=False)
     created_at = Column(Integer, nullable=False)
+
+
+
+class CommunityAnalysis(Base):
+    __tablename__ = 'community_analysis'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    community_id = Column(String, nullable=False)
+    top_tweets = Column(JSON, nullable=True)  # Store top tweets data
+    metrics = Column(JSON, nullable=True)  # Engagement rates, growth trends etc
+    quantitative_analysis = Column(JSON, nullable=True)  # Engagement rates, growth trends etc
+    qualitative_analysis = Column(String, nullable=True)  # Overall community analysis text
+    style_analysis = Column(JSON, nullable=True) 
+    details = Column(JSON, nullable=True)  
+    created_at = Column(Integer, nullable=False)
+    updated_at = Column(Integer, nullable=False)

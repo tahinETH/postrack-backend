@@ -7,8 +7,10 @@ from db.users.user_db import UserDataRepository
 from db.tw.tweet_db import TweetDataRepository
 from db.tw.structured import TweetStructuredRepository
 from db.tw.account_db import AccountRepository
+from db.tw.community_db import CommunityRepository
 from analysis.ai import AIAnalyzer
 from analysis.account import AccountAnalyzer
+from analysis.community import CommunityAnalyzer
 from analysis.workshop import Workshop
 from api_client import TwitterAPIClient
 from monitor import TweetMonitor
@@ -63,7 +65,8 @@ class Service:
         self.account_analyzer = AccountAnalyzer(self.analysis, SOCIAL_DATA_API_KEY)
         self.api_client = TwitterAPIClient(SOCIAL_DATA_API_KEY)
         self.content_workshop = Workshop()
-
+        self.community = CommunityRepository()
+        self.community_analyzer = CommunityAnalyzer(self.analysis, self.community, SOCIAL_DATA_API_KEY)
     async def _get_user_limits(self, user_id: str) -> Tuple[int, int]:
         """Get user's max allowed accounts and tweets based on their tier"""
         user = await self.user_repository.get_user(user_id)
@@ -380,6 +383,37 @@ class Service:
             logger.error(f"Error getting standalone tweet ideas: {str(e)}")
             raise
 
+
+    async def analyze_community(self, community_id: str, new_fetch: bool = True, user_id: str = None) -> Dict:
+        """Analyze a community"""
+        if not await self._can_track_analysis(user_id):
+            raise ValueError("Analysis tracking limit reached for user's tier")
+
+        try:
+            # Add to user's tracked items
+            await self.user_repository.add_tracked_item(user_id, "community_analysis", community_id, community_id)
+            
+            result = await self.community_analyzer.analyze_community(community_id, new_fetch=new_fetch, user_id=user_id)
+            logger.info(f"Generated analysis for community {community_id}")
+            return result
+        except Exception as e:
+            logger.error(f"Error analyzing community {community_id}: {str(e)}")
+            raise
+
+    async def get_community_analysis(self, community_id: str, user_id: str) -> Dict:
+        """Get community analysis"""
+        try:
+            result = await self.community_analyzer.get_community_analysis(community_id, user_id)
+            return result
+        except Exception as e:
+            logger.error(f"Error getting community analysis: {str(e)}")
+            raise
+
+
+
+
+
+    ### STRIPE ###
     async def create_checkout_session(self, user_id: str) -> Dict[str, Any]:
         """Create a checkout session for a user"""
         try:
@@ -388,6 +422,11 @@ class Service:
         except Exception as e:
             logger.error(f"Error creating checkout session: {str(e)}")
             raise
+
+
+
+
+
     ## PERIODIC CHECKS ##
     async def check_single_tweet(self, timestamp: int):
         """Single run of tweet check and update"""

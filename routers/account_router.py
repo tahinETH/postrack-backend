@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query, Depends, Header
+from fastapi import APIRouter, HTTPException, Query, Depends, Header, BackgroundTasks
 import logging
 import time
 import asyncio
@@ -55,12 +55,13 @@ async def get_account_analysis(account_id: str, user_id: str = Depends(auth_midd
 @router.post("/analyze/{screen_name}")
 async def analyze_account(
     screen_name: str,
+    background_tasks: BackgroundTasks,
     new_fetch: bool = Query(default=True),
     user_id: str = Depends(auth_middleware),
 ):
     """Analyze an account"""
     try:
-        await service.analyze_account(screen_name, new_fetch=new_fetch, user_id=user_id)
+        background_tasks.add_task(service.analyze_account, screen_name, new_fetch, user_id)
         return {"status": "success", "message": "Account analysis started"}
     except ValueError as e:
         if str(e) == "Analysis tracking limit reached for user's tier":
@@ -96,6 +97,7 @@ async def admin_get_account_analysis(account_id: str, admin_secret: str = Header
 @router.post("/admin/analyze/{screen_name}")
 async def admin_analyze_account(
     screen_name: str,
+    background_tasks: BackgroundTasks,
     new_fetch: bool = Query(default=True),
     admin_secret: str = Header(None)
 ):
@@ -104,7 +106,7 @@ async def admin_analyze_account(
         if admin_secret != ADMIN_SECRET:
             raise HTTPException(status_code=403, detail="Invalid admin secret")
         user_id = "admin"
-        await service.analyze_account(screen_name, new_fetch=new_fetch, user_id=user_id)
+        background_tasks.add_task(service.analyze_account, screen_name, new_fetch, user_id)
         return {"status": "success", "message": "Account analysis started"}
     except ValueError as e:
         if str(e) == "Analysis tracking limit reached for user's tier":
@@ -126,6 +128,3 @@ async def admin_delete_account_analysis(account_id: str, admin_secret: str = Hea
     except Exception as e:
         logger.error(f"Error deleting account analysis at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e)) 
-    
-
-

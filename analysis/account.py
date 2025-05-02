@@ -20,7 +20,7 @@ class AccountAnalyzer:
     async def _fetch_account_tweets(self, screen_name: str) -> List[Dict[str, Any]]:
         """Fetch the top tweets for an account"""
         reply_tweets = await self.api_client.api_get_account_by_id_top_tweets(screen_name, limit=50, replies=True)
-        non_reply_tweets = await self.api_client.api_get_account_by_id_top_tweets(screen_name, limit=50, replies=False)
+        non_reply_tweets = await self.api_client.api_get_account_by_id_top_tweets(screen_name, limit=100, replies=False)
         tweets = reply_tweets + non_reply_tweets
         
         return tweets
