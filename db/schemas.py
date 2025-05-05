@@ -173,6 +173,8 @@ class CommunityAnalysis(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
     community_id = Column(String, nullable=False)
+    status = Column(String, nullable=False)  # in_progress, processing, completed, failed
+    error = Column(String, nullable=True)  # For storing error messages if analysis fails
     top_tweets = Column(JSON, nullable=True)  # Store top tweets data
     metrics = Column(JSON, nullable=True)  # Engagement rates, growth trends etc
     quantitative_analysis = Column(JSON, nullable=True)  # Engagement rates, growth trends etc

@@ -28,24 +28,23 @@ SOCIAL_DATA_API_KEY = config.SOCIAL_DATA_API_KEY
 
 
 class SubscriptionTier:
-    def __init__(self, tier_id: str, max_accounts: int, max_tweets: int, max_analysis: int, max_followers: int):
+    def __init__(self, tier_id: str, max_accounts: int, max_tweets: int, max_analysis: int, max_community: int, max_followers: int):
         self.tier_id = tier_id
         self.max_accounts = max_accounts
         self.max_tweets = max_tweets
         self.max_analysis = max_analysis
+        self.max_community = max_community
         self.max_followers = max_followers
 
 class SubscriptionTiers:
     #max_accounts, max_tweets, max_analysis, max_followers
-    FREE = SubscriptionTier('tier0', 0, 0, 0, 1)
-    GOOD = SubscriptionTier('tier1', 1, 0, 10, 10000)
-    BETTER = SubscriptionTier('tier2', 1, 0, 200, 50000)
-    ADMIN = SubscriptionTier('admin', 1000, 1000, 1000, 1000000000)
+    FREE = SubscriptionTier('tier0', 0, 0, 0, 0, 0)
+    GOOD = SubscriptionTier('tier1', 1, 0, 10, 10, 10000)
+    ADMIN = SubscriptionTier('admin', 1000, 1000, 1000, 1000, 1000000000)
 
     TIER_MAP = {
         'tier0': 'FREE',
         'tier1': 'GOOD',
-        'tier2': 'BETTER',
         'admin': 'ADMIN'
     }
 
@@ -76,7 +75,7 @@ class Service:
             raise ValueError(f"User {user_id} not found")
             
         tier = SubscriptionTiers.get_tier(user['current_tier'])
-        return tier.max_accounts, tier.max_tweets, tier.max_analysis, tier.max_followers
+        return tier.max_accounts, tier.max_tweets, tier.max_analysis, tier.max_community, tier.max_followers
 
     async def get_user(self, user_id: str) -> Dict:
         """Get user details"""
@@ -88,7 +87,7 @@ class Service:
     async def _can_track_account(self, user_id: str) -> bool:
         """Check if user can track another account based on their tier limits"""
         try:
-            max_accounts, _, _, max_followers = await self._get_user_limits(user_id)
+            max_accounts, _, _, _, max_followers = await self._get_user_limits(user_id)
             tracked_items = await self.user_repository.get_tracked_items(user_id)
             current_accounts = len(tracked_items['accounts'])
 
@@ -101,13 +100,24 @@ class Service:
     async def _can_track_analysis(self, user_id: str) -> bool:
         """Check if user can track another analysis based on their tier limits"""
         try:
-            _, _, max_analysis, _ = await self._get_user_limits(user_id)
+            _, _, max_analysis, _, _ = await self._get_user_limits(user_id)
             
             tracked_items = await self.user_repository.get_tracked_items(user_id)
             current_analysis = len(tracked_items['analysis'])
             return current_analysis < max_analysis
         except Exception as e:
             logger.error(f"Error checking analysis tracking limit for user {user_id}: {str(e)}")
+            raise
+
+    async def _can_track_community(self, user_id: str) -> bool:
+        """Check if user can track another community based on their tier limits"""
+        try:
+            _, _, _, max_community,_ = await self._get_user_limits(user_id)
+            tracked_items = await self.user_repository.get_tracked_items(user_id)
+            current_community = len(tracked_items['community_analysis'])
+            return current_community < max_community
+        except Exception as e:
+            logger.error(f"Error checking community tracking limit for user {user_id}: {str(e)}")
             raise
             
     async def _can_track_tweet(self, user_id: str) -> bool:
@@ -384,7 +394,7 @@ class Service:
 
     async def analyze_community(self, community_id: str, new_fetch: bool = True, user_id: str = None) -> Dict:
         """Analyze a community"""
-        if not await self._can_track_analysis(user_id):
+        if not await self._can_track_community(user_id):
             raise ValueError("Analysis tracking limit reached for user's tier")
 
         try:
@@ -406,8 +416,14 @@ class Service:
         except Exception as e:
             logger.error(f"Error getting community analysis: {str(e)}")
             raise
-
-
+    async def delete_community_analysis(self, user_id: str, community_id: str) -> Dict:
+        """Delete community analysis"""
+        try:
+            result = await self.community_analyzer.delete_community_analysis(user_id, community_id)
+            return result
+        except Exception as e:
+            logger.error(f"Error deleting community analysis: {str(e)}")
+            raise
 
 
 

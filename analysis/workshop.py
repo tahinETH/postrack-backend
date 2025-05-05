@@ -3,6 +3,7 @@ import logging
 import os
 from typing import Dict, Any, Optional, List
 from db.tw.structured import TweetStructuredRepository
+from db.tw.community_db import CommunityRepository
 from config import config
 from analysis.prompts.prompts_workshop import (
     prepare_content_inspiration_prompt,
@@ -28,7 +29,7 @@ class Workshop:
         self.analysis_repo = TweetStructuredRepository()
         self.accounts = AccountAnalyzer(self.analysis_repo, config.SOCIAL_DATA_API_KEY)
         self.workshop_repo = WorkshopRepository()
-
+        self.community_repo = CommunityRepository()
     async def _get_tweet_text(self, tweet_id: str, is_thread: bool = False) -> Optional[str]:
         if is_thread:
             thread_tweets = await self.api_client.api_get_thread_tweets(tweet_id)
@@ -46,6 +47,15 @@ class Workshop:
                     return f"{tweet_text}\n\nQuoted tweet:\n{quoted_text}"
                 return tweet_data.get('full_text')
         return None
+    
+    async def _get_analysis(self, account_id: str, user_id: str) -> Dict[str, Any]:
+        """Retrieve analysis for an account or community."""
+        analysis = await self.accounts.get_account_analysis(account_id, user_id)
+        if analysis:
+            return analysis
+            
+        analysis = await self.community_repo.get_community_analysis(account_id, user_id)
+        return analysis  
 
     async def clean_tweets(self, tweets: List[Dict[str, Any]], limit: Optional[int] = None) -> List[Dict[str, Any]]:
         cleaned_tweets = []
@@ -81,7 +91,7 @@ class Workshop:
             if not tweet_text:
                 return "Error: Could not retrieve tweet"
             try:
-                analysis = await self.accounts.get_account_analysis(account_id, user_id)
+                analysis = await self._get_analysis(account_id, user_id)
                 raw_tweets = analysis.get('top_tweets', [])
                 example_posts = await self.clean_tweets(raw_tweets, limit=20)
             except Exception as e:
@@ -124,14 +134,17 @@ class Workshop:
             merged_result = json.dumps(content_inspiration)
 
             # Save the inspiration
-            await self.workshop_repo.save_generation(
-                user_id=user_id,
-                input=tweet_text,
-                prompt=prompt,
-                result=merged_result,
-                account_id=account_id,
-                is_thread=is_thread
-            )
+            try:
+                await self.workshop_repo.save_generation(
+                    user_id=user_id,
+                    input=tweet_text,
+                    prompt=prompt,
+                    result=merged_result,
+                    account_id=account_id,
+                    is_thread=is_thread
+                )
+            except Exception as e:
+                pass
             
             return str(merged_result)
         except Exception as e:
@@ -143,7 +156,7 @@ class Workshop:
             if not tweet_text:
                 return "Error: Could not retrieve tweet"
 
-            analysis = await self.accounts.get_account_analysis(account_id, user_id)
+            analysis = await self._get_analysis(account_id, user_id)
             
             raw_tweets = analysis.get('top_tweets', [])
             #example_posts = await self.clean_tweets(raw_tweets, limit=20)
@@ -161,14 +174,17 @@ class Workshop:
             result = json.loads(response.choices[0].message.content)
             
             # Save the refinement
-            await self.workshop_repo.save_refinement(
-                user_id=user_id,
-                tweet_draft=tweet_text,
-                result=str(result),
-                prompt=prompt,
-                account_id=account_id,
-                additional_commands=additional_commands
-            )
+            try:
+                await self.workshop_repo.save_refinement(
+                    user_id=user_id,
+                    tweet_draft=tweet_text,
+                    result=str(result),
+                    prompt=prompt,
+                    account_id=account_id,
+                    additional_commands=additional_commands
+                )
+            except Exception as e:
+                pass
             
             return result
         except Exception as e:
@@ -208,7 +224,8 @@ class Workshop:
             if not input_text:
                 return "Error: Could not retrieve input text"
 
-            analysis = await self.accounts.get_account_analysis(account_id, user_id)
+            analysis = await self._get_analysis(account_id, user_id)
+
             
             raw_tweets = analysis.get('top_tweets', [])
             example_posts = await self.clean_tweets(raw_tweets, limit=20)
@@ -252,13 +269,16 @@ class Workshop:
             merged_result = json.dumps(content_inspiration)
 
             # Save the generation
-            await self.workshop_repo.save_generation(
-                user_id=user_id,
-                input=input_text,
-                prompt=prompt,
-                result=merged_result,
-                account_id=account_id,
-            )
+            try:
+                await self.workshop_repo.save_generation(
+                    user_id=user_id,
+                    input=input_text,
+                    prompt=prompt,
+                    result=merged_result,
+                    account_id=account_id,
+                )
+            except Exception as e:
+                pass
             
             return content_inspiration
         except Exception as e:

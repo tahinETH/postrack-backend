@@ -165,13 +165,13 @@ class UserDataRepository():
                 result = await session.execute(
                     select(UserTrackedItem).filter(
                         UserTrackedItem.user_id == user_id,
-                        UserTrackedItem.tracked_type.in_(['tweet', 'account', 'analysis'])
+                        UserTrackedItem.tracked_type.in_(['tweet', 'account', 'analysis', 'community_analysis'])
                     )
                 )
                 tracked_items = result.scalars().all()
                 if not tracked_items:
-                    return {'tweets': [], 'accounts': [], 'analysis': []}
-                items = {'tweets': [], 'accounts': [], 'analysis': []}
+                    return {'tweets': [], 'accounts': [], 'analysis': [], 'community_analysis': []}
+                items = {'tweets': [], 'accounts': [], 'analysis': [], 'community_analysis': []}
                 for item in tracked_items:
                     if item.tracked_type == 'tweet':
                         items['tweets'].append(item.tracked_id)
@@ -179,7 +179,8 @@ class UserDataRepository():
                         items['accounts'].append(item.tracked_id)
                     elif item.tracked_type == 'analysis':
                         items['analysis'].append(item.tracked_id)
-                        
+                    elif item.tracked_type == 'community_analysis':
+                        items['community_analysis'].append(item.tracked_id)
                 return items
                 
         except Exception as e:

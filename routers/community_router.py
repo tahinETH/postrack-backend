@@ -18,8 +18,8 @@ async def analyze_community(
 ):
     """Analyze a community"""
     try:
-        await service.analyze_community(community_id, new_fetch=new_fetch, user_id=user_id)
-        return {"status": "success", "message": "Community analysis started"}
+        result = await service.analyze_community(community_id, new_fetch=new_fetch, user_id=user_id)
+        return result
     except ValueError as e:
         if str(e) == "Analysis tracking limit reached for user's tier":
             raise HTTPException(status_code=403, detail=str(e))
@@ -36,6 +36,17 @@ async def get_community_analysis(community_id: str, user_id: str = Depends(auth_
         return result
     except Exception as e:
         logger.error(f"Error getting community analysis at {int(time.time())}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.delete("/analyze/{community_id}")
+async def delete_community_analysis(community_id:str, user_id: str = Depends(auth_middleware)):
+    """Delete community analysis"""
+    try:
+        result = await service.delete_community_analysis(user_id, community_id)
+        return {"status": "success", "message": f"Community analysis for {community_id} deleted successfully"}
+    except Exception as e:
+        logger.error(f"Error deleting community analysis at {int(time.time())}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/admin/analyze/{community_id}")

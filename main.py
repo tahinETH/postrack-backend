@@ -17,6 +17,7 @@ from routers.account_router import router as account_router
 from routers.tweet_router import router as tweet_router
 from routers.workshop_router import router as workshop_router
 from routers.stripe_router import router as stripe_payment_router
+from routers.community_router import router as community_router
 
 from db.service import Service
 
@@ -49,6 +50,7 @@ app.include_router(stripe_router)
 app.include_router(fe_ws_router)
 app.include_router(user_router)
 app.include_router(account_router)
+app.include_router(community_router)
 app.include_router(tweet_router)
 app.include_router(workshop_router)
 app.include_router(stripe_payment_router)

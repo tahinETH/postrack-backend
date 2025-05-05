@@ -271,3 +271,141 @@ I wanted you to focus heavily on the style, cadence, and anything that allows yo
 What i want you to do is to give very concrete examples when describing a value. Tell me in what kind of words, expressions, flows made you think a description.
 Use the template shared in JSON_FORMAT. 
 """
+
+
+
+def prepare_account_soul_extractor_prompt_community(example_posts: Dict[str, Any]) -> str:
+      return f"""
+
+<example_posts>
+{json.dumps(example_posts)}
+</example_posts>
+
+
+<JSON_FORMAT>
+{
+{
+  "profile_summary": "[Write a 1-2 sentence summary capturing the community's main topics, overall tone, and any standout stylistic features.]",
+  "persona_and_voice": {
+    "core_description": "[Describe the community's apparent personas (e.g., 'industry expert', 'humorist', 'personal journaler') and dominant tones (e.g., 'formal', 'sarcastic', 'enthusiastic').]",
+    "indicative_patterns": [
+      {
+        "pattern": "Common Sentence Openings",
+        "description": "[How do tweets typically begin? Note common patterns or phrases.]",
+        "example_markers": "[List 1-2 example common opening structures or words.]"
+      },
+      {
+        "pattern": "Expression of Thought/Opinion",
+        "description": "[How does the community typically signal opinions or thoughts (e.g., 'I think', direct statements, questions)? Note common markers.]",
+        "example_markers": "[List 1-2 example phrases used to express opinion/thought.]"
+      },
+      {
+        "pattern": "Address Style",
+        "description": "[Does the community address the audience directly, use informal address, or maintain distance? Provide examples if applicable.]",
+        "example_markers": "[List examples like specific address terms or common rhetorical question formats used.]"
+      },
+      {
+        "pattern": "Expression of Certainty/Nuance",
+        "description": "[Does the community express high certainty, uncertainty, or acknowledge complexity often? Note typical phrasing.]",
+        "example_markers": "[List 1-2 example phrases showing certainty or nuance.]"
+      }
+    ]
+  },
+  "cadence_and_flow": {
+    "core_description": "[Describe the typical rhythm and flow: e.g., fast-paced, measured, choppy, smooth? Comment on typical sentence length and variation.]",
+    "indicative_patterns": [
+      {
+        "pattern": "Sentence Connectivity",
+        "description": "[How are ideas linked within or between sentences (e.g., simple conjunctions, complex clauses, abrupt transitions)?]",
+        "example_markers": "[Provide a short example snippet illustrating typical connectivity.]"
+      },
+      {
+        "pattern": "Use of Short Sentences/Fragments",
+        "description": "[Are short sentences or fragments used frequently, occasionally, or rarely? For what effect (e.g., emphasis, humor)?]",
+        "example_markers": "[List 1-2 examples if used distinctively.]"
+      },
+      {
+        "pattern": "Question Usage",
+        "description": "[Note the frequency and typical style of questions (e.g., rhetorical, direct, polling).]",
+        "example_markers": "[Provide 1-2 common question formats.]"
+      },
+      {
+        "pattern": "Structural Patterns",
+        "description": "[Are there common structural patterns (e.g., lists, comparisons, narratives)? Note if observed.]",
+        "example_markers": "[Briefly describe a recurring structure if found.]"
+      }
+    ]
+  },
+  "vocabulary_and_texture": {
+    "core_description": "[Describe the overall vocabulary: formal, informal, technical, simple, diverse? Any unique textural elements (e.g., specific formatting, emotional language)?]",
+    "indicative_patterns": [
+      {
+        "pattern": "Lexical Mix",
+        "description": "[Is there a notable mix of different types of language (e.g., technical & slang, formal & emotional)? Describe the mix.]",
+        "example_markers": "[Provide 1-2 examples illustrating the mix if present.]"
+      },
+      {
+        "pattern": "Figurative/Evocative Language",
+        "description": "[Do the community employ metaphors, similes, hyperbole, or other evocative language? Note frequency and style.]",
+        "example_markers": "[List 1-2 examples if used distinctively.]"
+      },
+      {
+        "pattern": "Signature Words/Phrases",
+        "description": "[Are there any recurring words, phrases, or unique coinages that stand out?]",
+        "example_markers": "[List 1-2 examples if found.]"
+      },
+      {
+        "pattern": "Capitalization Style",
+        "description": "[Describe the typical capitalization: standard sentence case, title case, all lowercase, inconsistent?]",
+        "example_markers": "[Provide a brief example illustrating the typical style.]"
+      },
+      {
+        "pattern": "Domain-Specific Jargon",
+        "description": "[If applicable, list the key domains and common jargon used.]",
+        "example_markers": "[List 3-5 common technical/niche terms if present.]"
+      },
+      {
+        "pattern": "Informal/Slang Usage",
+        "description": "[Note frequency and type of informal language, slang, or contractions.]",
+        "example_markers": "[List 2-3 common examples if used.]"
+      }
+    ]
+  },
+  "punctuation_and_formatting_style": {
+    "core_description": "[Describe the general punctuation style: standard, minimal, heavy, creative? Any notable formatting habits (e.g. line breaks)?]",
+    "indicative_patterns": [
+      {
+        "pattern": "Ellipses Usage",
+        "description": "[Are ellipses (...) used frequently, occasionally, or rarely? For what effect (e.g., pauses, omission, trailing off)?]",
+        "example_markers": "[Provide 1 example if used distinctively.]"
+      },
+      {
+        "pattern": "Emphasis Marks",
+        "description": "[Are multiple question/exclamation marks (???, !!!), asterisks (* *), or bolding used for emphasis? Note frequency.]",
+        "example_markers": "[Provide 1 example if used distinctively.]"
+      },
+      {
+        "pattern": "Line Breaks Within Tweets",
+        "description": "[Are line breaks used for structure or pacing within single tweets? Note frequency and purpose.]",
+        "example_markers": "[Confirm yes/no, briefly describe usage if yes.]"
+      },
+      {
+        "pattern": "Parentheses/Dashes",
+        "description": "[Are parentheses or em-dashes used for asides, clarifications, or emphasis? Note frequency.]",
+        "example_markers": "[Provide 1 example if used distinctively.]"
+      }
+    ]
+  },
+  "key_style_takeaways_for_replication": [
+    "[List the 3-5 most crucial and distinctive stylistic elements to replicate for this specific account: e.g. usage of lowercase letters, punctuoations, etc.]"
+  ]
+}
+}
+</JSON_FORMAT>
+
+Above are the top tweets from a community. Based on these tweets, I want to create a JSON profile about their posting.
+I'll send this JSON to an AI to give it immediate context on how to copy community's writing style and make a post fitting for the community.
+I wanted you to focus heavily on the style, cadence, and anything that allows you to capture the soul of the writing. 
+What i want you to do is to give very concrete examples when describing a value. Tell me in what kind of words, expressions, flows made you think a description.
+Use the template shared in JSON_FORMAT. 
+"""

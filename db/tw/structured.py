@@ -6,6 +6,7 @@ from db.migrations import get_async_session
 from db.tw.tweet_db import TweetDataRepository
 from db.users.user_db import UserDataRepository
 from db.tw.account_db import AccountRepository
+from db.tw.community_db import CommunityRepository
 
 
 class TweetStructuredRepository():
@@ -14,6 +15,7 @@ class TweetStructuredRepository():
         self.tweet_data = TweetDataRepository()
         self.user_data = UserDataRepository()
         self.accounts = AccountRepository()
+        self.community = CommunityRepository()
         
 
     async def process_engagement_metrics(self, tweet_details: Dict) -> Dict[str, int]:
@@ -102,6 +104,7 @@ class TweetStructuredRepository():
         
         tracked_items = await self.user_data.get_tracked_items(user_id)
         tracked_accounts = []
+        community_analyses = []
 
         if tracked_items.get('analysis'):
             for account_id in tracked_items['analysis']:
@@ -130,6 +133,19 @@ class TweetStructuredRepository():
                         'created_at': account['created_at'],
                         'account_details': account['account_details'],
                         'tracking_type': 'account'
+                    })
+
+        # Get tracked community analyses
+        if tracked_items.get('community_analysis'):
+            for community_id in tracked_items['community_analysis']:
+                analysis = await self.community.get_community_analysis(community_id, user_id)
+                if analysis:
+                    community_analyses.append({
+                        'id': analysis['id'],
+                        'account_id': analysis['community_id'],
+                        'details': analysis['details'],
+                        'created_at': analysis['created_at'],
+                        'updated_at': analysis['updated_at']
                     })
 
         feed_data = []
@@ -200,7 +216,8 @@ class TweetStructuredRepository():
             'total_count': total_count,
             'tweets': paginated_feed,
             'tracked_accounts': tracked_accounts,
-            'streak_data': streak_data
+            'streak_data': streak_data,
+            'communities': community_analyses
         }
 
 

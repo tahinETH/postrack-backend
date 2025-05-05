@@ -341,7 +341,6 @@ class AccountAnalyzer:
                     # Fetch and clean tweets
                     tweets = await self._fetch_account_tweets(screen_name)
                     cleaned_tweets = await self.clean_account_top_tweets(tweets)
-                    print(cleaned_tweets)
                     
                     # Save cleaned tweets immediately
                     await self.accounts.save_account_analysis(
