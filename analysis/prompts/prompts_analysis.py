@@ -139,9 +139,9 @@ def prepare_account_ai_analysis_qualitative_prompt(insights: Dict[str, Any] | No
 def prepare_account_soul_extractor_prompt(example_posts: Dict[str, Any]) -> str:
       return f"""
 
-<example_posts>
+<example_replies>
 {json.dumps(example_posts)}
-</example_posts>
+</example_replies>
 
 
 <JSON_FORMAT>
@@ -408,4 +408,107 @@ I'll send this JSON to an AI to give it immediate context on how to copy communi
 I wanted you to focus heavily on the style, cadence, and anything that allows you to capture the soul of the writing. 
 What i want you to do is to give very concrete examples when describing a value. Tell me in what kind of words, expressions, flows made you think a description.
 Use the template shared in JSON_FORMAT. 
+"""
+
+
+def prepare_account_reply_extractor_prompt(example_replies: Dict[str, Any]) -> str:
+    return f"""
+<example_replies>
+{json.dumps(example_replies)}
+</example_replies>
+
+<JSON_FORMAT>
+{{
+  "reply_profile_summary": "[1‑2 sentences on typical reply themes, overall stance, and tone.]",
+
+  "source_tweet_alignment": {{
+    "default_stance": "[agree / neutral / challenge / playful / other]",
+    "stance_frequency_breakdown": {{
+      "agree": "[%]", "neutral": "[%]", "challenge": "[%]", "playful": "[%]", "other": "[%]"
+    }}
+  }},
+
+  "audience_address_style": {{
+    "core_description": "[How they address the author/audience.]",
+    "indicative_patterns": [
+      {{
+        "pattern": "Handle vs Name Usage",
+        "description": "[Do they use @handle, first name, both?]",
+        "example_markers": "[\"@alice\", \"Alice —\"]"
+      }},
+      {{
+        "pattern": "Second‑Person Framing",
+        "description": "[Direct 'you', rhetorical questions, etc.]",
+        "example_markers": "[\"you missed …?\", \"ever tried …?\"]"
+      }}
+    ]
+  }},
+
+  "reference_and_context_handling": {{
+    "direct_quote_usage": "[never / occasional / frequent]",
+    "mention_usage": "[opening / closing / inline / none]",
+    "context_depth": "[single‑line / multi‑sentence / mini‑thread]"
+  }},
+
+  "cadence_and_flow": {{
+    "core_description": "[Pace, sentence length, flow in replies.]",
+    "length_vs_source_ratio": "[<0.5× / ≈1× / >2×]",
+    "indicative_patterns": [
+      {{
+        "pattern": "Sentence Connectivity",
+        "description": "[Conjunctions, abrupt breaks, etc.]",
+        "example_markers": "[short illustrative snippet]"
+      }},
+      {{
+        "pattern": "Question Usage",
+        "description": "[Rhetorical vs genuine questions to OP.]",
+        "example_markers": "[\"What if …?\", \"Thoughts?\"]"
+      }}
+    ]
+  }},
+
+  "vocabulary_and_texture": {{
+    "core_description": "[Formal/informal, emojis, jargon in replies.]",
+    "indicative_patterns": [
+      {{
+        "pattern": "Emojis / GIF shorthand",
+        "description": "[Frequency, placement.]",
+        "example_markers": "[\"😂\", \"🔥\"]"
+      }},
+      {{
+        "pattern": "Signature Reply Phrases",
+        "description": "[Recurring reply‑specific phrases.]",
+        "example_markers": "[\"fair point\", \"+1\"]"
+      }}
+    ]
+  }},
+
+  "punctuation_and_formatting_style": {{
+    "core_description": "[Ellipses, exclamations, line breaks inside replies.]",
+    "indicative_patterns": [
+      {{
+        "pattern": "Ellipses Usage",
+        "description": "[rate & purpose]",
+        "example_markers": "[\"so…\", \"well…\"]"
+      }},
+      {{
+        "pattern": "Line Breaks",
+        "description": "[yes/no; how used for pacing.]",
+        "example_markers": "[confirm usage]"
+      }}
+    ]
+  }},
+
+  "engagement_goal_cues": {{
+    "calls_to_action": "[ask for RTs? invite opinions? rarely?]",
+    "humour_hooks": "[gif? sarcasm? none?]"
+  }},
+
+  "key_reply_style_takeaways_for_replication": [
+    "[3‑5 bullet points: most critical style rules for replies]"
+  ]
+}}
+</JSON_FORMAT>
+
+Above are real replies from an account. Analyse **only the replies** and fill every JSON field with <10 concise lines each, always citing concrete phrases where asked.
 """

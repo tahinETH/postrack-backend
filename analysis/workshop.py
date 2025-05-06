@@ -21,7 +21,7 @@ from litellm import acompletion
 logger = logging.getLogger(__name__)
 
 PRIMARY_MODEL = "chatgpt-4o-latest"
-ADMIN_MODEL = "chatgpt-4o-latest"
+ADMIN_MODEL = "gpt-4.1"
 class Workshop:
     def __init__(self):
         
@@ -92,13 +92,15 @@ class Workshop:
                 return "Error: Could not retrieve tweet"
             try:
                 analysis = await self._get_analysis(account_id, user_id)
-                raw_tweets = analysis.get('top_tweets', [])
-                example_posts = await self.clean_tweets(raw_tweets, limit=20)
+                example_posts = analysis.get('top_tweets', [])
+                reply_posts = [post for post in example_posts if post.get('type') == 'reply']
+                if len(reply_posts) < 20:
+                    reply_posts = example_posts
             except Exception as e:
                 logger.error(f"Error getting example posts: {str(e)}")
                 example_posts = {}
             
-            prompt = prepare_content_inspiration_prompt(example_posts, tweet_text, additional_commands)
+            prompt = prepare_content_inspiration_prompt(reply_posts, tweet_text, additional_commands)
             response = await acompletion(
                 model=PRIMARY_MODEL,
                 max_tokens=2000,
@@ -111,8 +113,8 @@ class Workshop:
             content_inspiration = json.loads(response.choices[0].message.content)
 
             style_analysis = analysis.get('style_analysis', {})
-
-            tweet_example_generator_prompt = prepare_reply_example_generator_prompt(json.dumps(content_inspiration), style_analysis, example_posts, tweet_text, additional_commands)
+            reply_style_analysis = analysis.get('reply_style_analysis', {}) if analysis.get('reply_style_analysis', {}) else style_analysis
+            tweet_example_generator_prompt = prepare_reply_example_generator_prompt(json.dumps(content_inspiration), reply_style_analysis, tweet_text, additional_commands)
             response = await acompletion(
                 model=ADMIN_MODEL if user_id =="user_2tcQfynAXow17zErfaDwYzyRc5l" else PRIMARY_MODEL,
                 max_tokens=2000,

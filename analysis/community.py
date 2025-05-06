@@ -36,6 +36,7 @@ class CommunityAnalyzer:
         for tweet in tweets:
             cleaned_tweet = {
                 'tweet_created_at': tweet.get('tweet_created_at'),
+                'type': tweet.get('type'),
                 'id': tweet.get('id'),
                 'id_str': tweet.get('id_str'),
                 'full_text': tweet.get('full_text', ''),
@@ -299,6 +300,7 @@ class CommunityAnalyzer:
     async def run_soul_extractor(self, example_posts: Dict[str, Any]) -> Dict[str, Any]:
         soul_extractor = await self.ai.generate_ai_analysis_soul_extractor(example_posts,community=True)
         return soul_extractor
+    
 
     async def get_community_analysis(self, community_id: str, user_id: str) -> Dict[str, Any]:
         """Get community analysis"""
@@ -385,7 +387,7 @@ class CommunityAnalyzer:
                         # Run qualitative and style analysis in parallel
                         qualitative_analysis, style_analysis = await asyncio.gather(
                             self.run_qualitative_analysis(cleaned_tweets, community_details),
-                            self.run_soul_extractor(cleaned_tweets)
+                            self.run_soul_extractor(cleaned_tweets),
                         )
                         logger.debug(f"Qualitative and style analysis completed for community {community_id}")
 

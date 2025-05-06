@@ -78,7 +78,8 @@ class AccountRepository():
         metrics: Optional[Dict] = None,
         quantitative_analysis: Optional[Dict] = None,
         qualitative_analysis: Optional[str] = None,
-        style_analysis: Optional[Dict] = None
+        style_analysis: Optional[Dict] = None,
+        reply_style_analysis: Optional[Dict] = None
     ):
         current_timestamp = int(datetime.now().timestamp())
         async with get_async_session() as session:
@@ -107,6 +108,8 @@ class AccountRepository():
                     existing.qualitative_analysis = qualitative_analysis
                 if style_analysis is not None:
                     existing.style_analysis = style_analysis
+                if reply_style_analysis is not None:
+                    existing.reply_style_analysis = reply_style_analysis
                 existing.updated_at = current_timestamp
             else:
                 # Create new analysis
@@ -120,6 +123,7 @@ class AccountRepository():
                     quantitative_analysis=quantitative_analysis if quantitative_analysis != {} else None,
                     qualitative_analysis=qualitative_analysis if qualitative_analysis != "" else None,
                     style_analysis=style_analysis if style_analysis != {} else None,
+                    reply_style_analysis=reply_style_analysis if reply_style_analysis != {} else None,
                     created_at=current_timestamp,
                     updated_at=current_timestamp
             )

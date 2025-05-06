@@ -71,6 +71,17 @@ def migrations():
             END IF;
         END $$;""",
 
+        # Add reply_style_analysis column to account_analysis table if it doesn't exist
+        """DO $$ 
+        BEGIN 
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_name='account_analysis' AND column_name='reply_style_analysis'
+            ) THEN
+                ALTER TABLE account_analysis ADD COLUMN reply_style_analysis JSONB;
+            END IF;
+        END $$;""",
+
         # Add status column if it doesn't exist
         """DO $$ 
         BEGIN 

@@ -9,7 +9,8 @@ from analysis.prompts.prompts_analysis import (
     prepare_account_ai_analysis_quantitative_prompt, 
     prepare_account_ai_analysis_qualitative_prompt, 
     prepare_account_soul_extractor_prompt_community,
-    prepare_account_soul_extractor_prompt
+    prepare_account_soul_extractor_prompt,
+    prepare_account_reply_extractor_prompt
     )
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,12 @@ class AIAnalyzer:
             prompt = prepare_account_soul_extractor_prompt_community(example_posts)
         else:
             prompt = prepare_account_soul_extractor_prompt(example_posts)
+        llm_response = await self._get_llm_analysis_json(prompt)
+        return llm_response
+    
+    async def generate_ai_analysis_reply_soul_extractor(self, example_posts: Dict[str, Any]) -> str:
+        reply_posts = [post for post in example_posts if post.get('type') == 'reply']
+        prompt = prepare_account_reply_extractor_prompt(reply_posts)
         llm_response = await self._get_llm_analysis_json(prompt)
         return llm_response
     

@@ -7,9 +7,9 @@ def prepare_content_inspiration_prompt(example_posts: Dict[str, Any], tweet: str
     return f"""
     You are an AI assistant helping a social media content creator generate ideas for new posts. Your task is to suggest topics and points to explore based on their previous content and a provided resource.
 
-    <example_posts>
+    <reply_posts>
     {json.dumps(example_posts)}
-    </example_posts>
+    </reply_posts>
 
     <tweet_to_reply_to>
     {tweet}
@@ -19,7 +19,7 @@ def prepare_content_inspiration_prompt(example_posts: Dict[str, Any], tweet: str
     {additional_commands}
     </additional_commands_from_user>
 
-    The tweet_to_reply_to contains a tweet or thread.
+    The tweet_to_reply_to contains a tweet or thread. And you'll see example replies from that account under reply_posts.
     Generate tweet ideas to respond to, ask a question to, or expand upon the content shared. 
     Provide potential conversation points, topics, orthogonal/parallel ideas and frameworks to explore.
 
@@ -63,7 +63,7 @@ def prepare_content_inspiration_prompt(example_posts: Dict[str, Any], tweet: str
         "additional_instructions_output": "Output based on any additional instructions provided"
     }}
 
-    For independent ideas, be very creative and include esoteric/outlier ideas. Do not provide actual posts to share - only areas to explore. Do not use em dashes or ellipses.
+    For independent ideas, be creative and include esoteric/outlier ideas that the account might mention. Do not use em dashes or ellipses. Only provide ideas, not actual posts.
     """
 
 
@@ -259,37 +259,33 @@ Present your response in the following JSON format:
 
 
 
-def prepare_reply_example_generator_prompt(inspiration: str, style_analysis: Dict[str, Any], example_posts: Dict[str, Any], discussion_source: str, additional_commands: str) -> str:
+def prepare_reply_example_generator_prompt(inspiration: str, reply_style_analysis: Dict[str, Any], example_posts: Dict[str, Any], discussion_source: str, additional_commands: str) -> str:
     return f"""
     You are an AI assistant tasked with generating example tweets based on a discussion source. Your goal is to generate engaging tweets that match the style and tone of the example posts while exploring the provided topic ideas.
 
     First, carefully review these example posts to understand the desired style and tone:
 
-    <example_posts>
-    {json.dumps(example_posts)}
-    </example_posts>
-
   
-
+    <topic_ideas>
+    {inspiration}
+    </topic_ideas>
 
     <additional_commands_from_user>
     {additional_commands}
     </additional_commands_from_user>
 
     <account_soul_info>
-    {style_analysis}
+    {reply_style_analysis}
     </account_soul_info>
 
-      <discussion_source>
+    <discussion_source>
     {discussion_source}
     </discussion_source>
 
-    <topic_ideas>
-    {inspiration}
-    </topic_ideas>
+
 
     Topic ideas have been generated to explore how to engage with the discussion source with a reply or quote tweet.
-    Generate example tweets for each topic idea in the topic_ideas section. Follow the style and tone of the example posts.
+    Generate example tweets for each topic idea in the topic_ideas section. Follow the style and tone of the account_soul_info.
 
     Return your response in the following JSON format:
 
@@ -309,8 +305,7 @@ def prepare_reply_example_generator_prompt(inspiration: str, style_analysis: Dic
     }}
 
     For each tweet:
-    - Keep it within Twitter's character limit
-    - Match the voice and style of the example posts
+    - Match the voice and style of the account_soul_info
     - Focus on one clear topic or idea
     - Use engaging hooks and strong closings
     - Include appropriate formatting (line breaks, punctuation, etc.) when relevant

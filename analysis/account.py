@@ -38,6 +38,7 @@ class AccountAnalyzer:
             
             cleaned_tweet = {
                 'tweet_created_at': tweet.get('tweet_created_at'),
+                'type': tweet.get('type'),
                 'id': tweet.get('id'),
                 'id_str': tweet.get('id_str'), 
                 'full_text': tweet.get('full_text', ''),
@@ -301,6 +302,10 @@ class AccountAnalyzer:
     async def run_soul_extractor(self, example_posts: Dict[str, Any]) -> Dict[str, Any]:
         soul_extractor = await self.ai.generate_ai_analysis_soul_extractor(example_posts)
         return soul_extractor
+    
+    async def run_reply_soul_extractor(self, example_posts: Dict[str, Any]) -> Dict[str, Any]:
+        reply_soul_extractor = await self.ai.generate_ai_analysis_reply_soul_extractor(example_posts)
+        return reply_soul_extractor
 
 
     async def analyze_account(self, account_id: str, new_fetch: bool = False, account_data: Dict[str, Any] = None, user_id: str = None) -> Dict[str, Any]:
@@ -369,9 +374,10 @@ class AccountAnalyzer:
                     )
 
                     # Run qualitative and style analysis in parallel
-                    qualitative_analysis, style_analysis = await asyncio.gather(
+                    qualitative_analysis, style_analysis, reply_style_analysis = await asyncio.gather(
                         self.run_qualitative_analysis(cleaned_tweets, account_data),
-                        self.run_soul_extractor(cleaned_tweets)
+                        self.run_soul_extractor(cleaned_tweets),
+                        self.run_reply_soul_extractor(cleaned_tweets)
                     )
 
                     # Save final results
@@ -380,6 +386,7 @@ class AccountAnalyzer:
                         account_id,
                         qualitative_analysis=qualitative_analysis,
                         style_analysis=style_analysis,
+                        reply_style_analysis=reply_style_analysis,
                         status="completed"
                     )
 

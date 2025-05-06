@@ -69,6 +69,7 @@ class AccountAnalysis(Base):
     quantitative_analysis = Column(JSON, nullable=True)
     qualitative_analysis = Column(String, nullable=True)
     style_analysis = Column(JSON, nullable=True)
+    reply_style_analysis = Column(JSON, nullable=True)
     created_at = Column(Integer, nullable=False)
     updated_at = Column(Integer, nullable=False)
 
