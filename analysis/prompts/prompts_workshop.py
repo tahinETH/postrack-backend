@@ -259,7 +259,7 @@ Present your response in the following JSON format:
 
 
 
-def prepare_reply_example_generator_prompt(inspiration: str, reply_style_analysis: Dict[str, Any], example_posts: Dict[str, Any], discussion_source: str, additional_commands: str) -> str:
+def prepare_reply_example_generator_prompt(inspiration: str, reply_style_analysis: Dict[str, Any],discussion_source: str, additional_commands: str) -> str:
     return f"""
     You are an AI assistant tasked with generating example tweets based on a discussion source. Your goal is to generate engaging tweets that match the style and tone of the example posts while exploring the provided topic ideas.
 
