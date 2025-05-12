@@ -21,7 +21,7 @@ def verify_stripe_webhook(request: Request, body: bytes) -> Dict[str, Any]:
     stripe_signature = request.headers.get("stripe-signature")
 
     if not stripe_signature:
-        logger.error("Mi<ssing Stripe signature header")
+        logger.error("Missing Stripe signature header")
         raise HTTPException(status_code=400, detail="Missing Stripe signature header")
 
     try:

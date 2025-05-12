@@ -340,7 +340,10 @@ class UserDataRepository():
                         'price': config.TIER1_PRICE_ID,
                         'quantity': 1
                     }],
-                    customer=user.stripe_customer_id
+                    customer=user.stripe_customer_id,
+                    subscription_data={
+                        'trial_period_days': 7
+                    }
                 )
 
                 logger.info(f"Created checkout session for user {user_id}")
